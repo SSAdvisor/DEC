@@ -1,4 +1,4 @@
-# Generated from RSTSBasic.g4 by ANTLR 4.13.1
+# Generated from compiler/grammar/RSTSBasic.g4 by ANTLR 4.13.1
 from antlr4 import *
 if "." in __name__:
     from .RSTSBasicParser import RSTSBasicParser
@@ -89,6 +89,11 @@ class RSTSBasicVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by RSTSBasicParser#dimStmt.
+    def visitDimStmt(self, ctx:RSTSBasicParser.DimStmtContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by RSTSBasicParser#strExpr.
     def visitStrExpr(self, ctx:RSTSBasicParser.StrExprContext):
         return self.visitChildren(ctx)
@@ -114,6 +119,11 @@ class RSTSBasicVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by RSTSBasicParser#chrExpr.
+    def visitChrExpr(self, ctx:RSTSBasicParser.ChrExprContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by RSTSBasicParser#parensExpr.
     def visitParensExpr(self, ctx:RSTSBasicParser.ParensExprContext):
         return self.visitChildren(ctx)
@@ -126,6 +136,11 @@ class RSTSBasicVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by RSTSBasicParser#mulDivExpr.
     def visitMulDivExpr(self, ctx:RSTSBasicParser.MulDivExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#inkeyExpr.
+    def visitInkeyExpr(self, ctx:RSTSBasicParser.InkeyExprContext):
         return self.visitChildren(ctx)
 
 

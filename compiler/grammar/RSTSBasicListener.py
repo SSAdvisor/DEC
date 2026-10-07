@@ -1,4 +1,4 @@
-# Generated from RSTSBasic.g4 by ANTLR 4.13.1
+# Generated from compiler/grammar/RSTSBasic.g4 by ANTLR 4.13.1
 from antlr4 import *
 if "." in __name__:
     from .RSTSBasicParser import RSTSBasicParser
@@ -152,6 +152,15 @@ class RSTSBasicListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by RSTSBasicParser#dimStmt.
+    def enterDimStmt(self, ctx:RSTSBasicParser.DimStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#dimStmt.
+    def exitDimStmt(self, ctx:RSTSBasicParser.DimStmtContext):
+        pass
+
+
     # Enter a parse tree produced by RSTSBasicParser#strExpr.
     def enterStrExpr(self, ctx:RSTSBasicParser.StrExprContext):
         pass
@@ -197,6 +206,15 @@ class RSTSBasicListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by RSTSBasicParser#chrExpr.
+    def enterChrExpr(self, ctx:RSTSBasicParser.ChrExprContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#chrExpr.
+    def exitChrExpr(self, ctx:RSTSBasicParser.ChrExprContext):
+        pass
+
+
     # Enter a parse tree produced by RSTSBasicParser#parensExpr.
     def enterParensExpr(self, ctx:RSTSBasicParser.ParensExprContext):
         pass
@@ -221,6 +239,15 @@ class RSTSBasicListener(ParseTreeListener):
 
     # Exit a parse tree produced by RSTSBasicParser#mulDivExpr.
     def exitMulDivExpr(self, ctx:RSTSBasicParser.MulDivExprContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#inkeyExpr.
+    def enterInkeyExpr(self, ctx:RSTSBasicParser.InkeyExprContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#inkeyExpr.
+    def exitInkeyExpr(self, ctx:RSTSBasicParser.InkeyExprContext):
         pass
 
 

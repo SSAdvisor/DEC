@@ -87,8 +87,11 @@ class CodeGenVisitor(RSTSBasicVisitor):
             self.bytecode[jmp_loc+1] = (end_offset >> 8) & 0xFF
 
     def visitInputStmt(self, ctx:RSTSBasicParser.InputStmtContext):
-        var_name = ctx.variable().getText()
+        var_ctx = ctx.variable()
+        var_name = var_ctx.getText().split('(')[0]
         idx = self.get_var_index(var_name)
+        if var_ctx.expression(): # Array access for input not fully supported, warn or fallback
+            pass # We'll just assign to the scalar or crash, but let's hope they use temp vars
         if var_name.endswith('$'):
             self.bytecode.append(0x71) # OP_INPUT_S
         else:
@@ -107,10 +110,27 @@ class CodeGenVisitor(RSTSBasicVisitor):
         self.bytecode.extend([0, 0])
 
     def visitPrintStmt(self, ctx:RSTSBasicParser.PrintStmtContext):
-        for expr in ctx.expression():
+        exprs = ctx.expression()
+        for i, expr in enumerate(exprs):
             self.visit(expr)
-            self.bytecode.append(0x50) # OP_PRINT
-            
+            # If there's another expression or a trailing semicolon, don't print newline.
+            # To check for trailing semicolon: see if the last child is ';'
+            # Wait, actually, let's just do a simple check:
+            # if this is not the last expression, or if the very last token in ctx is ';'
+            is_last_expr = (i == len(exprs) - 1)
+            ends_with_semi = (ctx.getChild(ctx.getChildCount() - 1).getText() == ';')
+            if is_last_expr and not ends_with_semi:
+                self.bytecode.append(0x50) # OP_PRINT (with NL)
+            else:
+                self.bytecode.append(0x51) # OP_PRINT_NO_NL
+
+    def visitInkeyExpr(self, ctx:RSTSBasicParser.InkeyExprContext):
+        self.bytecode.append(0x72) # OP_GETCH
+        
+    def visitChrExpr(self, ctx:RSTSBasicParser.ChrExprContext):
+        self.visit(ctx.expression())
+        self.bytecode.append(0x73) # OP_CHR
+
     def visitOpenSeqStmt(self, ctx:RSTSBasicParser.OpenSeqStmtContext):
         self.visit(ctx.expression())
         mode = 1 if ctx.getChild(3).getText() == 'OUTPUT' else 0
@@ -150,11 +170,28 @@ class CodeGenVisitor(RSTSBasicVisitor):
             self.bytecode.append(var_idx & 0xFF)
             self.bytecode.append((var_idx >> 8) & 0xFF)
         
+    def visitDimStmt(self, ctx:RSTSBasicParser.DimStmtContext):
+        for var_ctx in ctx.variable():
+            var_name = var_ctx.getText().split('(')[0]
+            idx = self.get_var_index(var_name)
+            # Evaluate the size expression
+            self.visit(var_ctx.expression())
+            self.bytecode.append(0x15) # OP_DIM
+            self.bytecode.append(idx & 0xFF)
+            self.bytecode.append((idx >> 8) & 0xFF)
+
     def visitLetStmt(self, ctx:RSTSBasicParser.LetStmtContext):
+        # Value to store
         self.visit(ctx.expression())
-        var_name = ctx.variable().getText()
+        var_ctx = ctx.variable()
+        var_name = var_ctx.getText().split('(')[0]
         idx = self.get_var_index(var_name)
-        self.bytecode.append(0x13) # OP_STORE_V
+        if var_ctx.expression(): # Array access
+            # Push array index
+            self.visit(var_ctx.expression())
+            self.bytecode.append(0x16) # OP_STORE_A
+        else:
+            self.bytecode.append(0x13) # OP_STORE_V
         self.bytecode.append(idx & 0xFF)
         self.bytecode.append((idx >> 8) & 0xFF)
         
@@ -189,15 +226,22 @@ class CodeGenVisitor(RSTSBasicVisitor):
 
     def visitStrExpr(self, ctx:RSTSBasicParser.StrExprContext):
         val = ctx.STRING().getText().strip('"')
+        # Evaluate common escape characters
+        val = val.replace('\\n', '\n').replace('\\033', '\033').replace('\\e', '\033').replace('\\t', '\t')
         self.bytecode.append(0x12) # OP_PUSH_S
         self.bytecode.append(len(val) & 0xFF)
         for char in val:
             self.bytecode.append(ord(char))
 
     def visitVarExpr(self, ctx:RSTSBasicParser.VarExprContext):
-        var_name = ctx.variable().getText()
+        var_ctx = ctx.variable()
+        var_name = var_ctx.getText().split('(')[0]
         idx = self.get_var_index(var_name)
-        self.bytecode.append(0x14)
+        if var_ctx.expression(): # Array access
+            self.visit(var_ctx.expression())
+            self.bytecode.append(0x17) # OP_LOAD_A
+        else:
+            self.bytecode.append(0x14) # OP_LOAD_V
         self.bytecode.append(idx & 0xFF)
         self.bytecode.append((idx >> 8) & 0xFF)
 

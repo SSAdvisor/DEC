@@ -13,6 +13,9 @@ typedef enum {
     OP_PUSH_S    = 0x12,
     OP_STORE_V   = 0x13,
     OP_LOAD_V    = 0x14,
+    OP_DIM       = 0x15,
+    OP_STORE_A   = 0x16,
+    OP_LOAD_A    = 0x17,
     
     OP_ADD       = 0x20,
     OP_SUB       = 0x21,
@@ -31,6 +34,7 @@ typedef enum {
     OP_CALL_OVL  = 0x42, // Overlay cross-call
     
     OP_PRINT     = 0x50,
+    OP_PRINT_NO_NL = 0x51,
     
     OP_RMS_OPEN  = 0x60,
     OP_RMS_GET   = 0x61,
@@ -38,7 +42,9 @@ typedef enum {
     OP_RMS_CLOS  = 0x63,
     
     OP_INPUT_I   = 0x70,
-    OP_INPUT_S   = 0x71
+    OP_INPUT_S   = 0x71,
+    OP_GETCH     = 0x72,
+    OP_CHR       = 0x73
 } Opcode;
 
 #endif // OPCODES_H

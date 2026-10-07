@@ -22,12 +22,15 @@ statement
     | 'GET' '#' INT (',' 'KEY' variable)?                         # getStmt
     | 'CALL' STRING                                               # callStmt
     | 'INPUT' variable                                            # inputStmt
+    | 'DIM' variable (',' variable)*                              # dimStmt
     ;
 
 expression
     : left=expression op=('*'|'/') right=expression               # mulDivExpr
     | left=expression op=('+'|'-') right=expression               # addSubExpr
     | left=expression op=('<'|'>'|'='|'<='|'>='|'<>') right=expression # relExpr
+    | 'INKEY$'                                                    # inkeyExpr
+    | 'CHR$' '(' expression ')'                                   # chrExpr
     | INT                                                         # intExpr
     | FLOAT                                                       # floatExpr
     | STRING                                                      # strExpr
@@ -35,7 +38,8 @@ expression
     | '(' expression ')'                                          # parensExpr
     ;
 
-variable: ID ('%' | '$')?; // % for integer, $ for string
+variable: ID ('%' | '$')? ('(' expression ')')?; // % for integer, $ for string
+
 
 // Lexer Rules
 INT: [0-9]+;
