@@ -5,7 +5,7 @@ COMPILER_CMD = "source .venv/bin/activate && python compiler/basicc.py {input} -
 LINKER_CMD = "source .venv/bin/activate && python compiler/basiclink.py {input} -o {output}"
 
 def test_linker_executable():
-    bas_content = "10 PRINT 100\\n20 END\\n"
+    bas_content = "10 PRINT 100\n20 END\n"
     bas_file = "tests/test_link.bas"
     bobj_file = "tests/test_link.bobj"
     exe_file = "tests/test_link_app"
@@ -60,9 +60,9 @@ def test_linker_overlays():
 .ROOT MAIN-O1
 O1: .FCTR FUNC1,FUNC2
 """
-    main_bas = '10 PRINT 1\\n20 CALL "FUNC1"\\n30 CALL "FUNC2"\\n40 END\\n'
-    func1_bas = '10 PRINT 11\\n20 END\\n'
-    func2_bas = '10 PRINT 22\\n20 END\\n'
+    main_bas = '10 PRINT 1\n20 CALL "FUNC1"\n30 CALL "FUNC2"\n40 END\n'
+    func1_bas = '10 PRINT 11\n20 END\n'
+    func2_bas = '10 PRINT 22\n20 END\n'
     
     with open("tests/main.bas", "w") as f: f.write(main_bas)
     with open("tests/func1.bas", "w") as f: f.write(func1_bas)

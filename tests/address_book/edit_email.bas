@@ -1,0 +1,43 @@
+1 C=C
+2 N$=N$
+3 A$=A$
+4 T$=T$
+5 B$=B$
+6 U$=U$
+7 C$=C$
+8 V$=V$
+9 P$=P$
+10 W$=W$
+11 Q$=Q$
+12 X$=X$
+13 R$=R$
+14 Y$=Y$
+15 E$=E$
+16 Z$=Z$
+17 F$=F$
+18 S$=S$
+19 G$=G$
+20 D$=D$
+21 I=I
+100 PRINT "Edit Email Index (1-3)?"
+110 INPUT I
+120 IF I = 1 THEN GOTO 200
+130 IF I = 2 THEN GOTO 300
+140 IF I = 3 THEN GOTO 400
+150 GOTO 500
+200 PRINT "Enter Email 1:"
+210 INPUT E$
+220 PRINT "Enter Type 1:"
+230 INPUT Z$
+240 GOTO 500
+300 PRINT "Enter Email 2:"
+310 INPUT F$
+320 PRINT "Enter Type 2:"
+330 INPUT S$
+340 GOTO 500
+400 PRINT "Enter Email 3:"
+410 INPUT G$
+420 PRINT "Enter Type 3:"
+430 INPUT D$
+500 PRINT "Email updated."
+510 END\n

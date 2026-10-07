@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     uint32_t payload_size;
     
     if (fread(magic, 1, 4, f) != 4 || fread(&payload_size, 4, 1, f) != 1) {
-        printf("Failed to read footer.\\n");
+        printf("Failed to read footer.\n");
         return 1;
     }
     
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
             fseek(f, 0, SEEK_SET);
             has_header = 0;
         } else {
-            printf("Error: No valid bytecode payload found in executable, and no input file provided.\\n");
+            printf("Error: No valid bytecode payload found in executable, and no input file provided.\n");
             return 1;
         }
     } else {
@@ -69,14 +69,14 @@ int main(int argc, char **argv) {
         g_segments[0].bytecode = payload;
     }
 
-    printf("RSTS/E VM Init\\n");
+    printf("RSTS/E VM Init\n");
     runtime_init();
     rms_init();
     vm_init();
     
-    printf("--- Execution Start (Segments: %u) ---\\n", g_num_segments);
+    printf("--- Execution Start (Segments: %u) ---\n", g_num_segments);
     vm_run(0); // Start MAIN
-    printf("--- Execution End ---\\n");
+    printf("--- Execution End ---\n");
     
     free(payload);
     return 0;

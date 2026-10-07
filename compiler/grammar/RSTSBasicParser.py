@@ -10,58 +10,59 @@ else:
 
 def serializedATN():
     return [
-        4,1,45,145,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,1,0,5,
+        4,1,45,147,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,1,0,5,
         0,14,8,0,10,0,12,0,17,9,0,1,0,1,0,1,1,3,1,22,8,1,1,1,1,1,1,1,5,1,
         27,8,1,10,1,12,1,30,9,1,1,1,1,1,1,2,1,2,1,3,1,3,1,3,1,3,1,3,1,3,
         5,3,42,8,3,10,3,12,3,45,9,3,1,3,3,3,48,8,3,1,3,3,3,51,8,3,1,3,1,
         3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,3,3,65,8,3,1,3,1,3,1,3,
         5,3,70,8,3,10,3,12,3,73,9,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,
         1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,
-        1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,3,3,110,8,3,1,3,1,3,3,3,
-        114,8,3,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,3,4,125,8,4,1,4,1,4,
-        1,4,1,4,1,4,1,4,1,4,1,4,1,4,5,4,136,8,4,10,4,12,4,139,9,4,1,5,1,
-        5,3,5,143,8,5,1,5,1,71,1,8,6,0,2,4,6,8,10,0,6,1,1,44,44,1,0,15,16,
-        1,0,27,28,1,0,29,30,2,0,6,6,31,35,1,0,38,39,167,0,15,1,0,0,0,2,21,
-        1,0,0,0,4,33,1,0,0,0,6,113,1,0,0,0,8,124,1,0,0,0,10,140,1,0,0,0,
-        12,14,3,2,1,0,13,12,1,0,0,0,14,17,1,0,0,0,15,13,1,0,0,0,15,16,1,
-        0,0,0,16,18,1,0,0,0,17,15,1,0,0,0,18,19,5,0,0,1,19,1,1,0,0,0,20,
-        22,3,4,2,0,21,20,1,0,0,0,21,22,1,0,0,0,22,23,1,0,0,0,23,28,3,6,3,
-        0,24,25,5,1,0,0,25,27,3,6,3,0,26,24,1,0,0,0,27,30,1,0,0,0,28,26,
-        1,0,0,0,28,29,1,0,0,0,29,31,1,0,0,0,30,28,1,0,0,0,31,32,7,0,0,0,
-        32,3,1,0,0,0,33,34,5,40,0,0,34,5,1,0,0,0,35,36,5,2,0,0,36,43,3,8,
-        4,0,37,38,5,3,0,0,38,42,3,8,4,0,39,40,5,4,0,0,40,42,3,8,4,0,41,37,
-        1,0,0,0,41,39,1,0,0,0,42,45,1,0,0,0,43,41,1,0,0,0,43,44,1,0,0,0,
-        44,47,1,0,0,0,45,43,1,0,0,0,46,48,5,4,0,0,47,46,1,0,0,0,47,48,1,
-        0,0,0,48,114,1,0,0,0,49,51,5,5,0,0,50,49,1,0,0,0,50,51,1,0,0,0,51,
-        52,1,0,0,0,52,53,3,10,5,0,53,54,5,6,0,0,54,55,3,8,4,0,55,114,1,0,
-        0,0,56,57,5,7,0,0,57,114,3,4,2,0,58,59,5,8,0,0,59,60,3,8,4,0,60,
-        61,5,9,0,0,61,64,3,6,3,0,62,63,5,10,0,0,63,65,3,6,3,0,64,62,1,0,
-        0,0,64,65,1,0,0,0,65,114,1,0,0,0,66,114,5,11,0,0,67,71,5,12,0,0,
-        68,70,9,0,0,0,69,68,1,0,0,0,70,73,1,0,0,0,71,72,1,0,0,0,71,69,1,
-        0,0,0,72,74,1,0,0,0,73,71,1,0,0,0,74,114,7,0,0,0,75,76,5,13,0,0,
-        76,77,3,8,4,0,77,78,5,14,0,0,78,79,7,1,0,0,79,80,5,17,0,0,80,81,
-        5,18,0,0,81,82,5,19,0,0,82,83,5,40,0,0,83,114,1,0,0,0,84,85,5,13,
-        0,0,85,86,3,8,4,0,86,87,5,17,0,0,87,88,5,18,0,0,88,89,5,19,0,0,89,
-        90,5,40,0,0,90,91,5,3,0,0,91,92,5,20,0,0,92,93,5,3,0,0,93,94,5,21,
-        0,0,94,95,5,22,0,0,95,96,3,10,5,0,96,114,1,0,0,0,97,98,5,23,0,0,
-        98,99,5,19,0,0,99,114,5,40,0,0,100,101,5,24,0,0,101,102,5,19,0,0,
-        102,114,5,40,0,0,103,104,5,25,0,0,104,105,5,19,0,0,105,109,5,40,
-        0,0,106,107,5,3,0,0,107,108,5,22,0,0,108,110,3,10,5,0,109,106,1,
-        0,0,0,109,110,1,0,0,0,110,114,1,0,0,0,111,112,5,26,0,0,112,114,5,
-        42,0,0,113,35,1,0,0,0,113,50,1,0,0,0,113,56,1,0,0,0,113,58,1,0,0,
-        0,113,66,1,0,0,0,113,67,1,0,0,0,113,75,1,0,0,0,113,84,1,0,0,0,113,
-        97,1,0,0,0,113,100,1,0,0,0,113,103,1,0,0,0,113,111,1,0,0,0,114,7,
-        1,0,0,0,115,116,6,4,-1,0,116,125,5,40,0,0,117,125,5,41,0,0,118,125,
-        5,42,0,0,119,125,3,10,5,0,120,121,5,36,0,0,121,122,3,8,4,0,122,123,
-        5,37,0,0,123,125,1,0,0,0,124,115,1,0,0,0,124,117,1,0,0,0,124,118,
-        1,0,0,0,124,119,1,0,0,0,124,120,1,0,0,0,125,137,1,0,0,0,126,127,
-        10,8,0,0,127,128,7,2,0,0,128,136,3,8,4,9,129,130,10,7,0,0,130,131,
-        7,3,0,0,131,136,3,8,4,8,132,133,10,6,0,0,133,134,7,4,0,0,134,136,
-        3,8,4,7,135,126,1,0,0,0,135,129,1,0,0,0,135,132,1,0,0,0,136,139,
-        1,0,0,0,137,135,1,0,0,0,137,138,1,0,0,0,138,9,1,0,0,0,139,137,1,
-        0,0,0,140,142,5,43,0,0,141,143,7,5,0,0,142,141,1,0,0,0,142,143,1,
-        0,0,0,143,11,1,0,0,0,15,15,21,28,41,43,47,50,64,71,109,113,124,135,
-        137,142
+        1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,3,3,110,8,3,1,3,1,3,1,3,
+        1,3,3,3,116,8,3,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,3,4,127,8,4,
+        1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,4,5,4,138,8,4,10,4,12,4,141,9,
+        4,1,5,1,5,3,5,145,8,5,1,5,1,71,1,8,6,0,2,4,6,8,10,0,6,1,1,44,44,
+        1,0,15,16,1,0,27,28,1,0,29,30,2,0,6,6,31,35,1,0,38,39,170,0,15,1,
+        0,0,0,2,21,1,0,0,0,4,33,1,0,0,0,6,115,1,0,0,0,8,126,1,0,0,0,10,142,
+        1,0,0,0,12,14,3,2,1,0,13,12,1,0,0,0,14,17,1,0,0,0,15,13,1,0,0,0,
+        15,16,1,0,0,0,16,18,1,0,0,0,17,15,1,0,0,0,18,19,5,0,0,1,19,1,1,0,
+        0,0,20,22,3,4,2,0,21,20,1,0,0,0,21,22,1,0,0,0,22,23,1,0,0,0,23,28,
+        3,6,3,0,24,25,5,1,0,0,25,27,3,6,3,0,26,24,1,0,0,0,27,30,1,0,0,0,
+        28,26,1,0,0,0,28,29,1,0,0,0,29,31,1,0,0,0,30,28,1,0,0,0,31,32,7,
+        0,0,0,32,3,1,0,0,0,33,34,5,40,0,0,34,5,1,0,0,0,35,36,5,2,0,0,36,
+        43,3,8,4,0,37,38,5,3,0,0,38,42,3,8,4,0,39,40,5,4,0,0,40,42,3,8,4,
+        0,41,37,1,0,0,0,41,39,1,0,0,0,42,45,1,0,0,0,43,41,1,0,0,0,43,44,
+        1,0,0,0,44,47,1,0,0,0,45,43,1,0,0,0,46,48,5,4,0,0,47,46,1,0,0,0,
+        47,48,1,0,0,0,48,116,1,0,0,0,49,51,5,5,0,0,50,49,1,0,0,0,50,51,1,
+        0,0,0,51,52,1,0,0,0,52,53,3,10,5,0,53,54,5,6,0,0,54,55,3,8,4,0,55,
+        116,1,0,0,0,56,57,5,7,0,0,57,116,3,4,2,0,58,59,5,8,0,0,59,60,3,8,
+        4,0,60,61,5,9,0,0,61,64,3,6,3,0,62,63,5,10,0,0,63,65,3,6,3,0,64,
+        62,1,0,0,0,64,65,1,0,0,0,65,116,1,0,0,0,66,116,5,11,0,0,67,71,5,
+        12,0,0,68,70,9,0,0,0,69,68,1,0,0,0,70,73,1,0,0,0,71,72,1,0,0,0,71,
+        69,1,0,0,0,72,74,1,0,0,0,73,71,1,0,0,0,74,116,7,0,0,0,75,76,5,13,
+        0,0,76,77,3,8,4,0,77,78,5,14,0,0,78,79,7,1,0,0,79,80,5,17,0,0,80,
+        81,5,18,0,0,81,82,5,19,0,0,82,83,5,40,0,0,83,116,1,0,0,0,84,85,5,
+        13,0,0,85,86,3,8,4,0,86,87,5,17,0,0,87,88,5,18,0,0,88,89,5,19,0,
+        0,89,90,5,40,0,0,90,91,5,3,0,0,91,92,5,20,0,0,92,93,5,3,0,0,93,94,
+        5,21,0,0,94,95,5,22,0,0,95,96,3,10,5,0,96,116,1,0,0,0,97,98,5,23,
+        0,0,98,99,5,19,0,0,99,116,5,40,0,0,100,101,5,24,0,0,101,102,5,19,
+        0,0,102,116,5,40,0,0,103,104,5,25,0,0,104,105,5,19,0,0,105,109,5,
+        40,0,0,106,107,5,3,0,0,107,108,5,22,0,0,108,110,3,10,5,0,109,106,
+        1,0,0,0,109,110,1,0,0,0,110,116,1,0,0,0,111,112,5,26,0,0,112,116,
+        5,42,0,0,113,114,5,15,0,0,114,116,3,10,5,0,115,35,1,0,0,0,115,50,
+        1,0,0,0,115,56,1,0,0,0,115,58,1,0,0,0,115,66,1,0,0,0,115,67,1,0,
+        0,0,115,75,1,0,0,0,115,84,1,0,0,0,115,97,1,0,0,0,115,100,1,0,0,0,
+        115,103,1,0,0,0,115,111,1,0,0,0,115,113,1,0,0,0,116,7,1,0,0,0,117,
+        118,6,4,-1,0,118,127,5,40,0,0,119,127,5,41,0,0,120,127,5,42,0,0,
+        121,127,3,10,5,0,122,123,5,36,0,0,123,124,3,8,4,0,124,125,5,37,0,
+        0,125,127,1,0,0,0,126,117,1,0,0,0,126,119,1,0,0,0,126,120,1,0,0,
+        0,126,121,1,0,0,0,126,122,1,0,0,0,127,139,1,0,0,0,128,129,10,8,0,
+        0,129,130,7,2,0,0,130,138,3,8,4,9,131,132,10,7,0,0,132,133,7,3,0,
+        0,133,138,3,8,4,8,134,135,10,6,0,0,135,136,7,4,0,0,136,138,3,8,4,
+        7,137,128,1,0,0,0,137,131,1,0,0,0,137,134,1,0,0,0,138,141,1,0,0,
+        0,139,137,1,0,0,0,139,140,1,0,0,0,140,9,1,0,0,0,141,139,1,0,0,0,
+        142,144,5,43,0,0,143,145,7,5,0,0,144,143,1,0,0,0,144,145,1,0,0,0,
+        145,11,1,0,0,0,15,15,21,28,41,43,47,50,64,71,109,115,126,137,139,
+        144
     ]
 
 class RSTSBasicParser ( Parser ):
@@ -207,7 +208,7 @@ class RSTSBasicParser ( Parser ):
             self.state = 15
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 9895730493860) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 9895730526628) != 0):
                 self.state = 12
                 self.line()
                 self.state = 17
@@ -378,6 +379,140 @@ class RSTSBasicParser ( Parser ):
 
 
 
+    class OpenIdxStmtContext(StatementContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expression(self):
+            return self.getTypedRuleContext(RSTSBasicParser.ExpressionContext,0)
+
+        def INT(self):
+            return self.getToken(RSTSBasicParser.INT, 0)
+        def variable(self):
+            return self.getTypedRuleContext(RSTSBasicParser.VariableContext,0)
+
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterOpenIdxStmt" ):
+                listener.enterOpenIdxStmt(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitOpenIdxStmt" ):
+                listener.exitOpenIdxStmt(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitOpenIdxStmt" ):
+                return visitor.visitOpenIdxStmt(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class RemStmtContext(StatementContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def NEWLINE(self):
+            return self.getToken(RSTSBasicParser.NEWLINE, 0)
+        def EOF(self):
+            return self.getToken(RSTSBasicParser.EOF, 0)
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterRemStmt" ):
+                listener.enterRemStmt(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitRemStmt" ):
+                listener.exitRemStmt(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitRemStmt" ):
+                return visitor.visitRemStmt(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class LetStmtContext(StatementContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def variable(self):
+            return self.getTypedRuleContext(RSTSBasicParser.VariableContext,0)
+
+        def expression(self):
+            return self.getTypedRuleContext(RSTSBasicParser.ExpressionContext,0)
+
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterLetStmt" ):
+                listener.enterLetStmt(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitLetStmt" ):
+                listener.exitLetStmt(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitLetStmt" ):
+                return visitor.visitLetStmt(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class GotoStmtContext(StatementContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def lineNumber(self):
+            return self.getTypedRuleContext(RSTSBasicParser.LineNumberContext,0)
+
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterGotoStmt" ):
+                listener.enterGotoStmt(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitGotoStmt" ):
+                listener.exitGotoStmt(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitGotoStmt" ):
+                return visitor.visitGotoStmt(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class InputStmtContext(StatementContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def variable(self):
+            return self.getTypedRuleContext(RSTSBasicParser.VariableContext,0)
+
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterInputStmt" ):
+                listener.enterInputStmt(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitInputStmt" ):
+                listener.exitInputStmt(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitInputStmt" ):
+                return visitor.visitInputStmt(self)
+            else:
+                return visitor.visitChildren(self)
+
+
     class EndStmtContext(StatementContext):
 
         def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
@@ -424,36 +559,6 @@ class RSTSBasicParser ( Parser ):
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitPrintStmt" ):
                 return visitor.visitPrintStmt(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-    class OpenIdxStmtContext(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def expression(self):
-            return self.getTypedRuleContext(RSTSBasicParser.ExpressionContext,0)
-
-        def INT(self):
-            return self.getToken(RSTSBasicParser.INT, 0)
-        def variable(self):
-            return self.getTypedRuleContext(RSTSBasicParser.VariableContext,0)
-
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterOpenIdxStmt" ):
-                listener.enterOpenIdxStmt(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitOpenIdxStmt" ):
-                listener.exitOpenIdxStmt(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitOpenIdxStmt" ):
-                return visitor.visitOpenIdxStmt(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -513,60 +618,6 @@ class RSTSBasicParser ( Parser ):
                 return visitor.visitChildren(self)
 
 
-    class RemStmtContext(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def NEWLINE(self):
-            return self.getToken(RSTSBasicParser.NEWLINE, 0)
-        def EOF(self):
-            return self.getToken(RSTSBasicParser.EOF, 0)
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRemStmt" ):
-                listener.enterRemStmt(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRemStmt" ):
-                listener.exitRemStmt(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRemStmt" ):
-                return visitor.visitRemStmt(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-    class LetStmtContext(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def variable(self):
-            return self.getTypedRuleContext(RSTSBasicParser.VariableContext,0)
-
-        def expression(self):
-            return self.getTypedRuleContext(RSTSBasicParser.ExpressionContext,0)
-
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterLetStmt" ):
-                listener.enterLetStmt(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitLetStmt" ):
-                listener.exitLetStmt(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitLetStmt" ):
-                return visitor.visitLetStmt(self)
-            else:
-                return visitor.visitChildren(self)
-
-
     class OpenSeqStmtContext(StatementContext):
 
         def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
@@ -590,31 +641,6 @@ class RSTSBasicParser ( Parser ):
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitOpenSeqStmt" ):
                 return visitor.visitOpenSeqStmt(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-    class GotoStmtContext(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a RSTSBasicParser.StatementContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def lineNumber(self):
-            return self.getTypedRuleContext(RSTSBasicParser.LineNumberContext,0)
-
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterGotoStmt" ):
-                listener.enterGotoStmt(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitGotoStmt" ):
-                listener.exitGotoStmt(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitGotoStmt" ):
-                return visitor.visitGotoStmt(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -701,7 +727,7 @@ class RSTSBasicParser ( Parser ):
         self.enterRule(localctx, 6, self.RULE_statement)
         self._la = 0 # Token type
         try:
-            self.state = 113
+            self.state = 115
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,10,self._ctx)
             if la_ == 1:
@@ -938,6 +964,15 @@ class RSTSBasicParser ( Parser ):
                 self.match(RSTSBasicParser.T__25)
                 self.state = 112
                 self.match(RSTSBasicParser.STRING)
+                pass
+
+            elif la_ == 13:
+                localctx = RSTSBasicParser.InputStmtContext(self, localctx)
+                self.enterOuterAlt(localctx, 13)
+                self.state = 113
+                self.match(RSTSBasicParser.T__14)
+                self.state = 114
+                self.variable()
                 pass
 
 
@@ -1192,7 +1227,7 @@ class RSTSBasicParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 124
+            self.state = 126
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [40]:
@@ -1200,46 +1235,46 @@ class RSTSBasicParser ( Parser ):
                 self._ctx = localctx
                 _prevctx = localctx
 
-                self.state = 116
+                self.state = 118
                 self.match(RSTSBasicParser.INT)
                 pass
             elif token in [41]:
                 localctx = RSTSBasicParser.FloatExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 117
+                self.state = 119
                 self.match(RSTSBasicParser.FLOAT)
                 pass
             elif token in [42]:
                 localctx = RSTSBasicParser.StrExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 118
+                self.state = 120
                 self.match(RSTSBasicParser.STRING)
                 pass
             elif token in [43]:
                 localctx = RSTSBasicParser.VarExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 119
+                self.state = 121
                 self.variable()
                 pass
             elif token in [36]:
                 localctx = RSTSBasicParser.ParensExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 120
-                self.match(RSTSBasicParser.T__35)
-                self.state = 121
-                self.expression(0)
                 self.state = 122
+                self.match(RSTSBasicParser.T__35)
+                self.state = 123
+                self.expression(0)
+                self.state = 124
                 self.match(RSTSBasicParser.T__36)
                 pass
             else:
                 raise NoViableAltException(self)
 
             self._ctx.stop = self._input.LT(-1)
-            self.state = 137
+            self.state = 139
             self._errHandler.sync(self)
             _alt = self._interp.adaptivePredict(self._input,13,self._ctx)
             while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
@@ -1247,18 +1282,18 @@ class RSTSBasicParser ( Parser ):
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
-                    self.state = 135
+                    self.state = 137
                     self._errHandler.sync(self)
                     la_ = self._interp.adaptivePredict(self._input,12,self._ctx)
                     if la_ == 1:
                         localctx = RSTSBasicParser.MulDivExprContext(self, RSTSBasicParser.ExpressionContext(self, _parentctx, _parentState))
                         localctx.left = _prevctx
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
-                        self.state = 126
+                        self.state = 128
                         if not self.precpred(self._ctx, 8):
                             from antlr4.error.Errors import FailedPredicateException
                             raise FailedPredicateException(self, "self.precpred(self._ctx, 8)")
-                        self.state = 127
+                        self.state = 129
                         localctx.op = self._input.LT(1)
                         _la = self._input.LA(1)
                         if not(_la==27 or _la==28):
@@ -1266,7 +1301,7 @@ class RSTSBasicParser ( Parser ):
                         else:
                             self._errHandler.reportMatch(self)
                             self.consume()
-                        self.state = 128
+                        self.state = 130
                         localctx.right = self.expression(9)
                         pass
 
@@ -1274,11 +1309,11 @@ class RSTSBasicParser ( Parser ):
                         localctx = RSTSBasicParser.AddSubExprContext(self, RSTSBasicParser.ExpressionContext(self, _parentctx, _parentState))
                         localctx.left = _prevctx
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
-                        self.state = 129
+                        self.state = 131
                         if not self.precpred(self._ctx, 7):
                             from antlr4.error.Errors import FailedPredicateException
                             raise FailedPredicateException(self, "self.precpred(self._ctx, 7)")
-                        self.state = 130
+                        self.state = 132
                         localctx.op = self._input.LT(1)
                         _la = self._input.LA(1)
                         if not(_la==29 or _la==30):
@@ -1286,7 +1321,7 @@ class RSTSBasicParser ( Parser ):
                         else:
                             self._errHandler.reportMatch(self)
                             self.consume()
-                        self.state = 131
+                        self.state = 133
                         localctx.right = self.expression(8)
                         pass
 
@@ -1294,11 +1329,11 @@ class RSTSBasicParser ( Parser ):
                         localctx = RSTSBasicParser.RelExprContext(self, RSTSBasicParser.ExpressionContext(self, _parentctx, _parentState))
                         localctx.left = _prevctx
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
-                        self.state = 132
+                        self.state = 134
                         if not self.precpred(self._ctx, 6):
                             from antlr4.error.Errors import FailedPredicateException
                             raise FailedPredicateException(self, "self.precpred(self._ctx, 6)")
-                        self.state = 133
+                        self.state = 135
                         localctx.op = self._input.LT(1)
                         _la = self._input.LA(1)
                         if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 66571993152) != 0)):
@@ -1306,12 +1341,12 @@ class RSTSBasicParser ( Parser ):
                         else:
                             self._errHandler.reportMatch(self)
                             self.consume()
-                        self.state = 134
+                        self.state = 136
                         localctx.right = self.expression(7)
                         pass
 
              
-                self.state = 139
+                self.state = 141
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,13,self._ctx)
 
@@ -1361,13 +1396,13 @@ class RSTSBasicParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 140
-            self.match(RSTSBasicParser.ID)
             self.state = 142
+            self.match(RSTSBasicParser.ID)
+            self.state = 144
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,14,self._ctx)
             if la_ == 1:
-                self.state = 141
+                self.state = 143
                 _la = self._input.LA(1)
                 if not(_la==38 or _la==39):
                     self._errHandler.recoverInline(self)

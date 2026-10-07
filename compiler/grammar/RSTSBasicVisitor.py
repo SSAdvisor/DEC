@@ -84,6 +84,11 @@ class RSTSBasicVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by RSTSBasicParser#inputStmt.
+    def visitInputStmt(self, ctx:RSTSBasicParser.InputStmtContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by RSTSBasicParser#strExpr.
     def visitStrExpr(self, ctx:RSTSBasicParser.StrExprContext):
         return self.visitChildren(ctx)

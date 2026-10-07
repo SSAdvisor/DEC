@@ -143,6 +143,15 @@ class RSTSBasicListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by RSTSBasicParser#inputStmt.
+    def enterInputStmt(self, ctx:RSTSBasicParser.InputStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#inputStmt.
+    def exitInputStmt(self, ctx:RSTSBasicParser.InputStmtContext):
+        pass
+
+
     # Enter a parse tree produced by RSTSBasicParser#strExpr.
     def enterStrExpr(self, ctx:RSTSBasicParser.StrExprContext):
         pass

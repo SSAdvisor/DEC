@@ -18,6 +18,10 @@ typedef enum {
     OP_SUB       = 0x21,
     OP_MUL       = 0x22,
     OP_DIV       = 0x23,
+    OP_EQ        = 0x24,
+    OP_NEQ       = 0x25,
+    OP_LT        = 0x26,
+    OP_GT        = 0x27,
     
     OP_JMP       = 0x30,
     OP_JMP_Z     = 0x31,
@@ -31,7 +35,10 @@ typedef enum {
     OP_RMS_OPEN  = 0x60,
     OP_RMS_GET   = 0x61,
     OP_RMS_PUT   = 0x62,
-    OP_RMS_CLOS  = 0x63
+    OP_RMS_CLOS  = 0x63,
+    
+    OP_INPUT_I   = 0x70,
+    OP_INPUT_S   = 0x71
 } Opcode;
 
 #endif // OPCODES_H
