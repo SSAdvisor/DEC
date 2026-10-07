@@ -6,12 +6,13 @@ from grammar.RSTSBasicParser import RSTSBasicParser
 from grammar.RSTSBasicVisitor import RSTSBasicVisitor
 
 class CodeGenVisitor(RSTSBasicVisitor):
-    def __init__(self):
+    def __init__(self, module_name="MAIN"):
         self.bytecode = []
         self.symbols = []
         self.relocations = []
         self.string_pool = []
         self.variables = {}
+        self.module_name = module_name
         
     def get_var_index(self, name):
         if name not in self.variables:
@@ -24,12 +25,25 @@ class CodeGenVisitor(RSTSBasicVisitor):
         return self.string_pool.index(text)
 
     def visitProgram(self, ctx:RSTSBasicParser.ProgramContext):
-        self.symbols.append({"name": "MAIN_START", "type": "EXPORT", "offset": 0})
+        self.symbols.append({"name": f"{self.module_name}_START", "type": "EXPORT", "offset": 0})
         for child in ctx.children:
             self.visit(child)
-        self.bytecode.append(0x00) # OP_HALT
+        if self.module_name == "MAIN":
+            self.bytecode.append(0x00) # OP_HALT
+        else:
+            self.bytecode.append(0x41) # OP_RET
         return self.generate_bobj()
         
+    def visitCallStmt(self, ctx:RSTSBasicParser.CallStmtContext):
+        module_name = ctx.STRING().getText().strip('"')
+        self.bytecode.append(0x42) # OP_CALL_OVL
+        self.relocations.append({
+            "offset": len(self.bytecode),
+            "type": "CALL_OVL",
+            "target": module_name
+        })
+        self.bytecode.extend([0, 0]) # Placeholder for segment index
+
     def visitPrintStmt(self, ctx:RSTSBasicParser.PrintStmtContext):
         for expr in ctx.expression():
             self.visit(expr)
@@ -113,7 +127,7 @@ class CodeGenVisitor(RSTSBasicVisitor):
     def generate_bobj(self):
         return {
             "version": 1,
-            "module": "MAIN",
+            "module": self.module_name,
             "symbols": self.symbols,
             "relocations": self.relocations,
             "strings": self.string_pool,
@@ -122,8 +136,15 @@ class CodeGenVisitor(RSTSBasicVisitor):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: basicc.py <input.bas> [-o output.bobj]")
+        print("Usage: basicc.py <input.bas> [-o output.bobj] [--module NAME]")
         sys.exit(1)
+        
+    module_name = "MAIN"
+    if "--module" in sys.argv:
+        idx = sys.argv.index("--module")
+        module_name = sys.argv[idx + 1]
+        sys.argv.pop(idx)
+        sys.argv.pop(idx)
         
     input_file = sys.argv[1]
     input_stream = FileStream(input_file)
@@ -132,7 +153,7 @@ def main():
     parser = RSTSBasicParser(stream)
     tree = parser.program()
     
-    visitor = CodeGenVisitor()
+    visitor = CodeGenVisitor(module_name)
     bobj = visitor.visit(tree)
     
     output_file = "out.bobj"

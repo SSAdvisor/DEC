@@ -20,6 +20,7 @@ statement
     | 'CLOSE' '#' INT                                             # closeStmt
     | 'PUT' '#' INT                                               # putStmt
     | 'GET' '#' INT (',' 'KEY' variable)?                         # getStmt
+    | 'CALL' STRING                                               # callStmt
     ;
 
 expression

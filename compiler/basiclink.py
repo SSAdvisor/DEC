@@ -47,9 +47,25 @@ def main():
             segments.append({
                 'module': obj['module'],
                 'bytecode': bytearray(obj['bytecode']),
-                'strings': obj.get('strings', [])
+                'strings': obj.get('strings', []),
+                'relocations': obj.get('relocations', [])
             })
             
+    module_to_idx = {seg['module']: i for i, seg in enumerate(segments)}
+    
+    for seg in segments:
+        bytecode = seg['bytecode']
+        for rel in seg['relocations']:
+            if rel['type'] == 'CALL_OVL':
+                target_mod = rel['target']
+                if target_mod in module_to_idx:
+                    target_idx = module_to_idx[target_mod]
+                    offset = rel['offset']
+                    bytecode[offset] = target_idx & 0xFF
+                    bytecode[offset + 1] = (target_idx >> 8) & 0xFF
+                else:
+                    print(f"Warning: unresolved module {target_mod}")
+                    
     # For now, we will merge all strings into a global string pool
     global_strings = []
     # And we just concatenate bytecode as different "segments"

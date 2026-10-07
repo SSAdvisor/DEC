@@ -1,0 +1,1 @@
+10 PRINT 11\n20 END\n

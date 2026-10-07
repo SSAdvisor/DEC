@@ -55,30 +55,36 @@ def test_linker_rms_execution():
     assert "RMS OPEN (INDEXED) channel 1 with SQLite backend" in result.stdout
     assert "RMS PUT (INDEXED) channel 1 to SQLite" in result.stdout
 
-def test_linker_odl_parsing():
+def test_linker_overlays():
     odl_content = """
 .ROOT MAIN-O1
-O1: .FCTR SUB1-SUB2
+O1: .FCTR FUNC1-FUNC2
 """
-    bas_content = "10 PRINT 1\n20 END\n"
-    odl_file = "tests/test.odl"
-    bas_file = "tests/test_odl.bas"
-    bobj_file = "tests/test_odl.bobj"
-    exe_file = "tests/test_odl_app"
+    main_bas = '10 PRINT 1\\n20 CALL "FUNC1"\\n30 CALL "FUNC2"\\n40 END\\n'
+    func1_bas = '10 PRINT 11\\n20 END\\n'
+    func2_bas = '10 PRINT 22\\n20 END\\n'
     
-    with open(odl_file, "w") as f:
-        f.write(odl_content)
-    with open(bas_file, "w") as f:
-        f.write(bas_content)
-        
-    subprocess.run(COMPILER_CMD.format(input=bas_file, output=bobj_file), shell=True, check=True, executable='/bin/bash')
+    with open("tests/main.bas", "w") as f: f.write(main_bas)
+    with open("tests/func1.bas", "w") as f: f.write(func1_bas)
+    with open("tests/func2.bas", "w") as f: f.write(func2_bas)
+    with open("tests/test.odl", "w") as f: f.write(odl_content)
     
-    # Run linker with odl file
-    l_cmd = f"source .venv/bin/activate && python compiler/basiclink.py {bobj_file} {odl_file} -o {exe_file}"
-    result = subprocess.run(l_cmd, shell=True, check=True, capture_output=True, text=True, executable='/bin/bash')
+    # Compile
+    subprocess.run("source .venv/bin/activate && python compiler/basicc.py tests/main.bas -o tests/main.bobj", shell=True, check=True, executable='/bin/bash')
+    subprocess.run("source .venv/bin/activate && python compiler/basicc.py tests/func1.bas -o tests/func1.bobj --module FUNC1", shell=True, check=True, executable='/bin/bash')
+    subprocess.run("source .venv/bin/activate && python compiler/basicc.py tests/func2.bas -o tests/func2.bobj --module FUNC2", shell=True, check=True, executable='/bin/bash')
     
-    # Verify that the linker output says it parsed the ODL file
-    assert "Parsed ODL File" in result.stdout
-    assert "'ROOT': 'MAIN-O1'" in result.stdout
-    assert "'O1': 'SUB1-SUB2'" in result.stdout
+    # Link
+    l_cmd = "source .venv/bin/activate && python compiler/basiclink.py tests/main.bobj tests/func1.bobj tests/func2.bobj tests/test.odl -o tests/overlay_app"
+    subprocess.run(l_cmd, shell=True, check=True, executable='/bin/bash')
+    
+    # Run
+    result = subprocess.run("./tests/overlay_app", shell=True, capture_output=True, text=True)
+    assert result.returncode == 0
+    
+    assert "PRINT: 1" in result.stdout
+    assert "Loading overlay segment 1 (FUNC1)" in result.stdout
+    assert "PRINT: 11" in result.stdout
+    assert "Loading overlay segment 2 (FUNC2)" in result.stdout
+    assert "PRINT: 22" in result.stdout
 

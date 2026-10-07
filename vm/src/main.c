@@ -47,20 +47,24 @@ int main(int argc, char **argv) {
     fread(payload, 1, payload_size, f);
     fclose(f);
     
-    uint8_t *bytecode;
-    uint32_t first_seg_size;
-    uint16_t num_segments = 1;
-
     if (has_header) {
-        // Now extract the root segment bytecode from the payload
-        // Payload Format: [NUM_SEGMENTS (2)] | [NAME (16)] [SIZE (4)] ... | [DATA]
-        num_segments = payload[0] | (payload[1] << 8);
-        size_t header_size = 2 + (num_segments * 20);
-        first_seg_size = payload[2+16] | (payload[2+16+1] << 8) | (payload[2+16+2] << 16) | (payload[2+16+3] << 24);
-        bytecode = payload + header_size;
+        g_num_segments = payload[0] | (payload[1] << 8);
+        size_t header_size = 2 + (g_num_segments * 20);
+        size_t data_offset = header_size;
+        
+        for (int i = 0; i < g_num_segments; i++) {
+            size_t entry_offset = 2 + (i * 20);
+            memcpy(g_segments[i].name, &payload[entry_offset], 16);
+            g_segments[i].name[16] = '\0';
+            g_segments[i].size = payload[entry_offset+16] | (payload[entry_offset+17] << 8) | (payload[entry_offset+18] << 16) | (payload[entry_offset+19] << 24);
+            g_segments[i].bytecode = payload + data_offset;
+            data_offset += g_segments[i].size;
+        }
     } else {
-        bytecode = payload;
-        first_seg_size = payload_size;
+        g_num_segments = 1;
+        strcpy(g_segments[0].name, "MAIN");
+        g_segments[0].size = payload_size;
+        g_segments[0].bytecode = payload;
     }
 
     printf("RSTS/E VM Init\\n");
@@ -68,8 +72,8 @@ int main(int argc, char **argv) {
     rms_init();
     vm_init();
     
-    printf("--- Execution Start (Seg Size: %u, Segments: %u) ---\\n", first_seg_size, num_segments);
-    vm_run(bytecode, first_seg_size);
+    printf("--- Execution Start (Segments: %u) ---\\n", g_num_segments);
+    vm_run(0); // Start MAIN
     printf("--- Execution End ---\\n");
     
     free(payload);

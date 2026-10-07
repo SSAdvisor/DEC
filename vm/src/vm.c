@@ -3,18 +3,44 @@
 #include "rms.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define STACK_SIZE 256
 #define MAX_VARS 256
+
+VmSegment g_segments[256];
+uint16_t g_num_segments = 0;
+
+#define OVERLAY_SIZE 4096
+uint8_t overlay_area[OVERLAY_SIZE];
 
 void vm_init(void) {
     printf("VM Initialized.\\n");
 }
 
-int vm_run(const uint8_t* bytecode, size_t size) {
+int vm_run(uint16_t seg_idx) {
+    if (seg_idx >= g_num_segments) {
+        printf("Error: invalid segment index %d\\n", seg_idx);
+        return 1;
+    }
+    
+    const uint8_t* bytecode;
+    size_t size;
+    
+    if (seg_idx == 0) {
+        bytecode = g_segments[0].bytecode;
+        size = g_segments[0].size;
+    } else {
+        printf("Loading overlay segment %d (%s) into overlay region at %p.\\n", seg_idx, g_segments[seg_idx].name, overlay_area);
+        size = g_segments[seg_idx].size;
+        if (size > OVERLAY_SIZE) size = OVERLAY_SIZE;
+        memcpy(overlay_area, g_segments[seg_idx].bytecode, size);
+        bytecode = overlay_area;
+    }
+
     int32_t stack[STACK_SIZE];
     int sp = 0;
-    int32_t vars[MAX_VARS] = {0};
+    static int32_t vars[MAX_VARS] = {0}; // Shared state across segments!
     
     size_t pc = 0;
     while (pc < size) {
@@ -23,6 +49,14 @@ int vm_run(const uint8_t* bytecode, size_t size) {
             case OP_HALT:
                 printf("VM Halt.\\n");
                 return 0;
+            case OP_RET:
+                return 0;
+            case OP_CALL_OVL: {
+                uint16_t target_idx = bytecode[pc] | (bytecode[pc+1] << 8);
+                pc += 2;
+                vm_run(target_idx);
+                break;
+            }
             case OP_PUSH_I: {
                 int32_t val = bytecode[pc] | (bytecode[pc+1] << 8);
                 pc += 2;
