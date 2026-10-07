@@ -58,7 +58,7 @@ def test_linker_rms_execution():
 def test_linker_overlays():
     odl_content = """
 .ROOT MAIN-O1
-O1: .FCTR FUNC1-FUNC2
+O1: .FCTR FUNC1,FUNC2
 """
     main_bas = '10 PRINT 1\\n20 CALL "FUNC1"\\n30 CALL "FUNC2"\\n40 END\\n'
     func1_bas = '10 PRINT 11\\n20 END\\n'
@@ -83,8 +83,8 @@ O1: .FCTR FUNC1-FUNC2
     assert result.returncode == 0
     
     assert "PRINT: 1" in result.stdout
-    assert "Loading overlay segment 1 (FUNC1)" in result.stdout
+    assert "Loading segment 1 (FUNC1) into virtual memory at vaddr" in result.stdout
     assert "PRINT: 11" in result.stdout
-    assert "Loading overlay segment 2 (FUNC2)" in result.stdout
+    assert "Loading segment 2 (FUNC2) into virtual memory at vaddr" in result.stdout
     assert "PRINT: 22" in result.stdout
 

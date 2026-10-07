@@ -11,8 +11,8 @@
 VmSegment g_segments[256];
 uint16_t g_num_segments = 0;
 
-#define OVERLAY_SIZE 4096
-uint8_t overlay_area[OVERLAY_SIZE];
+#define VM_MEM_SIZE 65536
+uint8_t virtual_memory[VM_MEM_SIZE];
 
 void vm_init(void) {
     printf("VM Initialized.\\n");
@@ -24,19 +24,21 @@ int vm_run(uint16_t seg_idx) {
         return 1;
     }
     
-    const uint8_t* bytecode;
-    size_t size;
+    uint32_t vaddr = g_segments[seg_idx].vaddr;
+    size_t size = g_segments[seg_idx].size;
     
-    if (seg_idx == 0) {
-        bytecode = g_segments[0].bytecode;
-        size = g_segments[0].size;
-    } else {
-        printf("Loading overlay segment %d (%s) into overlay region at %p.\\n", seg_idx, g_segments[seg_idx].name, overlay_area);
-        size = g_segments[seg_idx].size;
-        if (size > OVERLAY_SIZE) size = OVERLAY_SIZE;
-        memcpy(overlay_area, g_segments[seg_idx].bytecode, size);
-        bytecode = overlay_area;
+    if (vaddr + size > VM_MEM_SIZE) {
+        printf("Error: Segment %s exceeds virtual memory!\\n", g_segments[seg_idx].name);
+        return 1;
     }
+    
+    // For MAIN (seg_idx=0), we load it if it's the first time. 
+    // Actually, let's just always load it or just load everything dynamically.
+    printf("Loading segment %d (%s) into virtual memory at vaddr 0x%04X.\\n", seg_idx, g_segments[seg_idx].name, vaddr);
+    memcpy(&virtual_memory[vaddr], g_segments[seg_idx].bytecode, size);
+    
+    // We execute local to the segment to keep things simple for now
+    const uint8_t* bytecode = &virtual_memory[vaddr];
 
     int32_t stack[STACK_SIZE];
     int sp = 0;

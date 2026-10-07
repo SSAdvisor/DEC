@@ -7,6 +7,7 @@
 typedef struct {
     char name[17];
     uint32_t size;
+    uint32_t vaddr;
     const uint8_t* bytecode;
 } VmSegment;
 

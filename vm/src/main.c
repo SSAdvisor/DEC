@@ -49,14 +49,15 @@ int main(int argc, char **argv) {
     
     if (has_header) {
         g_num_segments = payload[0] | (payload[1] << 8);
-        size_t header_size = 2 + (g_num_segments * 20);
+        size_t header_size = 2 + (g_num_segments * 24);
         size_t data_offset = header_size;
         
         for (int i = 0; i < g_num_segments; i++) {
-            size_t entry_offset = 2 + (i * 20);
+            size_t entry_offset = 2 + (i * 24);
             memcpy(g_segments[i].name, &payload[entry_offset], 16);
             g_segments[i].name[16] = '\0';
             g_segments[i].size = payload[entry_offset+16] | (payload[entry_offset+17] << 8) | (payload[entry_offset+18] << 16) | (payload[entry_offset+19] << 24);
+            g_segments[i].vaddr = payload[entry_offset+20] | (payload[entry_offset+21] << 8) | (payload[entry_offset+22] << 16) | (payload[entry_offset+23] << 24);
             g_segments[i].bytecode = payload + data_offset;
             data_offset += g_segments[i].size;
         }
@@ -64,6 +65,7 @@ int main(int argc, char **argv) {
         g_num_segments = 1;
         strcpy(g_segments[0].name, "MAIN");
         g_segments[0].size = payload_size;
+        g_segments[0].vaddr = 0;
         g_segments[0].bytecode = payload;
     }
 

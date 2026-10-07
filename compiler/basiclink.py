@@ -66,15 +66,50 @@ def main():
                 else:
                     print(f"Warning: unresolved module {target_mod}")
                     
-    # For now, we will merge all strings into a global string pool
-    global_strings = []
-    # And we just concatenate bytecode as different "segments"
-    # A real ODL parser would determine the overlay tree here.
+    # Map virtual addresses based on ODL
+    module_to_seg = {seg['module']: seg for seg in segments}
     
+    def process_node(node_str, current_vaddr):
+        max_size = 0
+        if ',' in node_str:
+            alternatives = node_str.split(',')
+            for alt in alternatives:
+                size = process_node(alt.strip(), current_vaddr)
+                if size > max_size:
+                    max_size = size
+            return max_size
+        
+        if '-' in node_str:
+            parts = node_str.split('-')
+            total_size = 0
+            for part in parts:
+                size = process_node(part.strip(), current_vaddr + total_size)
+                total_size += size
+            return total_size
+            
+        if node_str in overlay_tree:
+            return process_node(overlay_tree[node_str], current_vaddr)
+        else:
+            if node_str in module_to_seg:
+                seg = module_to_seg[node_str]
+                seg['vaddr'] = current_vaddr
+                return len(seg['bytecode'])
+            else:
+                print(f"Warning: Module {node_str} found in ODL but not in bobj files.")
+                return 0
+
+    if 'ROOT' in overlay_tree:
+        process_node(overlay_tree['ROOT'], 0)
+    else:
+        vaddr = 0
+        for seg in segments:
+            seg['vaddr'] = vaddr
+            vaddr += len(seg['bytecode'])
+
     # Pack the payload
     # Format: 
     # [MAGIC "RSTS"] [PAYLOAD_SIZE (4)] [NUM_SEGMENTS (2)]
-    # Segments: [NAME (16)] [SIZE (4)] [DATA ...]
+    # Segments: [NAME (16)] [SIZE (4)] [VADDR (4)] [DATA ...]
     
     payload = bytearray()
     
@@ -89,9 +124,11 @@ def main():
         name_bytes = seg['module'].encode('utf-8')[:15]
         name_bytes = name_bytes.ljust(16, bytes([0]))
         size = len(seg['bytecode'])
+        vaddr = seg.get('vaddr', 0)
         
         payload.extend(name_bytes)
         payload.extend(struct.pack('<I', size))
+        payload.extend(struct.pack('<I', vaddr))
         
         segment_data_pool.extend(seg['bytecode'])
         
