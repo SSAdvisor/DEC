@@ -1,0 +1,15 @@
+        DIGITAL EQUIPMENT CORPORATION - PDP-11 / VAX SYSTEMS
+        ----------------------------------------------------
+The EDT text editor was designed by Digital Equipment Corporation as
+the standard interactive screen and line editor for DEC operating systems,
+including VMS, RSX-11M, and RSTS/E.
+
+Key Features of EDT:
+1. Two distinct editing modes:
+   - Line editing mode (the asterisk '*' prompt)
+   - Change mode (full-screen VT100 keypad editing)
+2. Powerful string manipulation and pattern search.
+3. Resequencing and multi-line block deletions and insertions.
+4. Seamless integration with DEC DCL command procedures.
+
+Welcome to the authentic DEC BASIC-PLUS-2 EDT implementation!
