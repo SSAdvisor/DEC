@@ -2,7 +2,7 @@
   "project": "DEC BASIC-PLUS-2 Compiler and Linker",
   "phase": "testing",
   "status": "ongoing",
-  "last_updated": "2026-10-13T20:38:00-04:00",
+  "last_updated": "2026-10-13T21:40:28-04:00",
   "proposed_architecture": {
     "frontend_compiler": "Python",
     "parser_generator": "ANTLR4",
@@ -52,6 +52,7 @@
     "DEC BASIC-PLUS-2 Language Extensions: implemented OP_AND (0x28), OP_OR (0x29), OP_INPUT_LINE_CH (0x7B), OP_LEN (0x7C), OP_MID (0x7D), OP_LEFT (0x7E), OP_RIGHT (0x7F), OP_INSTR (0x80), OP_VAL (0x81), OP_STR (0x82), OP_ASCII (0x83), string concatenation in OP_ADD, and multi-argument grammar parsing",
     "DEC RSTS/E EDT Editor V3.0 in edt/: pure DEC BASIC-PLUS-2 implementation (edt/edt.bas) featuring authentic Line Mode (* prompt: TYPE, INSERT, DELETE, REPLACE, FIND, SUBSTITUTE, RESEQ, SHOW, WRITE, EXIT, QUIT, HELP) and VT100 Change Mode (screen navigation, cursor highlight, status bar), automated build script (edt/build.sh), sample document (edt/sample.txt), complete docs (edt/README.md), and unit test suite tests/test_edt.py passing (7/7 tests, 28/28 total passed)",
     "DEC EDT Keyboard Shortcut Macros & Command Procedures: DEFINE KEY and DEFINE MACRO commands, SHOW KEY and SHOW MACRO listings, multi-command macro execution (; delimiter), startup configuration file auto-loading (EDTINI.EDT), command procedure execution (@file), Change Mode GOLD key (G / Ctrl-G) modifier and custom keypad bindings returning to screen mode, VM stdin EOF handling (OP_INPUT_S Ctrl-Z emulation), and expanded unit test suite tests/test_edt.py passing (11/11 EDT tests, 32/32 total tests passed)",
-    "DEC RSTS/E DCL Rewrite in DEC BASIC-PLUS-2 (dcl/dcl.bas): Full rewrite of the DIGITAL Command Language processor in pure DEC BASIC-PLUS-2; implemented VM opcodes OP_SYS (0x84), OP_COMMAND_STR (0x85), OP_TIME_STR (0x86) and RMS file error trapping (ON ERROR GOTO for missing files); compiled with basicc.py and linked with basiclink.py into native standalone binary (dcl/dcl); verified interactive shell, one-shot command execution, command procedures (@tests/office/salesrpt.dcl, @tests/office/sales_batch.com), PBS SQLite queue integration, comprehensive test suite in tests/test_dcl.py (18/18 tests passed), build script dcl/build.sh, and complete documentation in dcl/README.md"
+    "DEC RSTS/E DCL Rewrite in DEC BASIC-PLUS-2 (dcl/dcl.bas): Full rewrite of the DIGITAL Command Language processor in pure DEC BASIC-PLUS-2; implemented VM opcodes OP_SYS (0x84), OP_COMMAND_STR (0x85), OP_TIME_STR (0x86) and RMS file error trapping (ON ERROR GOTO for missing files); compiled with basicc.py and linked with basiclink.py into native standalone binary (dcl/dcl); verified interactive shell, one-shot command execution, command procedures (@tests/office/salesrpt.dcl, @tests/office/sales_batch.com), PBS SQLite queue integration, comprehensive test suite in tests/test_dcl.py (19/19 tests passed), build script dcl/build.sh, and complete documentation in dcl/README.md",
+    "Git Repository Review & Test Suite Consolidation: Cleaned up untracked artifacts and duplicates; updated .gitignore (.dcl/, *.IDX, *.idx, DATABASE, *.rpt, test executables); updated test_compiler.py and test_linker.py to reflect current opcode specification and VM runtime; added compiled batch procedure test in tests/test_dcl.py; achieved 100% pass rate across entire project test suite (47/47 pytest tests and 28/28 unittest tests passed); structured git history into clean commits on master."
   ]
 }
