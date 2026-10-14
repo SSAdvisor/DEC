@@ -16,14 +16,14 @@
   },
   "target_dialect": "BASIC-PLUS-2 (with BASIC-PLUS compatibility)",
   "test_summary": {
-    "total_tests": 46,
-    "passed_tests": 46,
+    "total_tests": 47,
+    "passed_tests": 47,
     "suites": {
       "test_address_book": "1/1 passed",
       "test_compiler": "4/4 passed",
       "test_linker": "3/3 passed",
       "test_edt": "11/11 passed",
-      "test_dcl": "18/18 passed",
+      "test_dcl": "19/19 passed",
       "test_print_service": "9/9 passed"
     }
   },

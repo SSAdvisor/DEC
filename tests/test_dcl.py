@@ -210,10 +210,23 @@ class TestCompiledDCL(unittest.TestCase):
         self.assertIn("PRINT", res.stdout)
 
     def test_command_procedure(self):
+        bas_file = os.path.join(repo_root, "tests", "office", "salesrpt.bas")
+        bobj_file = os.path.join(repo_root, "tests", "office", "salesrpt.bobj")
+        exe_file = os.path.join(repo_root, "tests", "office", "salesrpt")
+        if not os.path.exists(exe_file):
+            subprocess.run([sys.executable, os.path.join(repo_root, "compiler", "basicc.py"), bas_file, "-o", bobj_file], check=True, cwd=repo_root)
+            subprocess.run([sys.executable, os.path.join(repo_root, "compiler", "basiclink.py"), bobj_file, "-o", exe_file], check=True, cwd=repo_root)
+
         proc = os.path.join(repo_root, "tests", "office", "salesrpt.dcl")
         res = subprocess.run([self.dcl_bin, f"@{proc}"], capture_output=True, text=True, cwd=repo_root)
         self.assertEqual(res.returncode, 0)
         self.assertIn("submitted to queue NETPRINT", res.stdout)
+
+    def test_sales_batch_procedure(self):
+        batch_com = os.path.join(repo_root, "tests", "office", "sales_batch.com")
+        res = subprocess.run([self.dcl_bin, f"@{batch_com}"], capture_output=True, text=True, cwd=repo_root)
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("Sales Inventory Report Batch Job Finished Successfully", res.stdout)
 
     def test_interactive_session_pipe(self):
         res = subprocess.run(
