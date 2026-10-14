@@ -40,4 +40,4 @@
 420 PRINT "Enter Type 3:"
 430 INPUT D$
 500 PRINT "Email updated."
-510 END\n
+510 END

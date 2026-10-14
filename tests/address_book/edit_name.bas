@@ -22,4 +22,4 @@
 100 PRINT "Enter new Name:"
 110 INPUT N$
 120 PRINT "Name updated."
-130 END\n
+130 END

@@ -40,4 +40,4 @@
 420 PRINT "Enter Type 3:"
 430 INPUT V$
 500 PRINT "Address updated."
-510 END\n
+510 END

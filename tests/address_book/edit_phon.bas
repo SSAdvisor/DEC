@@ -40,4 +40,4 @@
 420 PRINT "Enter Type 3:"
 430 INPUT Y$
 500 PRINT "Phone updated."
-510 END\n
+510 END

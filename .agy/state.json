@@ -2,6 +2,7 @@
   "project": "DEC BASIC-PLUS-2 Compiler and Linker",
   "phase": "testing",
   "status": "ongoing",
+  "last_updated": "2026-10-13T20:38:00-04:00",
   "proposed_architecture": {
     "frontend_compiler": "Python",
     "parser_generator": "ANTLR4",
@@ -9,14 +10,48 @@
     "runtime_vm": "C",
     "rms_subsystem": "C",
     "indexed_file_backend": "SQLite",
+    "job_control_and_dcl": "DEC BASIC-PLUS-2 (dcl/dcl.bas compiled to standalone dcl/dcl binary; job controller & SQLite queue integration)",
+    "text_editor": "DEC BASIC-PLUS-2 (DEC EDT Editor V3.0)",
     "target_platform": "Linux native (via Bytecode VM emulation of Overlays)"
   },
   "target_dialect": "BASIC-PLUS-2 (with BASIC-PLUS compatibility)",
+  "test_summary": {
+    "total_tests": 46,
+    "passed_tests": 46,
+    "suites": {
+      "test_address_book": "1/1 passed",
+      "test_compiler": "4/4 passed",
+      "test_linker": "3/3 passed",
+      "test_edt": "11/11 passed",
+      "test_dcl": "18/18 passed",
+      "test_print_service": "9/9 passed"
+    }
+  },
   "open_questions": [],
   "recent_features": [
     "Unbuffered I/O (INKEY$, OP_GETCH)",
     "Arrays and DIM statement (OP_DIM, OP_LOAD_A, OP_STORE_A)",
     "VT100 Escape sequences and OP_PRINT_NO_NL for TUI",
-    "ODL Overlay Linker functioning"
+    "ODL Overlay Linker functioning",
+    "Native Database Persistence (OP_CALL_OVL intercept for SAVEDB/LOADDB)",
+    "TUI application state machine rewrite and memory deletion logic",
+    "Acey-Ducey game support: INPUT prompt parsing, implicit IF...THEN gotos, floating-point ops (*, /), RND/INT built-in functions",
+    "RSTSBasic.g4 expansion: ! comments, line continuation (&), MAP statements, ON ERROR GOTO, RESUME, and advanced OPEN/GET syntax",
+    "Compiler fix for statement execution without explicit line numbers",
+    "Standalone executable generation via basiclink.py wrapping rsts_vm with payload",
+    "Full RMS Indexed File I/O subsystem with SQLite backend, supporting dynamic MAP variable buffer serialization/deserialization and alternate key lookups (rms-sample.bas verified)",
+    "FOR...NEXT loops, DATA/READ statements, block IF structures, line labels, RESTORE, and multi-channel CLOSE",
+    "PRINT USING formatting ($$, string backslash fields, numeric fields) and channel file output (#2%)",
+    "RMS sequential iteration (GET #ch), EOF error detection (ERR = 11%), ON ERROR / RESUME handling, DATE$(0%) system date",
+    "Full compilation, linking, and execution of tests/office/salesrpt.bas verified (SALES.IDX database created and SALES.RPT report generated)",
+    "RSTS/E DCL CLI and Job Control / PBS subsystem (interactive shell, command procedures @file.com, SUBMIT, PRINT, SHOW QUEUE, SHOW JOBS, DELETE/ENTRY, and spooler)",
+    "Automated batch test procedure tests/office/sales_batch.com verifying full pipeline execution (BASIC -> LINK -> RUN -> PRINT -> SHOW QUEUE) and unit test suite tests/test_dcl.py passing (9/9 tests)",
+    "Execution of tests/office/salesrpt.dcl verified: attached qualifier parsing on arguments (/DELETE), SHOW ENTRY command, NETPRINT queue pre-configuration, case-insensitive and procedure-relative path resolution, and full test_dcl.py test suite passing (12/12 tests)",
+    "DEC RSTS/E Print Queue Service (PBS Symbiont Daemon): daemon management (start/stop/restart/status/run), systemd service unit generator & installer, authentic DEC burst/banner page rendering (5x5 ASCII block font), multi-destination dispatch (SPOOL, FILE/DEVICE, COMMAND/PIPE, TCP SOCKET), DCL integration, and test suite tests/test_print_service.py passing (6/6 tests, 18/18 total)",
+    "Network printer identification & dec-printq.conf control file: discovered HP LaserJet M209dw (192.168.40.203:9100 JetDirect / CUPS queue), created dec-printq.conf control file, added discover and apply-config CLI commands with auto-generation and SIGHUP reload support, and expanded test suite tests/test_print_service.py (9/9 tests, 21/21 total passed)",
+    "DEC BASIC-PLUS-2 Language Extensions: implemented OP_AND (0x28), OP_OR (0x29), OP_INPUT_LINE_CH (0x7B), OP_LEN (0x7C), OP_MID (0x7D), OP_LEFT (0x7E), OP_RIGHT (0x7F), OP_INSTR (0x80), OP_VAL (0x81), OP_STR (0x82), OP_ASCII (0x83), string concatenation in OP_ADD, and multi-argument grammar parsing",
+    "DEC RSTS/E EDT Editor V3.0 in edt/: pure DEC BASIC-PLUS-2 implementation (edt/edt.bas) featuring authentic Line Mode (* prompt: TYPE, INSERT, DELETE, REPLACE, FIND, SUBSTITUTE, RESEQ, SHOW, WRITE, EXIT, QUIT, HELP) and VT100 Change Mode (screen navigation, cursor highlight, status bar), automated build script (edt/build.sh), sample document (edt/sample.txt), complete docs (edt/README.md), and unit test suite tests/test_edt.py passing (7/7 tests, 28/28 total passed)",
+    "DEC EDT Keyboard Shortcut Macros & Command Procedures: DEFINE KEY and DEFINE MACRO commands, SHOW KEY and SHOW MACRO listings, multi-command macro execution (; delimiter), startup configuration file auto-loading (EDTINI.EDT), command procedure execution (@file), Change Mode GOLD key (G / Ctrl-G) modifier and custom keypad bindings returning to screen mode, VM stdin EOF handling (OP_INPUT_S Ctrl-Z emulation), and expanded unit test suite tests/test_edt.py passing (11/11 EDT tests, 32/32 total tests passed)",
+    "DEC RSTS/E DCL Rewrite in DEC BASIC-PLUS-2 (dcl/dcl.bas): Full rewrite of the DIGITAL Command Language processor in pure DEC BASIC-PLUS-2; implemented VM opcodes OP_SYS (0x84), OP_COMMAND_STR (0x85), OP_TIME_STR (0x86) and RMS file error trapping (ON ERROR GOTO for missing files); compiled with basicc.py and linked with basiclink.py into native standalone binary (dcl/dcl); verified interactive shell, one-shot command execution, command procedures (@tests/office/salesrpt.dcl, @tests/office/sales_batch.com), PBS SQLite queue integration, comprehensive test suite in tests/test_dcl.py (18/18 tests passed), build script dcl/build.sh, and complete documentation in dcl/README.md"
   ]
 }

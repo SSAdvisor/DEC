@@ -5,6 +5,14 @@ __pycache__/
 tests/*_app
 vm/build/
 *.db
+*.IDX
+*.idx
+DATABASE
 chan*.dat
+*.rpt
+*.RPT
+.dcl/
+tests/office/salesrpt
 out.bobj
 out.bin
+
