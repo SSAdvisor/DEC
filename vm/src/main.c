@@ -5,6 +5,8 @@
 #include "rms.h"
 #include "runtime.h"
 
+char g_command_line[1024] = {0};
+
 int main(int argc, char **argv) {
     // Read the payload from the end of the executable
     FILE *f = fopen("/proc/self/exe", "rb");
@@ -74,6 +76,13 @@ int main(int argc, char **argv) {
     rms_init();
     vm_init();
     
+    int start_arg = has_header ? 1 : 2;
+    g_command_line[0] = '\0';
+    for (int i = start_arg; i < argc; i++) {
+        if (i > start_arg) strncat(g_command_line, " ", sizeof(g_command_line) - strlen(g_command_line) - 1);
+        strncat(g_command_line, argv[i], sizeof(g_command_line) - strlen(g_command_line) - 1);
+    }
+
     printf("--- Execution Start (Segments: %u) ---\n", g_num_segments);
     vm_run(0); // Start MAIN
     printf("--- Execution End ---\n");

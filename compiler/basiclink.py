@@ -58,13 +58,19 @@ def main():
         for rel in seg['relocations']:
             if rel['type'] == 'CALL_OVL':
                 target_mod = rel['target']
-                if target_mod in module_to_idx:
+                if target_mod == 'SAVEDB':
+                    target_idx = 0x9998
+                elif target_mod == 'LOADDB':
+                    target_idx = 0x9999
+                elif target_mod in module_to_idx:
                     target_idx = module_to_idx[target_mod]
-                    offset = rel['offset']
-                    bytecode[offset] = target_idx & 0xFF
-                    bytecode[offset + 1] = (target_idx >> 8) & 0xFF
                 else:
                     print(f"Warning: unresolved module {target_mod}")
+                    target_idx = 0
+                
+                offset = rel['offset']
+                bytecode[offset] = target_idx & 0xFF
+                bytecode[offset + 1] = (target_idx >> 8) & 0xFF
                     
     # Map virtual addresses based on ODL
     module_to_seg = {seg['module']: seg for seg in segments}

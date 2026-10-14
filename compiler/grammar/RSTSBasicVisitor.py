@@ -19,8 +19,38 @@ class RSTSBasicVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by RSTSBasicParser#labelDef.
+    def visitLabelDef(self, ctx:RSTSBasicParser.LabelDefContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by RSTSBasicParser#lineNumber.
     def visitLineNumber(self, ctx:RSTSBasicParser.LineNumberContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#target.
+    def visitTarget(self, ctx:RSTSBasicParser.TargetContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#dataType.
+    def visitDataType(self, ctx:RSTSBasicParser.DataTypeContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#mapItem.
+    def visitMapItem(self, ctx:RSTSBasicParser.MapItemContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#programStmt.
+    def visitProgramStmt(self, ctx:RSTSBasicParser.ProgramStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#declareStmt.
+    def visitDeclareStmt(self, ctx:RSTSBasicParser.DeclareStmtContext):
         return self.visitChildren(ctx)
 
 
@@ -39,8 +69,58 @@ class RSTSBasicVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by RSTSBasicParser#randomizeStmt.
+    def visitRandomizeStmt(self, ctx:RSTSBasicParser.RandomizeStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#forStmt.
+    def visitForStmt(self, ctx:RSTSBasicParser.ForStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#nextStmt.
+    def visitNextStmt(self, ctx:RSTSBasicParser.NextStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#readStmt.
+    def visitReadStmt(self, ctx:RSTSBasicParser.ReadStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#dataStmt.
+    def visitDataStmt(self, ctx:RSTSBasicParser.DataStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#restoreStmt.
+    def visitRestoreStmt(self, ctx:RSTSBasicParser.RestoreStmtContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by RSTSBasicParser#ifStmt.
     def visitIfStmt(self, ctx:RSTSBasicParser.IfStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#ifBlockStmt.
+    def visitIfBlockStmt(self, ctx:RSTSBasicParser.IfBlockStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#thenStmt.
+    def visitThenStmt(self, ctx:RSTSBasicParser.ThenStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#elseStmt.
+    def visitElseStmt(self, ctx:RSTSBasicParser.ElseStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#endIfStmt.
+    def visitEndIfStmt(self, ctx:RSTSBasicParser.EndIfStmtContext):
         return self.visitChildren(ctx)
 
 
@@ -54,13 +134,28 @@ class RSTSBasicVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by RSTSBasicParser#openSeqStmt.
-    def visitOpenSeqStmt(self, ctx:RSTSBasicParser.OpenSeqStmtContext):
+    # Visit a parse tree produced by RSTSBasicParser#bangRemStmt.
+    def visitBangRemStmt(self, ctx:RSTSBasicParser.BangRemStmtContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by RSTSBasicParser#openIdxStmt.
-    def visitOpenIdxStmt(self, ctx:RSTSBasicParser.OpenIdxStmtContext):
+    # Visit a parse tree produced by RSTSBasicParser#onErrorStmt.
+    def visitOnErrorStmt(self, ctx:RSTSBasicParser.OnErrorStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#resumeStmt.
+    def visitResumeStmt(self, ctx:RSTSBasicParser.ResumeStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#mapStmt.
+    def visitMapStmt(self, ctx:RSTSBasicParser.MapStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#openAnyStmt.
+    def visitOpenAnyStmt(self, ctx:RSTSBasicParser.OpenAnyStmtContext):
         return self.visitChildren(ctx)
 
 
@@ -94,6 +189,21 @@ class RSTSBasicVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by RSTSBasicParser#printItem.
+    def visitPrintItem(self, ctx:RSTSBasicParser.PrintItemContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#dataItem.
+    def visitDataItem(self, ctx:RSTSBasicParser.DataItemContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#openClause.
+    def visitOpenClause(self, ctx:RSTSBasicParser.OpenClauseContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by RSTSBasicParser#strExpr.
     def visitStrExpr(self, ctx:RSTSBasicParser.StrExprContext):
         return self.visitChildren(ctx)
@@ -109,6 +219,11 @@ class RSTSBasicVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by RSTSBasicParser#unaryExpr.
+    def visitUnaryExpr(self, ctx:RSTSBasicParser.UnaryExprContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by RSTSBasicParser#intExpr.
     def visitIntExpr(self, ctx:RSTSBasicParser.IntExprContext):
         return self.visitChildren(ctx)
@@ -116,6 +231,11 @@ class RSTSBasicVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by RSTSBasicParser#addSubExpr.
     def visitAddSubExpr(self, ctx:RSTSBasicParser.AddSubExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#logicalExpr.
+    def visitLogicalExpr(self, ctx:RSTSBasicParser.LogicalExprContext):
         return self.visitChildren(ctx)
 
 

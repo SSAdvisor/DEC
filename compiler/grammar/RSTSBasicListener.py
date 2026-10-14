@@ -26,12 +26,66 @@ class RSTSBasicListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by RSTSBasicParser#labelDef.
+    def enterLabelDef(self, ctx:RSTSBasicParser.LabelDefContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#labelDef.
+    def exitLabelDef(self, ctx:RSTSBasicParser.LabelDefContext):
+        pass
+
+
     # Enter a parse tree produced by RSTSBasicParser#lineNumber.
     def enterLineNumber(self, ctx:RSTSBasicParser.LineNumberContext):
         pass
 
     # Exit a parse tree produced by RSTSBasicParser#lineNumber.
     def exitLineNumber(self, ctx:RSTSBasicParser.LineNumberContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#target.
+    def enterTarget(self, ctx:RSTSBasicParser.TargetContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#target.
+    def exitTarget(self, ctx:RSTSBasicParser.TargetContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#dataType.
+    def enterDataType(self, ctx:RSTSBasicParser.DataTypeContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#dataType.
+    def exitDataType(self, ctx:RSTSBasicParser.DataTypeContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#mapItem.
+    def enterMapItem(self, ctx:RSTSBasicParser.MapItemContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#mapItem.
+    def exitMapItem(self, ctx:RSTSBasicParser.MapItemContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#programStmt.
+    def enterProgramStmt(self, ctx:RSTSBasicParser.ProgramStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#programStmt.
+    def exitProgramStmt(self, ctx:RSTSBasicParser.ProgramStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#declareStmt.
+    def enterDeclareStmt(self, ctx:RSTSBasicParser.DeclareStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#declareStmt.
+    def exitDeclareStmt(self, ctx:RSTSBasicParser.DeclareStmtContext):
         pass
 
 
@@ -62,12 +116,102 @@ class RSTSBasicListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by RSTSBasicParser#randomizeStmt.
+    def enterRandomizeStmt(self, ctx:RSTSBasicParser.RandomizeStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#randomizeStmt.
+    def exitRandomizeStmt(self, ctx:RSTSBasicParser.RandomizeStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#forStmt.
+    def enterForStmt(self, ctx:RSTSBasicParser.ForStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#forStmt.
+    def exitForStmt(self, ctx:RSTSBasicParser.ForStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#nextStmt.
+    def enterNextStmt(self, ctx:RSTSBasicParser.NextStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#nextStmt.
+    def exitNextStmt(self, ctx:RSTSBasicParser.NextStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#readStmt.
+    def enterReadStmt(self, ctx:RSTSBasicParser.ReadStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#readStmt.
+    def exitReadStmt(self, ctx:RSTSBasicParser.ReadStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#dataStmt.
+    def enterDataStmt(self, ctx:RSTSBasicParser.DataStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#dataStmt.
+    def exitDataStmt(self, ctx:RSTSBasicParser.DataStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#restoreStmt.
+    def enterRestoreStmt(self, ctx:RSTSBasicParser.RestoreStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#restoreStmt.
+    def exitRestoreStmt(self, ctx:RSTSBasicParser.RestoreStmtContext):
+        pass
+
+
     # Enter a parse tree produced by RSTSBasicParser#ifStmt.
     def enterIfStmt(self, ctx:RSTSBasicParser.IfStmtContext):
         pass
 
     # Exit a parse tree produced by RSTSBasicParser#ifStmt.
     def exitIfStmt(self, ctx:RSTSBasicParser.IfStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#ifBlockStmt.
+    def enterIfBlockStmt(self, ctx:RSTSBasicParser.IfBlockStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#ifBlockStmt.
+    def exitIfBlockStmt(self, ctx:RSTSBasicParser.IfBlockStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#thenStmt.
+    def enterThenStmt(self, ctx:RSTSBasicParser.ThenStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#thenStmt.
+    def exitThenStmt(self, ctx:RSTSBasicParser.ThenStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#elseStmt.
+    def enterElseStmt(self, ctx:RSTSBasicParser.ElseStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#elseStmt.
+    def exitElseStmt(self, ctx:RSTSBasicParser.ElseStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#endIfStmt.
+    def enterEndIfStmt(self, ctx:RSTSBasicParser.EndIfStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#endIfStmt.
+    def exitEndIfStmt(self, ctx:RSTSBasicParser.EndIfStmtContext):
         pass
 
 
@@ -89,21 +233,48 @@ class RSTSBasicListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by RSTSBasicParser#openSeqStmt.
-    def enterOpenSeqStmt(self, ctx:RSTSBasicParser.OpenSeqStmtContext):
+    # Enter a parse tree produced by RSTSBasicParser#bangRemStmt.
+    def enterBangRemStmt(self, ctx:RSTSBasicParser.BangRemStmtContext):
         pass
 
-    # Exit a parse tree produced by RSTSBasicParser#openSeqStmt.
-    def exitOpenSeqStmt(self, ctx:RSTSBasicParser.OpenSeqStmtContext):
+    # Exit a parse tree produced by RSTSBasicParser#bangRemStmt.
+    def exitBangRemStmt(self, ctx:RSTSBasicParser.BangRemStmtContext):
         pass
 
 
-    # Enter a parse tree produced by RSTSBasicParser#openIdxStmt.
-    def enterOpenIdxStmt(self, ctx:RSTSBasicParser.OpenIdxStmtContext):
+    # Enter a parse tree produced by RSTSBasicParser#onErrorStmt.
+    def enterOnErrorStmt(self, ctx:RSTSBasicParser.OnErrorStmtContext):
         pass
 
-    # Exit a parse tree produced by RSTSBasicParser#openIdxStmt.
-    def exitOpenIdxStmt(self, ctx:RSTSBasicParser.OpenIdxStmtContext):
+    # Exit a parse tree produced by RSTSBasicParser#onErrorStmt.
+    def exitOnErrorStmt(self, ctx:RSTSBasicParser.OnErrorStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#resumeStmt.
+    def enterResumeStmt(self, ctx:RSTSBasicParser.ResumeStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#resumeStmt.
+    def exitResumeStmt(self, ctx:RSTSBasicParser.ResumeStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#mapStmt.
+    def enterMapStmt(self, ctx:RSTSBasicParser.MapStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#mapStmt.
+    def exitMapStmt(self, ctx:RSTSBasicParser.MapStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#openAnyStmt.
+    def enterOpenAnyStmt(self, ctx:RSTSBasicParser.OpenAnyStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#openAnyStmt.
+    def exitOpenAnyStmt(self, ctx:RSTSBasicParser.OpenAnyStmtContext):
         pass
 
 
@@ -161,6 +332,33 @@ class RSTSBasicListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by RSTSBasicParser#printItem.
+    def enterPrintItem(self, ctx:RSTSBasicParser.PrintItemContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#printItem.
+    def exitPrintItem(self, ctx:RSTSBasicParser.PrintItemContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#dataItem.
+    def enterDataItem(self, ctx:RSTSBasicParser.DataItemContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#dataItem.
+    def exitDataItem(self, ctx:RSTSBasicParser.DataItemContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#openClause.
+    def enterOpenClause(self, ctx:RSTSBasicParser.OpenClauseContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#openClause.
+    def exitOpenClause(self, ctx:RSTSBasicParser.OpenClauseContext):
+        pass
+
+
     # Enter a parse tree produced by RSTSBasicParser#strExpr.
     def enterStrExpr(self, ctx:RSTSBasicParser.StrExprContext):
         pass
@@ -188,6 +386,15 @@ class RSTSBasicListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by RSTSBasicParser#unaryExpr.
+    def enterUnaryExpr(self, ctx:RSTSBasicParser.UnaryExprContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#unaryExpr.
+    def exitUnaryExpr(self, ctx:RSTSBasicParser.UnaryExprContext):
+        pass
+
+
     # Enter a parse tree produced by RSTSBasicParser#intExpr.
     def enterIntExpr(self, ctx:RSTSBasicParser.IntExprContext):
         pass
@@ -203,6 +410,15 @@ class RSTSBasicListener(ParseTreeListener):
 
     # Exit a parse tree produced by RSTSBasicParser#addSubExpr.
     def exitAddSubExpr(self, ctx:RSTSBasicParser.AddSubExprContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#logicalExpr.
+    def enterLogicalExpr(self, ctx:RSTSBasicParser.LogicalExprContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#logicalExpr.
+    def exitLogicalExpr(self, ctx:RSTSBasicParser.LogicalExprContext):
         pass
 
 

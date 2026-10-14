@@ -1,34 +1,75 @@
 grammar RSTSBasic;
 
-// RSTS/E BASIC-PLUS-2 Grammar Sketch
+// RSTS/E BASIC-PLUS-2 Grammar
 
-program: line* EOF;
+program: line* ((lineNumber | labelDef)? statement ((':' | '\\') statement)*)? EOF;
 
-line: (lineNumber)? statement (':' statement)* (NEWLINE | EOF);
+line: (lineNumber | labelDef)? (statement ((':' | '\\') statement)*)? NEWLINE;
 
+labelDef: ID ':';
 lineNumber: INT;
+target: INT | ID;
+
+dataType: 'WORD' | 'SINGLE' | 'DOUBLE' | 'BYTE' | 'LONG' | 'STRING';
+
+mapItem: dataType? variable ('=' INT)?;
 
 statement
-    : 'PRINT' expression (',' expression | ';' expression)* (';')?  # printStmt
+    : 'PROGRAM' ID                                                # programStmt
+    | 'DECLARE' dataType variable (',' variable)*                 # declareStmt
+    | 'PRINT' ('#' INT (',' | ';')?)? ('USING' formatExpr=expression ';')? (printItem ((',' | ';')? printItem)* (',' | ';')?)? # printStmt
     | 'LET'? variable '=' expression                              # letStmt
-    | 'GOTO' lineNumber                                           # gotoStmt
-    | 'IF' expression 'THEN' statement ('ELSE' statement)?        # ifStmt
-    | 'END'                                                       # endStmt
-    | 'REM' .*? (NEWLINE | EOF)                                   # remStmt
-    | 'OPEN' expression 'FOR' ('INPUT' | 'OUTPUT') 'AS' 'FILE' '#' INT # openSeqStmt
-    | 'OPEN' expression 'AS' 'FILE' '#' INT ',' 'INDEXED' ',' 'PRIMARY' 'KEY' variable # openIdxStmt
-    | 'CLOSE' '#' INT                                             # closeStmt
+    | 'GOTO' target                                               # gotoStmt
+    | 'RANDOMIZE'                                                 # randomizeStmt
+    | 'FOR' variable '=' fromExpr=expression 'TO' toExpr=expression ('STEP' stepExpr=expression)? # forStmt
+    | 'NEXT' variable?                                            # nextStmt
+    | 'READ' variable (',' variable)*                             # readStmt
+    | 'DATA' dataItem (',' dataItem)*                             # dataStmt
+    | 'RESTORE' ('#' INT)? (',' 'KEY' ('#' INT)? (('EQ' | '=')? expression)?)? # restoreStmt
+    | 'IF' expression 'THEN' (thenStmt=statement | thenTarget=target) ('ELSE' (elseStmt=statement | elseTarget=target))? # ifStmt
+    | 'IF' expression ('THEN')?                                   # ifBlockStmt
+    | 'THEN' statement?                                           # thenStmt
+    | 'ELSE' statement?                                           # elseStmt
+    | 'END' 'IF'                                                  # endIfStmt
+    | 'END' 'PROGRAM'?                                            # endStmt
+    | REM_COMMENT                                                 # remStmt
+    | BANG_COMMENT                                                # bangRemStmt
+    | 'ON' 'ERROR' 'GOTO' target                                  # onErrorStmt
+    | 'RESUME' target?                                            # resumeStmt
+    | 'MAP' '(' variable ')' mapItem (',' mapItem)*               # mapStmt
+    | 'OPEN' expression ('FOR' ('INPUT' | 'OUTPUT'))? 'AS' 'FILE'? '#' INT (',' openClause)* # openAnyStmt
+    | 'CLOSE' '#' INT (',' '#' INT)*                              # closeStmt
     | 'PUT' '#' INT                                               # putStmt
-    | 'GET' '#' INT (',' 'KEY' variable)?                         # getStmt
+    | 'GET' '#' INT (',' 'KEY' ('#' INT)? ('EQ' | '=')? expression)?  # getStmt
     | 'CALL' STRING                                               # callStmt
-    | 'INPUT' variable                                            # inputStmt
+    | 'LINE'? 'INPUT' ('#' INT (',' | ';'))? (STRING (';' | ','))? variable # inputStmt
     | 'DIM' variable (',' variable)*                              # dimStmt
     ;
 
+printItem
+    : expression
+    ;
+
+dataItem
+    : ('+' | '-')? (INT | FLOAT)
+    | STRING
+    ;
+
+openClause
+    : 'ORGANIZATION'? 'INDEXED' 'FIXED'?
+    | 'ACCESS' ('MODIFY' | 'READ' | 'WRITE')
+    | 'ALLOW' 'NONE'
+    | 'MAP' variable
+    | 'PRIMARY' 'KEY'? variable
+    | 'ALTERNATE' 'KEY'? variable
+    ;
+
 expression
-    : left=expression op=('*'|'/') right=expression               # mulDivExpr
+    : op=('+'|'-') expression                                     # unaryExpr
+    | left=expression op=('*'|'/') right=expression               # mulDivExpr
     | left=expression op=('+'|'-') right=expression               # addSubExpr
     | left=expression op=('<'|'>'|'='|'<='|'>='|'<>') right=expression # relExpr
+    | left=expression op=('AND'|'OR') right=expression            # logicalExpr
     | 'INKEY$'                                                    # inkeyExpr
     | 'CHR$' '(' expression ')'                                   # chrExpr
     | INT                                                         # intExpr
@@ -38,13 +79,15 @@ expression
     | '(' expression ')'                                          # parensExpr
     ;
 
-variable: ID ('%' | '$')? ('(' expression ')')?; // % for integer, $ for string
-
+variable: ID ('%' | '$')? ('(' expression (',' expression)* ')')?; // % for integer, $ for string
 
 // Lexer Rules
-INT: [0-9]+;
+REM_COMMENT: 'REM' ~[\r\n]*;
+BANG_COMMENT: '!' ~[\r\n]*;
+LINE_CONT: '&' [ \t]* '\r'? '\n' -> skip;
+INT: [0-9]+ '%'?;
 FLOAT: [0-9]+ '.' [0-9]+;
 STRING: '"' ~["]* '"';
-ID: [A-Z] [A-Z0-9]*;
+ID: [A-Z] [A-Z0-9_]*;
 NEWLINE: '\r'? '\n';
 WS: [ \t]+ -> skip;

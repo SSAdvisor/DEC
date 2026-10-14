@@ -30,7 +30,7 @@ def test_basic_math():
     bc = obj["bytecode"]
     assert 0x20 in bc # OP_ADD
     assert 0x13 in bc # OP_STORE_V
-    assert 0x50 in bc # OP_PRINT
+    assert 0x52 in bc or 0x50 in bc # OP_PRINT_CH or OP_PRINT
 
 def test_rms_sequential():
     bas = """10 OPEN "DATA.TXT" FOR OUTPUT AS FILE #1
@@ -59,7 +59,6 @@ def test_rms_indexed():
 def test_string_literals():
     bas = "10 PRINT \"HELLO WORLD\"\n"
     obj = compile_and_load(bas, "strings")
-    strings = obj["strings"]
-    assert '"HELLO WORLD"' in strings
     bc = obj["bytecode"]
     assert 0x12 in bc # OP_PUSH_S
+    assert b"HELLO WORLD" in bytes(bc)
