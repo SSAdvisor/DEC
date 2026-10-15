@@ -18,6 +18,8 @@ elif command -v hamurabi >/dev/null 2>&1; then
     BIN_DIR="$(dirname "$(command -v hamurabi)")"
 elif command -v sort11 >/dev/null 2>&1; then
     BIN_DIR="$(dirname "$(command -v sort11)")"
+elif command -v ade >/dev/null 2>&1; then
+    BIN_DIR="$(dirname "$(command -v ade)")"
 else
     BIN_DIR="/usr/local/dec-apps/bin"
 fi
@@ -217,6 +219,17 @@ for APP in "${TARGET_APPS[@]}"; do
             OUT="$("${EXE}" "${OUT_SEQ}=${IDX_F}/SEQ" 2>&1 || true)"
             if echo "${OUT}" | grep -q "RMSCNV" && [ -f "${OUT_SEQ}" ]; then
                 echo "PASSED (RMS convert verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        ade)
+            OUT="$("${EXE}" "HELP" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "ADE V3.0"; then
+                echo "PASSED (ADE 4GL environment & help verified)"
                 PASSED_COUNT=$((PASSED_COUNT + 1))
             else
                 echo "FAILED"

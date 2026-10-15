@@ -100,6 +100,9 @@ list_apps() {
             rmsutils)
                 printf "%-16s %-18s %s\n" "rmsutils" "RMS Utilities" "DEC RMS-11 utilities suite (RMSDES, RMSDEF, RMSIFL, RMSCNV, RMSBCK, RMSRST, RMSDSP)"
                 ;;
+            ade)
+                printf "%-16s %-18s %s\n" "ade" "4GL / Database" "Application Development Environment & 4GL data manager"
+                ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
                 ;;

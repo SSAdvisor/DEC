@@ -13,6 +13,7 @@ MASTER_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Linux-x86_64.tar.gz"
 HAMURABI_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-hamurabi-V1.0-L-Linux-x86_64.tar.gz")
 SORT11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-sort11-V1.0-L-Linux-x86_64.tar.gz")
 RMSUTILS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-rmsutils-V1.0-L-Linux-x86_64.tar.gz")
+ADE_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-ade-V1.0-L-Linux-x86_64.tar.gz")
 SRC_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Source.tar.gz")
 
 def test_distrib_build_kit():
@@ -24,6 +25,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(HAMURABI_ARCHIVE), f"Hamurabi archive {HAMURABI_ARCHIVE} not created"
     assert os.path.isfile(SORT11_ARCHIVE), f"SORT-11 archive {SORT11_ARCHIVE} not created"
     assert os.path.isfile(RMSUTILS_ARCHIVE), f"RMSUTILS archive {RMSUTILS_ARCHIVE} not created"
+    assert os.path.isfile(ADE_ARCHIVE), f"ADE archive {ADE_ARCHIVE} not created"
     assert os.path.isfile(SRC_ARCHIVE), f"Source archive {SRC_ARCHIVE} not created"
 
     # Verify staging contents of master kit
@@ -40,6 +42,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsbck"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsrst"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsdsp"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "ade"))
 
 def test_install_individual_app(tmp_path):
     """Verify that an individual application can be installed independently."""
@@ -153,6 +156,40 @@ def test_install_individual_rmsutils(tmp_path):
     for b in expected_bins:
         assert not (prefix / "bin" / b).exists(), f"Binary {b} was not removed after uninstall"
 
+def test_install_individual_ade(tmp_path):
+    """Verify that ADE can be installed and uninstalled independently."""
+    prefix = tmp_path / "ade_install"
+    res = subprocess.run(
+        [INSTALL_SH, f"--prefix={prefix}", "--no-symlinks", "ade"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res.returncode == 0, f"ADE install failed:\n{res.stdout}\n{res.stderr}"
+    assert "Installing application: ade" in res.stdout
+    assert "Verification Summary: 1 Passed, 0 Failed" in res.stdout
+
+    ade_bin = prefix / "bin" / "ade"
+    assert ade_bin.is_file()
+    assert os.access(ade_bin, os.X_OK)
+
+    # Verify execution
+    run_res = subprocess.run([str(ade_bin), "HELP"], capture_output=True, text=True, timeout=5)
+    assert "ADE V3.0" in run_res.stdout
+
+    assert (prefix / "docs" / "ade.md").is_file()
+
+    # Uninstall ade
+    res_un = subprocess.run(
+        [UNINSTALL_SH, f"--prefix={prefix}", "ade"],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+    assert res_un.returncode == 0
+    assert not ade_bin.exists()
+    assert not (prefix / "docs" / "ade.md").exists()
+
 def test_installer_list_apps():
     """Verify that ./install.sh --list enumerates all available applications."""
     res = subprocess.run([INSTALL_SH, "--list"], capture_output=True, text=True, timeout=5)
@@ -160,3 +197,5 @@ def test_installer_list_apps():
     assert "hamurabi" in res.stdout
     assert "sort11" in res.stdout
     assert "rmsutils" in res.stdout
+    assert "ade" in res.stdout
+

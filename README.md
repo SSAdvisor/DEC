@@ -115,3 +115,5 @@ make clean
 | [`hamurabi`](apps/hamurabi) | Simulation / Game | Ancient Sumeria city-state economic and governance simulation | Richard Merrill (1968), David Ahl (*101 BASIC Computer Games*, DEC, 1973) |
 | [`sort11`](apps/sort11) | System Utility | RMS file sort and index utility supporting sequential and SQLite-backed indexed files | Digital Equipment Corporation PDP-11 / RSTS/E / RSX-11M RMS-11 facility |
 | [`rmsutils`](apps/rmsutils) | System Utilities | RMS-11 file design, definition, load, conversion, backup, restore, and display suite (`RMSDES`, `RMSDEF`, `RMSIFL`, `RMSCNV`, `RMSBCK`, `RMSRST`, `RMSDSP`) | Digital Equipment Corporation PDP-11 / RSTS/E / RSX-11M / VAX/VMS RMS-11 facility |
+| [`ade`](apps/ade) | 4GL / Database | Application Development Environment: interactive 4GL departmental data manager, reporting, and graphing | Digital Equipment Corporation PDP-11 / RSTS/E & VAX/VMS ADE system (1979-1985) |
+
