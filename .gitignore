@@ -17,4 +17,5 @@ out.bobj
 out.bin
 distrib/kit/
 .pytest_cache/
+.agy/
 
