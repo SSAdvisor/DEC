@@ -121,6 +121,17 @@ echo "--------------------------------------------------------------------------
 for app in "${SELECTED_APPS[@]}"; do
     echo "-> Uninstalling ${app}..."
     
+    # Check for companion utilities
+    COMPANIONS=()
+    if [ -f "${PREFIX}/share/dec-apps/installed/${app}.txt" ]; then
+        COMP_LINE="$(grep '^Companions=' "${PREFIX}/share/dec-apps/installed/${app}.txt" || true)"
+        if [ -n "${COMP_LINE}" ]; then
+            COMPANIONS=(${COMP_LINE#Companions=})
+        fi
+    elif [ "$app" = "rmsutils" ]; then
+        COMPANIONS=("rmsdes" "rmsdef" "rmsifl" "rmscnv" "rmsbck" "rmsrst" "rmsdsp")
+    fi
+
     # 1. Remove symlink
     if [ -L "${LINK_BIN}/${app}" ]; then
         TARGET="$(readlink "${LINK_BIN}/${app}" || true)"
@@ -130,19 +141,38 @@ for app in "${SELECTED_APPS[@]}"; do
         fi
     fi
 
-    # 2. Remove binary
+    # 2. Remove companion symlinks
+    for c in "${COMPANIONS[@]}"; do
+        if [ -L "${LINK_BIN}/${c}" ]; then
+            TARGET="$(readlink "${LINK_BIN}/${c}" || true)"
+            if [[ "${TARGET}" == *"${PREFIX}"* ]]; then
+                rm -f "${LINK_BIN}/${c}"
+                echo "   Removed companion symlink ${LINK_BIN}/${c}"
+            fi
+        fi
+    done
+
+    # 3. Remove binary
     if [ -f "${PREFIX}/bin/${app}" ]; then
         rm -f "${PREFIX}/bin/${app}"
         echo "   Removed binary ${PREFIX}/bin/${app}"
     fi
 
-    # 3. Remove docs
+    # 4. Remove companion binaries
+    for c in "${COMPANIONS[@]}"; do
+        if [ -f "${PREFIX}/bin/${c}" ]; then
+            rm -f "${PREFIX}/bin/${c}"
+            echo "   Removed companion binary ${PREFIX}/bin/${c}"
+        fi
+    done
+
+    # 5. Remove docs
     if [ -f "${PREFIX}/docs/${app}.md" ]; then
         rm -f "${PREFIX}/docs/${app}.md"
         echo "   Removed documentation ${PREFIX}/docs/${app}.md"
     fi
 
-    # 4. Remove receipt
+    # 6. Remove receipt
     if [ -f "${PREFIX}/share/dec-apps/installed/${app}.txt" ]; then
         rm -f "${PREFIX}/share/dec-apps/installed/${app}.txt"
     fi

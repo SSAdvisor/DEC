@@ -12,6 +12,7 @@ VERIFY_KIT_SH = os.path.join(DISTRIB_DIR, "verify_kit.sh")
 MASTER_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Linux-x86_64.tar.gz")
 HAMURABI_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-hamurabi-V1.0-L-Linux-x86_64.tar.gz")
 SORT11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-sort11-V1.0-L-Linux-x86_64.tar.gz")
+RMSUTILS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-rmsutils-V1.0-L-Linux-x86_64.tar.gz")
 SRC_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Source.tar.gz")
 
 def test_distrib_build_kit():
@@ -22,6 +23,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(MASTER_ARCHIVE), f"Master archive {MASTER_ARCHIVE} not created"
     assert os.path.isfile(HAMURABI_ARCHIVE), f"Hamurabi archive {HAMURABI_ARCHIVE} not created"
     assert os.path.isfile(SORT11_ARCHIVE), f"SORT-11 archive {SORT11_ARCHIVE} not created"
+    assert os.path.isfile(RMSUTILS_ARCHIVE), f"RMSUTILS archive {RMSUTILS_ARCHIVE} not created"
     assert os.path.isfile(SRC_ARCHIVE), f"Source archive {SRC_ARCHIVE} not created"
 
     # Verify staging contents of master kit
@@ -30,6 +32,14 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "MANIFEST.TXT"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "hamurabi"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "sort11"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsutils"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsdes"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsdef"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsifl"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "rmscnv"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsbck"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsrst"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsdsp"))
 
 def test_install_individual_app(tmp_path):
     """Verify that an individual application can be installed independently."""
@@ -110,9 +120,43 @@ def test_install_and_uninstall_all(tmp_path):
     assert res_un.returncode == 0
     assert not prefix.exists() or not any(prefix.iterdir()), "Target prefix should be removed or empty"
 
+def test_install_individual_rmsutils(tmp_path):
+    """Verify that rmsutils (and all its companion utilities) can be installed and uninstalled."""
+    prefix = tmp_path / "rmsutils_install"
+    res = subprocess.run(
+        [INSTALL_SH, f"--prefix={prefix}", "--no-symlinks", "rmsutils"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res.returncode == 0, f"rmsutils install failed:\n{res.stdout}\n{res.stderr}"
+    assert "Installing application: rmsutils" in res.stdout
+    assert "Verification Summary: 1 Passed, 0 Failed" in res.stdout
+
+    # Check that master and all 7 companion utilities are installed
+    expected_bins = ["rmsutils", "rmsdes", "rmsdef", "rmsifl", "rmscnv", "rmsbck", "rmsrst", "rmsdsp"]
+    for b in expected_bins:
+        bin_path = prefix / "bin" / b
+        assert bin_path.is_file(), f"Binary {b} was not installed"
+        assert os.access(bin_path, os.X_OK), f"Binary {b} is not executable"
+
+    assert (prefix / "docs" / "rmsutils.md").is_file()
+
+    # Uninstall rmsutils
+    res_un = subprocess.run(
+        [UNINSTALL_SH, f"--prefix={prefix}", "rmsutils"],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+    assert res_un.returncode == 0
+    for b in expected_bins:
+        assert not (prefix / "bin" / b).exists(), f"Binary {b} was not removed after uninstall"
+
 def test_installer_list_apps():
     """Verify that ./install.sh --list enumerates all available applications."""
     res = subprocess.run([INSTALL_SH, "--list"], capture_output=True, text=True, timeout=5)
     assert res.returncode == 0
     assert "hamurabi" in res.stdout
     assert "sort11" in res.stdout
+    assert "rmsutils" in res.stdout

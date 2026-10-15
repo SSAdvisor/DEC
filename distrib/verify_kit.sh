@@ -98,6 +98,132 @@ for APP in "${TARGET_APPS[@]}"; do
                 FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
             ;;
+        rmsutils)
+            OUT="$(printf "0\n" | "${EXE}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "DEC RMS-11 Utilities Suite"; then
+                echo "PASSED (RMS-11 master menu verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        rmsdes)
+            DES_F="${TMP_DIR}/test.des"
+            OUT="$("${EXE}" "${DES_F} INDEXED 255 1 4" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "RMSDES" && [ -f "${DES_F}" ]; then
+                echo "PASSED (RMS design generation verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        rmsdef)
+            IDX_F="${TMP_DIR}/def.idx"
+            OUT="$("${EXE}" "${IDX_F}/ORG:INDEXED/SIZ:255" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "RMSDEF" && [ -f "${IDX_F}" ]; then
+                echo "PASSED (RMS file creation verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        rmsifl)
+            IDX_F="${TMP_DIR}/ifl.idx"
+            SEQ_F="${TMP_DIR}/ifl.txt"
+            printf "1001 Test Record\n" > "${SEQ_F}"
+            OUT="$("${EXE}" "${IDX_F}=${SEQ_F}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "RMSIFL" && [ -f "${IDX_F}" ]; then
+                echo "PASSED (RMS indexed file load verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        rmsdsp)
+            IDX_F="${TMP_DIR}/dsp.idx"
+            SEQ_F="${TMP_DIR}/dsp.txt"
+            printf "1001 Sample\n" > "${SEQ_F}"
+            if [ -x "${BIN_DIR}/rmsifl" ]; then
+                "${BIN_DIR}/rmsifl" "${IDX_F}=${SEQ_F}" >/dev/null 2>&1 || true
+            fi
+            OUT="$("${EXE}" "${IDX_F}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "RMSDSP"; then
+                echo "PASSED (RMS file display verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        rmsbck)
+            IDX_F="${TMP_DIR}/bck.idx"
+            BCK_F="${TMP_DIR}/test.bck"
+            SEQ_F="${TMP_DIR}/bck.txt"
+            printf "1001 Backup Test\n" > "${SEQ_F}"
+            if [ -x "${BIN_DIR}/rmsifl" ]; then
+                "${BIN_DIR}/rmsifl" "${IDX_F}=${SEQ_F}" >/dev/null 2>&1 || true
+            fi
+            OUT="$("${EXE}" "${BCK_F}=${IDX_F}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "RMSBCK" && [ -f "${BCK_F}" ]; then
+                echo "PASSED (RMS backup container verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        rmsrst)
+            BCK_F="${TMP_DIR}/test.bck"
+            RST_F="${TMP_DIR}/rst.idx"
+            if [ ! -f "${BCK_F}" ]; then
+                IDX_F="${TMP_DIR}/bck.idx"
+                SEQ_F="${TMP_DIR}/bck.txt"
+                printf "1001 Backup Test\n" > "${SEQ_F}"
+                if [ -x "${BIN_DIR}/rmsifl" ]; then
+                    "${BIN_DIR}/rmsifl" "${IDX_F}=${SEQ_F}" >/dev/null 2>&1 || true
+                fi
+                if [ -x "${BIN_DIR}/rmsbck" ]; then
+                    "${BIN_DIR}/rmsbck" "${BCK_F}=${IDX_F}" >/dev/null 2>&1 || true
+                fi
+            fi
+            OUT="$("${EXE}" "${RST_F}=${BCK_F}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "RMSRST" && [ -f "${RST_F}" ]; then
+                echo "PASSED (RMS restore verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        rmscnv)
+            IDX_F="${TMP_DIR}/cnv.idx"
+            SEQ_F="${TMP_DIR}/cnv.txt"
+            printf "1001 Convert Test\n" > "${SEQ_F}"
+            if [ -x "${BIN_DIR}/rmsifl" ]; then
+                "${BIN_DIR}/rmsifl" "${IDX_F}=${SEQ_F}" >/dev/null 2>&1 || true
+            fi
+            OUT_SEQ="${TMP_DIR}/cnv_out.txt"
+            OUT="$("${EXE}" "${OUT_SEQ}=${IDX_F}/SEQ" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "RMSCNV" && [ -f "${OUT_SEQ}" ]; then
+                echo "PASSED (RMS convert verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
         *)
             # Generic sanity check
             OUT="$("${EXE}" 2>&1 || true)"

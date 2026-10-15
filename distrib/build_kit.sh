@@ -48,13 +48,10 @@ mkdir -p "${STAGING_DIR}/docs"
 echo "-> Staging Master Distribution Kit: ${STAGING_DIR}..."
 
 for app in "${APP_LIST[@]}"; do
-    BIN_SRC="${ROOT_DIR}/apps/${app}/bin/${app}"
-    if [ ! -f "${BIN_SRC}" ]; then
-        echo "Error: Compiled binary for ${app} not found at ${BIN_SRC}"
-        exit 1
+    if [ -d "${ROOT_DIR}/apps/${app}/bin" ]; then
+        cp -a "${ROOT_DIR}/apps/${app}/bin"/* "${STAGING_DIR}/bin/"
+        chmod 755 "${STAGING_DIR}/bin"/*
     fi
-    cp -a "${BIN_SRC}" "${STAGING_DIR}/bin/"
-    chmod 755 "${STAGING_DIR}/bin/${app}"
 
     DOC_SRC="${ROOT_DIR}/apps/${app}/README.md"
     if [ -f "${DOC_SRC}" ]; then
@@ -151,8 +148,10 @@ for app in "${APP_LIST[@]}"; do
     mkdir -p "${APP_STAGING}/bin"
     mkdir -p "${APP_STAGING}/docs"
 
-    cp -a "${ROOT_DIR}/apps/${app}/bin/${app}" "${APP_STAGING}/bin/"
-    chmod 755 "${APP_STAGING}/bin/${app}"
+    if [ -d "${ROOT_DIR}/apps/${app}/bin" ]; then
+        cp -a "${ROOT_DIR}/apps/${app}/bin"/* "${APP_STAGING}/bin/"
+        chmod 755 "${APP_STAGING}/bin"/*
+    fi
 
     if [ -f "${ROOT_DIR}/apps/${app}/README.md" ]; then
         cp -a "${ROOT_DIR}/apps/${app}/README.md" "${APP_STAGING}/docs/${app}.md"
@@ -200,8 +199,13 @@ Vendor=Digital Equipment Corporation / DEC-APPS Project
 Description=DEC Application: ${app}
 
 [APPLICATIONS]
-${app}=bin/${app}
 EOF
+    for b in "${APP_STAGING}/bin"/*; do
+        if [ -f "$b" ] && [ -x "$b" ]; then
+            bname="$(basename "$b")"
+            echo "${bname}=bin/${bname}" >> "${APP_STAGING}/KIT.INI"
+        fi
+    done
 
     # Per-application MANIFEST.TXT
     (cd "${APP_STAGING}" && find . -type f -not -name "MANIFEST.TXT" | sort | xargs sha256sum > "${APP_STAGING}/MANIFEST.TXT")

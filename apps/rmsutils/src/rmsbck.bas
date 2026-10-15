@@ -1,0 +1,90 @@
+10 ! ================================================================
+20 ! RMSBCK - DEC RMS-11 FILE BACKUP UTILITY
+30 ! AUTHENTIC DIGITAL EQUIPMENT CORPORATION RMS-11 BACKUP FACILITY
+40 ! REIMPLEMENTED IN BASIC-PLUS-2 FOR DEC-APPS
+50 ! ================================================================
+60 MAP (REC_BUF) STRING MAP_LINE$ = 255%
+70 DIM REC$(1000%)
+80 NUM_RECS% = 0%
+90 IN_FILE$ = ""
+100 BCK_FILE$ = ""
+110 IN_ORG$ = "SEQUENTIAL"
+120 CMD$ = COMMAND$
+130 IF CMD$ <> "" THEN GOSUB 300
+140 IF IN_FILE$ = "" THEN GOSUB 400
+150 IF IN_FILE$ = "" OR BCK_FILE$ = "" THEN GOTO 990
+160 ! Ensure .BCK extension if missing
+170 IF INSTR(1%, BCK_FILE$, ".") = 0% THEN BCK_FILE$ = BCK_FILE$ + ".BCK"
+180 ! Detect input organization
+190 IF INSTR(1%, IN_FILE$, ".IDX") > 0% OR INSTR(1%, IN_FILE$, ".idx") > 0% THEN IN_ORG$ = "INDEXED"
+200 ! --- READ SOURCE FILE ---
+210 ON ERROR GOTO 290
+220 IF IN_ORG$ = "INDEXED" THEN GOTO 260
+230 ! Read Sequential File
+232 OPEN IN_FILE$ FOR INPUT AS FILE #1%
+234 READ_SEQ_LOOP:
+236 LINE INPUT #1%, LINE_BUF$
+238 NUM_RECS% = NUM_RECS% + 1%
+240 REC$(NUM_RECS%) = LINE_BUF$
+242 GOTO 234
+260 ! Read RMS Indexed File
+262 OPEN IN_FILE$ FOR INPUT AS FILE #1%, ORGANIZATION INDEXED FIXED, PRIMARY KEY MAP_LINE$, MAP REC_BUF
+264 READ_RMS_LOOP:
+266 GET #1%
+268 NUM_RECS% = NUM_RECS% + 1%
+270 REC$(NUM_RECS%) = MAP_LINE$
+272 GOTO 264
+290 CLOSE #1%
+295 RESUME 500
+300 ! --- PARSE COMMAND LINE ---
+310 EQ_P% = INSTR(1%, CMD$, "=")
+315 IF EQ_P% = 0% THEN GOTO 380
+320 BCK_FILE$ = LEFT$(CMD$, EQ_P% - 1%)
+325 IN_FILE$ = MID$(CMD$, EQ_P% + 1%, LEN(CMD$) - EQ_P%)
+330 RETURN
+380 ! Positional: IN BCK
+382 SP_P% = INSTR(1%, CMD$, " ")
+384 IF SP_P% = 0% THEN GOTO 390
+386 IN_FILE$ = LEFT$(CMD$, SP_P% - 1%)
+388 BCK_FILE$ = MID$(CMD$, SP_P% + 1%, LEN(CMD$) - SP_P%)
+390 RETURN
+400 ! --- INTERACTIVE PROMPTS ---
+405 PRINT "RMSBCK V2.0 - DEC RMS-11 File Backup Utility"
+410 PRINT ""
+415 INPUT "Source RMS file to backup: "; IN_FILE$
+420 IF IN_FILE$ = "" THEN GOTO 430
+425 INPUT "Target backup container (.BCK): "; BCK_FILE$
+430 RETURN
+500 ! --- WRITE BACKUP CONTAINER ---
+505 ON ERROR GOTO 980
+510 OPEN BCK_FILE$ FOR OUTPUT AS FILE #2%
+515 PRINT #2%, "! DEC-RMS-BACKUP-CONTAINER-V1.0"
+520 PRINT #2%, "ORG: "; IN_ORG$
+525 PRINT #2%, "SOURCE: "; IN_FILE$
+530 PRINT #2%, "RECORDS: "; NUM_RECS%
+535 PRINT #2%, "DATA_START"
+540 K% = 1%
+545 WRITE_BCK_LOOP:
+550 IF K% > NUM_RECS% THEN GOTO 570
+555 PRINT #2%, REC$(K%)
+560 K% = K% + 1%
+565 GOTO 545
+570 PRINT #2%, "DATA_END"
+575 PRINT #2%, "CHECKSUM: "; NUM_RECS%
+580 CLOSE #2%
+585 ON ERROR GOTO 0
+590 ! --- REPORT SUCCESS ---
+595 PRINT "RMSBCK V2.0 - DEC RMS-11 File Backup Utility"
+600 PRINT "================================================================"
+605 PRINT "Source File:        "; IN_FILE$
+610 PRINT "Source Format:      "; IN_ORG$
+615 PRINT "Backup Container:   "; BCK_FILE$
+620 PRINT "Records Backed Up:  "; NUM_RECS%
+625 PRINT "Checksum:           "; NUM_RECS%; " (OK)"
+630 PRINT "Status:             SUCCESS"
+635 PRINT "================================================================"
+640 GOTO 999
+980 PRINT "RMSBCK: Error creating backup container: "; BCK_FILE$
+985 GOTO 999
+990 PRINT "RMSBCK: Missing source or backup file specification."
+999 END

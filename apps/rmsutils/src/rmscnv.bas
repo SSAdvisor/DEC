@@ -1,0 +1,128 @@
+10 ! ================================================================
+20 ! RMSCNV - DEC RMS-11 FILE CONVERT UTILITY
+30 ! AUTHENTIC DIGITAL EQUIPMENT CORPORATION RMS-11 CONVERT FACILITY
+40 ! REIMPLEMENTED IN BASIC-PLUS-2 FOR DEC-APPS
+50 ! ================================================================
+60 MAP (REC_BUF) STRING MAP_LINE$ = 255%
+70 DIM REC$(1000%)
+80 NUM_RECS% = 0%
+90 NUM_CNV% = 0%
+100 NUM_EXC% = 0%
+110 IN_FILE$ = ""
+120 OUT_FILE$ = ""
+130 EXC_FILE$ = ""
+140 IN_ORG$ = "SEQ"
+150 OUT_ORG$ = "SEQ"
+160 CMD$ = COMMAND$
+170 IF CMD$ <> "" THEN GOSUB 300
+180 IF IN_FILE$ = "" THEN GOSUB 400
+190 IF IN_FILE$ = "" OR OUT_FILE$ = "" THEN GOTO 990
+200 ! Auto-detect organizations
+210 IF INSTR(1%, IN_FILE$, ".IDX") > 0% OR INSTR(1%, IN_FILE$, ".idx") > 0% THEN IN_ORG$ = "RMS"
+220 IF INSTR(1%, OUT_FILE$, ".IDX") > 0% OR INSTR(1%, OUT_FILE$, ".idx") > 0% THEN OUT_ORG$ = "RMS"
+230 ! --- READ INPUT FILE ---
+240 IF IN_ORG$ = "RMS" THEN GOTO 270
+250 ! Read Sequential File
+252 ON ERROR GOTO 290
+254 OPEN IN_FILE$ FOR INPUT AS FILE #1%
+256 READ_SEQ_LOOP:
+258 LINE INPUT #1%, LINE_BUF$
+260 NUM_RECS% = NUM_RECS% + 1%
+262 REC$(NUM_RECS%) = LINE_BUF$
+264 GOTO 256
+270 ! Read RMS Indexed File
+272 ON ERROR GOTO 290
+274 OPEN IN_FILE$ FOR INPUT AS FILE #1%, ORGANIZATION INDEXED FIXED, PRIMARY KEY MAP_LINE$, MAP REC_BUF
+276 READ_RMS_LOOP:
+278 GET #1%
+280 NUM_RECS% = NUM_RECS% + 1%
+282 REC$(NUM_RECS%) = MAP_LINE$
+284 GOTO 278
+290 CLOSE #1%
+295 RESUME 500
+300 ! --- PARSE COMMAND LINE ---
+310 EQ_P% = INSTR(1%, CMD$, "=")
+315 IF EQ_P% = 0% THEN GOTO 380
+320 OUT_FILE$ = LEFT$(CMD$, EQ_P% - 1%)
+325 REM_CMD$ = MID$(CMD$, EQ_P% + 1%, LEN(CMD$) - EQ_P%)
+330 SW_P% = INSTR(1%, REM_CMD$, "/EXC")
+332 IF SW_P% = 0% THEN SW_P% = INSTR(1%, REM_CMD$, "/RMS")
+334 IF SW_P% = 0% THEN SW_P% = INSTR(1%, REM_CMD$, "/IDX")
+336 IF SW_P% = 0% THEN SW_P% = INSTR(1%, REM_CMD$, "/SEQ")
+338 IF SW_P% = 0% THEN GOTO 345
+340 IN_FILE$ = LEFT$(REM_CMD$, SW_P% - 1%)
+342 SW$ = MID$(REM_CMD$, SW_P%, LEN(REM_CMD$) - SW_P% + 1%)
+343 GOTO 350
+345 IN_FILE$ = REM_CMD$
+347 SW$ = ""
+350 P_EXC% = INSTR(1%, SW$, "/EXC:")
+352 IF P_EXC% = 0% THEN P_EXC% = INSTR(1%, SW$, "/EXCEPTIONS:")
+354 IF P_EXC% = 0% THEN GOTO 370
+356 P2% = INSTR(P_EXC%, SW$, ":") + 1%
+358 P3% = INSTR(P2%, SW$, "/")
+360 IF P3% = 0% THEN P3% = LEN(SW$) + 1%
+362 EXC_FILE$ = MID$(SW$, P2%, P3% - P2%)
+370 IF INSTR(1%, SW$, "/RMS") > 0% OR INSTR(1%, SW$, "/IDX") > 0% THEN OUT_ORG$ = "RMS"
+372 IF INSTR(1%, SW$, "/SEQ") > 0% THEN OUT_ORG$ = "SEQ"
+375 RETURN
+380 ! Positional: IN OUT
+382 SP_P% = INSTR(1%, CMD$, " ")
+384 IF SP_P% = 0% THEN GOTO 390
+386 IN_FILE$ = LEFT$(CMD$, SP_P% - 1%)
+388 OUT_FILE$ = MID$(CMD$, SP_P% + 1%, LEN(CMD$) - SP_P%)
+390 RETURN
+400 ! --- INTERACTIVE PROMPTS ---
+405 PRINT "RMSCNV V2.0 - DEC RMS-11 File Convert Utility"
+410 PRINT ""
+415 INPUT "Source file: "; IN_FILE$
+420 IF IN_FILE$ = "" THEN GOTO 440
+425 INPUT "Target file: "; OUT_FILE$
+430 IF OUT_FILE$ = "" THEN GOTO 440
+435 INPUT "Exceptions log file [none]: "; EXC_FILE$
+440 RETURN
+500 ! --- WRITE CONVERTED RECORDS ---
+505 ON ERROR GOTO 0
+510 IF NUM_RECS% = 0% THEN GOTO 900
+515 ! Open exceptions file if specified
+520 IF EXC_FILE$ <> "" THEN OPEN EXC_FILE$ FOR OUTPUT AS FILE #3%
+525 IF OUT_ORG$ = "RMS" THEN GOTO 600
+530 ! Write Sequential Output
+535 OPEN OUT_FILE$ FOR OUTPUT AS FILE #2%
+540 K% = 1%
+545 WRITE_SEQ_LOOP:
+550 IF K% > NUM_RECS% THEN GOTO 570
+555 PRINT #2%, REC$(K%)
+560 NUM_CNV% = NUM_CNV% + 1%
+562 K% = K% + 1%
+564 GOTO 545
+570 CLOSE #2%
+575 GOTO 700
+600 ! Write RMS Indexed Output
+605 OPEN OUT_FILE$ FOR OUTPUT AS FILE #2%, ORGANIZATION INDEXED FIXED, PRIMARY KEY MAP_LINE$, MAP REC_BUF
+610 K% = 1%
+615 WRITE_RMS_LOOP:
+620 IF K% > NUM_RECS% THEN GOTO 650
+625 MAP_LINE$ = REC$(K%)
+630 PUT #2%
+635 NUM_CNV% = NUM_CNV% + 1%
+640 K% = K% + 1%
+642 GOTO 615
+650 CLOSE #2%
+700 ! Close exceptions file if opened
+710 IF EXC_FILE$ <> "" THEN CLOSE #3%
+720 GOTO 900
+900 ! --- PRINT REPORT ---
+905 PRINT "RMSCNV V2.0 - DEC RMS-11 File Convert Utility"
+910 PRINT "================================================================"
+915 PRINT "Input File:         "; IN_FILE$; " ("; IN_ORG$; ")"
+920 PRINT "Output File:        "; OUT_FILE$; " ("; OUT_ORG$; ")"
+925 PRINT "Records Processed:  "; NUM_RECS%
+930 PRINT "Records Converted:  "; NUM_CNV%
+935 IF EXC_FILE$ <> "" THEN PRINT "Exceptions Log:     "; EXC_FILE$
+940 PRINT "Status:             SUCCESS"
+945 PRINT "================================================================"
+950 GOTO 999
+980 PRINT "RMSCNV: Error processing file conversion."
+985 GOTO 999
+990 PRINT "RMSCNV: Missing input or output file specification."
+999 END

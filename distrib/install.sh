@@ -15,7 +15,13 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
         if [ -x "$f" ] && [ ! -d "$f" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
-                AVAILABLE_APPS+=("$bname")
+                case "$bname" in
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp)
+                        ;;
+                    *)
+                        AVAILABLE_APPS+=("$bname")
+                        ;;
+                esac
             fi
         fi
     done
@@ -90,6 +96,9 @@ list_apps() {
                 ;;
             sort11)
                 printf "%-16s %-18s %s\n" "sort11" "System Utility" "DEC RMS file sort and SQLite-backed index utility"
+                ;;
+            rmsutils)
+                printf "%-16s %-18s %s\n" "rmsutils" "RMS Utilities" "DEC RMS-11 utilities suite (RMSDES, RMSDEF, RMSIFL, RMSCNV, RMSBCK, RMSRST, RMSDSP)"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
@@ -229,12 +238,36 @@ for app in "${VALID_APPS[@]}"; do
         cp -a "${SCRIPT_DIR}/../apps/${app}/README.md" "${PREFIX}/docs/${app}.md"
     fi
 
+    # Install companion utilities if applicable
+    COMPANIONS=()
+    if [ "${app}" = "rmsutils" ]; then
+        COMPANIONS=("rmsdes" "rmsdef" "rmsifl" "rmscnv" "rmsbck" "rmsrst" "rmsdsp")
+        for c in "${COMPANIONS[@]}"; do
+            C_SRC=""
+            if [ -f "${SCRIPT_DIR}/bin/${c}" ]; then
+                C_SRC="${SCRIPT_DIR}/bin/${c}"
+            elif [ -f "${SCRIPT_DIR}/../apps/${app}/bin/${c}" ]; then
+                C_SRC="${SCRIPT_DIR}/../apps/${app}/bin/${c}"
+            fi
+            if [ -f "${C_SRC}" ]; then
+                cp -a "${C_SRC}" "${PREFIX}/bin/${c}"
+                chmod 755 "${PREFIX}/bin/${c}"
+                if [ "${CREATE_SYMLINKS}" = true ] && [ "${PREFIX}/bin" != "${LINK_BIN}" ]; then
+                    mkdir -p "${LINK_BIN}"
+                    ln -sf "${PREFIX}/bin/${c}" "${LINK_BIN}/${c}"
+                    echo "   Symlinked: ${LINK_BIN}/${c} -> ${PREFIX}/bin/${c}"
+                fi
+            fi
+        done
+    fi
+
     # Record installation receipt
     cat << EOF > "${PREFIX}/share/dec-apps/installed/${app}.txt"
 Name=${app}
 InstallDate=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 Binary=${PREFIX}/bin/${app}
 Docs=${PREFIX}/docs/${app}.md
+Companions=${COMPANIONS[*]}
 EOF
 
     # Create global symlink
