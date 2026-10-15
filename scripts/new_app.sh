@@ -78,8 +78,6 @@ def test_run():
     assert "${APP_NAME}" in res.stdout
 EOF
 
-touch "${APP_DIR}/tests/__init__.py"
-
 # 4. README.md
 cat << EOF > "${APP_DIR}/README.md"
 # ${APP_NAME}

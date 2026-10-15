@@ -76,3 +76,12 @@ make test
 ```bash
 make clean
 ```
+
+---
+
+## Applications Catalog
+
+| Application | Category | Description | Heritage |
+| :--- | :--- | :--- | :--- |
+| [`hamurabi`](apps/hamurabi) | Simulation / Game | Ancient Sumeria city-state economic and governance simulation | Richard Merrill (1968), David Ahl (*101 BASIC Computer Games*, DEC, 1973) |
+| [`sort11`](apps/sort11) | System Utility | RMS file sort and index utility supporting sequential and SQLite-backed indexed files | Digital Equipment Corporation PDP-11 / RSTS/E / RSX-11M RMS-11 facility |
