@@ -452,7 +452,7 @@
 4305 PRINT "DEC RSTS/E V10.1-L Environment"
 4310 PRINT "Host Platform: Linux Bytecode VM"
 4312 PRINT "System Time:   "; DATE$(0%); " "; TIME$(0%)
-4314 PRINT "Compiler:      BASIC-PLUS-2 Python Frontend / C Runtime VM"
+4314 PRINT "Compiler:      DEC BASIC-PLUS-2 Native Toolchain / Bytecode VM"
 4316 PRINT "Job Subsystem: Print/Batch Services (PBS) Active"
 4318 PRINT "Default Dir:   "; DEF_DIR$
 4319 GOTO 3990

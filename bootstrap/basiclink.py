@@ -1,0 +1,172 @@
+import sys
+import json
+import struct
+import os
+import shutil
+
+def main():
+    args = sys.argv[1:]
+    if len(args) < 2:
+        print("Usage: basiclink.py [-o output] <input1.bobj> [input2.bobj ...]")
+        return
+        
+    output_file = "a.out"
+    if "-o" in args:
+        idx = args.index("-o")
+        output_file = args[idx+1]
+        args.pop(idx)
+        args.pop(idx)
+        
+    bobj_files = [arg for arg in args if arg.endswith('.bobj')]
+    odl_files = [arg for arg in args if arg.endswith('.odl')]
+    
+    # 0. Parse ODL file
+    overlay_tree = {}
+    if odl_files:
+        with open(odl_files[0], 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith(';'):
+                    continue
+                # Super simple ODL parser for the concept
+                if line.startswith('.ROOT'):
+                    overlay_tree['ROOT'] = line.split()[1]
+                elif '.FCTR' in line:
+                    parts = line.split(':')
+                    if len(parts) == 2:
+                        name = parts[0].strip()
+                        fctr = parts[1].replace('.FCTR', '').strip()
+                        overlay_tree[name] = fctr
+        print(f"Parsed ODL File: {overlay_tree}")
+
+    # 1. Load all bobj files
+    segments = []
+    for f in bobj_files:
+        with open(f, 'r') as bobj_f:
+            obj = json.load(bobj_f)
+            segments.append({
+                'module': obj['module'],
+                'bytecode': bytearray(obj['bytecode']),
+                'strings': obj.get('strings', []),
+                'relocations': obj.get('relocations', [])
+            })
+            
+    module_to_idx = {seg['module']: i for i, seg in enumerate(segments)}
+    
+    for seg in segments:
+        bytecode = seg['bytecode']
+        for rel in seg['relocations']:
+            if rel['type'] == 'CALL_OVL':
+                target_mod = rel['target']
+                if target_mod == 'SAVEDB':
+                    target_idx = 0x9998
+                elif target_mod == 'LOADDB':
+                    target_idx = 0x9999
+                elif target_mod in module_to_idx:
+                    target_idx = module_to_idx[target_mod]
+                else:
+                    print(f"Warning: unresolved module {target_mod}")
+                    target_idx = 0
+                
+                offset = rel['offset']
+                bytecode[offset] = target_idx & 0xFF
+                bytecode[offset + 1] = (target_idx >> 8) & 0xFF
+                    
+    # Map virtual addresses based on ODL
+    module_to_seg = {seg['module']: seg for seg in segments}
+    
+    def process_node(node_str, current_vaddr):
+        max_size = 0
+        if ',' in node_str:
+            alternatives = node_str.split(',')
+            for alt in alternatives:
+                size = process_node(alt.strip(), current_vaddr)
+                if size > max_size:
+                    max_size = size
+            return max_size
+        
+        if '-' in node_str:
+            parts = node_str.split('-')
+            total_size = 0
+            for part in parts:
+                size = process_node(part.strip(), current_vaddr + total_size)
+                total_size += size
+            return total_size
+            
+        if node_str in overlay_tree:
+            return process_node(overlay_tree[node_str], current_vaddr)
+        else:
+            if node_str in module_to_seg:
+                seg = module_to_seg[node_str]
+                seg['vaddr'] = current_vaddr
+                return len(seg['bytecode'])
+            else:
+                print(f"Warning: Module {node_str} found in ODL but not in bobj files.")
+                return 0
+
+    if 'ROOT' in overlay_tree:
+        process_node(overlay_tree['ROOT'], 0)
+    else:
+        vaddr = 0
+        for seg in segments:
+            seg['vaddr'] = vaddr
+            vaddr += len(seg['bytecode'])
+
+    # Pack the payload
+    # Format: 
+    # [MAGIC "RSTS"] [PAYLOAD_SIZE (4)] [NUM_SEGMENTS (2)]
+    # Segments: [NAME (16)] [SIZE (4)] [VADDR (4)] [DATA ...]
+    
+    payload = bytearray()
+    
+    # Number of segments
+    num_segments = len(segments)
+    payload.extend(struct.pack('<H', num_segments))
+    
+    segment_data_offset = 0
+    segment_data_pool = bytearray()
+    
+    for seg in segments:
+        name_bytes = seg['module'].encode('utf-8')[:15]
+        name_bytes = name_bytes.ljust(16, bytes([0]))
+        size = len(seg['bytecode'])
+        vaddr = seg.get('vaddr', 0)
+        
+        payload.extend(name_bytes)
+        payload.extend(struct.pack('<I', size))
+        payload.extend(struct.pack('<I', vaddr))
+        
+        segment_data_pool.extend(seg['bytecode'])
+        
+    payload.extend(segment_data_pool)
+    
+    total_size = len(payload)
+    
+    final_payload = bytearray(payload)
+    final_payload.extend(b'RSTS')
+    final_payload.extend(struct.pack('<I', total_size))
+    
+    # 2. Package into executable
+    candidates = [
+        "vm/build/rsts_vm",
+        os.path.join(os.path.dirname(__file__), "..", "vm", "build", "rsts_vm"),
+        os.path.join(os.path.dirname(__file__), "..", "bin", "rsts_vm"),
+        os.path.join(os.path.dirname(__file__), "rsts_vm"),
+        os.path.join(os.environ.get("DEC_BASIC_HOME", ""), "bin", "rsts_vm"),
+        shutil.which("rsts_vm") or "",
+        "/usr/local/dec-basic2/bin/rsts_vm"
+    ]
+    vm_executable = next((p for p in candidates if p and os.path.isfile(p)), None)
+    if not vm_executable:
+        print("Error: VM executable rsts_vm not found. Please build or install it first.")
+        return
+        
+    shutil.copy2(vm_executable, output_file)
+    with open(output_file, "ab") as f:
+        f.write(final_payload)
+        
+    os.chmod(output_file, 0o755)
+    print(f"Successfully linked {len(segments)} segments into {output_file}")
+
+if __name__ == '__main__':
+    main()

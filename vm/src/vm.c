@@ -184,6 +184,8 @@ int vm_run(uint16_t seg_idx) {
 
     Value stack[STACK_SIZE];
     int sp = 0;
+    size_t call_stack[256];
+    int call_sp = 0;
     
     size_t pc = 0;
     while (pc < size) {
@@ -191,8 +193,23 @@ int vm_run(uint16_t seg_idx) {
         switch (op) {
             case OP_HALT:
                 return 0;
-            case OP_RET:
-                return 0;
+            case OP_CALL: {
+                uint16_t target = bytecode[pc] | (bytecode[pc+1] << 8);
+                pc += 2;
+                if (call_sp < 256) {
+                    call_stack[call_sp++] = pc;
+                }
+                pc = target;
+                break;
+            }
+            case OP_RET: {
+                if (call_sp > 0) {
+                    pc = call_stack[--call_sp];
+                } else {
+                    return 0;
+                }
+                break;
+            }
             case OP_CALL_OVL: {
                 uint16_t target_idx = bytecode[pc] | (bytecode[pc+1] << 8);
                 pc += 2;
@@ -432,7 +449,11 @@ int vm_run(uint16_t seg_idx) {
                 int ia = (a.type == VAL_INT) ? a.v.i : (a.type == VAL_FLOAT ? (int)a.v.f : (strlen(a.v.s) > 0));
                 int ib = (b.type == VAL_INT) ? b.v.i : (b.type == VAL_FLOAT ? (int)b.v.f : (strlen(b.v.s) > 0));
                 stack[sp].type = VAL_INT;
-                stack[sp++].v.i = (ia && ib) ? 1 : 0;
+                if (a.type == VAL_INT && b.type == VAL_INT) {
+                    stack[sp++].v.i = (ia & ib);
+                } else {
+                    stack[sp++].v.i = (ia && ib) ? 1 : 0;
+                }
                 break;
             }
             case OP_OR: {
@@ -440,7 +461,11 @@ int vm_run(uint16_t seg_idx) {
                 int ia = (a.type == VAL_INT) ? a.v.i : (a.type == VAL_FLOAT ? (int)a.v.f : (strlen(a.v.s) > 0));
                 int ib = (b.type == VAL_INT) ? b.v.i : (b.type == VAL_FLOAT ? (int)b.v.f : (strlen(b.v.s) > 0));
                 stack[sp].type = VAL_INT;
-                stack[sp++].v.i = (ia || ib) ? 1 : 0;
+                if (a.type == VAL_INT && b.type == VAL_INT) {
+                    stack[sp++].v.i = (ia | ib);
+                } else {
+                    stack[sp++].v.i = (ia || ib) ? 1 : 0;
+                }
                 break;
             }
             case OP_PRINT: {

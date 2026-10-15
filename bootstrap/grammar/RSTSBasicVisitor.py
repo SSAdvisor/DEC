@@ -1,4 +1,4 @@
-# Generated from compiler/grammar/RSTSBasic.g4 by ANTLR 4.13.1
+# Generated from bootstrap/grammar/RSTSBasic.g4 by ANTLR 4.13.1
 from antlr4 import *
 if "." in __name__:
     from .RSTSBasicParser import RSTSBasicParser
@@ -66,6 +66,16 @@ class RSTSBasicVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by RSTSBasicParser#gotoStmt.
     def visitGotoStmt(self, ctx:RSTSBasicParser.GotoStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#gosubStmt.
+    def visitGosubStmt(self, ctx:RSTSBasicParser.GosubStmtContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by RSTSBasicParser#returnStmt.
+    def visitReturnStmt(self, ctx:RSTSBasicParser.ReturnStmtContext):
         return self.visitChildren(ctx)
 
 

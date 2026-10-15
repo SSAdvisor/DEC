@@ -20,6 +20,8 @@ statement
     | 'PRINT' ('#' INT (',' | ';')?)? ('USING' formatExpr=expression ';')? (printItem ((',' | ';')? printItem)* (',' | ';')?)? # printStmt
     | 'LET'? variable '=' expression                              # letStmt
     | 'GOTO' target                                               # gotoStmt
+    | 'GOSUB' target                                              # gosubStmt
+    | 'RETURN'                                                    # returnStmt
     | 'RANDOMIZE'                                                 # randomizeStmt
     | 'FOR' variable '=' fromExpr=expression 'TO' toExpr=expression ('STEP' stepExpr=expression)? # forStmt
     | 'NEXT' variable?                                            # nextStmt

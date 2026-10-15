@@ -1,4 +1,4 @@
-# Generated from compiler/grammar/RSTSBasic.g4 by ANTLR 4.13.1
+# Generated from bootstrap/grammar/RSTSBasic.g4 by ANTLR 4.13.1
 from antlr4 import *
 if "." in __name__:
     from .RSTSBasicParser import RSTSBasicParser
@@ -113,6 +113,24 @@ class RSTSBasicListener(ParseTreeListener):
 
     # Exit a parse tree produced by RSTSBasicParser#gotoStmt.
     def exitGotoStmt(self, ctx:RSTSBasicParser.GotoStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#gosubStmt.
+    def enterGosubStmt(self, ctx:RSTSBasicParser.GosubStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#gosubStmt.
+    def exitGosubStmt(self, ctx:RSTSBasicParser.GosubStmtContext):
+        pass
+
+
+    # Enter a parse tree produced by RSTSBasicParser#returnStmt.
+    def enterReturnStmt(self, ctx:RSTSBasicParser.ReturnStmtContext):
+        pass
+
+    # Exit a parse tree produced by RSTSBasicParser#returnStmt.
+    def exitReturnStmt(self, ctx:RSTSBasicParser.ReturnStmtContext):
         pass
 
 
