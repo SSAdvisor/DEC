@@ -15,4 +15,6 @@ chan*.dat
 tests/office/salesrpt
 out.bobj
 out.bin
+distrib/kit/
+.pytest_cache/
 

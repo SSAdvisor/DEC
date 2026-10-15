@@ -1,12 +1,12 @@
 {
   "project": "DEC BASIC-PLUS-2 Compiler and Linker",
-  "phase": "testing",
+  "phase": "distribution & documentation",
   "status": "ongoing",
-  "last_updated": "2026-10-13T21:40:28-04:00",
+  "last_updated": "2026-10-14T11:55:00-04:00",
   "proposed_architecture": {
-    "frontend_compiler": "Python",
-    "parser_generator": "ANTLR4",
-    "linker": "Python",
+    "frontend_compiler": "DEC BASIC-PLUS-2 (compiler/basicc.bas compiled to standalone compiler/basicc binary; bootstrap/basicc.py preserved for bootstrapping)",
+    "parser_generator": "ANTLR4 (in bootstrap/ for bootstrapping)",
+    "linker": "DEC BASIC-PLUS-2 (linker/basiclink.bas compiled to standalone linker/basiclink binary; bootstrap/basiclink.py preserved for bootstrapping)",
     "runtime_vm": "C",
     "rms_subsystem": "C",
     "indexed_file_backend": "SQLite",
@@ -16,12 +16,14 @@
   },
   "target_dialect": "BASIC-PLUS-2 (with BASIC-PLUS compatibility)",
   "test_summary": {
-    "total_tests": 47,
-    "passed_tests": 47,
+    "total_tests": 53,
+    "passed_tests": 53,
     "suites": {
       "test_address_book": "1/1 passed",
       "test_compiler": "4/4 passed",
       "test_linker": "3/3 passed",
+      "test_native_toolchain": "4/4 passed",
+      "test_distrib": "2/2 passed",
       "test_edt": "11/11 passed",
       "test_dcl": "19/19 passed",
       "test_print_service": "9/9 passed"
@@ -53,6 +55,8 @@
     "DEC RSTS/E EDT Editor V3.0 in edt/: pure DEC BASIC-PLUS-2 implementation (edt/edt.bas) featuring authentic Line Mode (* prompt: TYPE, INSERT, DELETE, REPLACE, FIND, SUBSTITUTE, RESEQ, SHOW, WRITE, EXIT, QUIT, HELP) and VT100 Change Mode (screen navigation, cursor highlight, status bar), automated build script (edt/build.sh), sample document (edt/sample.txt), complete docs (edt/README.md), and unit test suite tests/test_edt.py passing (7/7 tests, 28/28 total passed)",
     "DEC EDT Keyboard Shortcut Macros & Command Procedures: DEFINE KEY and DEFINE MACRO commands, SHOW KEY and SHOW MACRO listings, multi-command macro execution (; delimiter), startup configuration file auto-loading (EDTINI.EDT), command procedure execution (@file), Change Mode GOLD key (G / Ctrl-G) modifier and custom keypad bindings returning to screen mode, VM stdin EOF handling (OP_INPUT_S Ctrl-Z emulation), and expanded unit test suite tests/test_edt.py passing (11/11 EDT tests, 32/32 total tests passed)",
     "DEC RSTS/E DCL Rewrite in DEC BASIC-PLUS-2 (dcl/dcl.bas): Full rewrite of the DIGITAL Command Language processor in pure DEC BASIC-PLUS-2; implemented VM opcodes OP_SYS (0x84), OP_COMMAND_STR (0x85), OP_TIME_STR (0x86) and RMS file error trapping (ON ERROR GOTO for missing files); compiled with basicc.py and linked with basiclink.py into native standalone binary (dcl/dcl); verified interactive shell, one-shot command execution, command procedures (@tests/office/salesrpt.dcl, @tests/office/sales_batch.com), PBS SQLite queue integration, comprehensive test suite in tests/test_dcl.py (19/19 tests passed), build script dcl/build.sh, and complete documentation in dcl/README.md",
-    "Git Repository Review & Test Suite Consolidation: Cleaned up untracked artifacts and duplicates; updated .gitignore (.dcl/, *.IDX, *.idx, DATABASE, *.rpt, test executables); updated test_compiler.py and test_linker.py to reflect current opcode specification and VM runtime; added compiled batch procedure test in tests/test_dcl.py; achieved 100% pass rate across entire project test suite (47/47 pytest tests and 28/28 unittest tests passed); structured git history into clean commits on master."
+    "Git Repository Review & Test Suite Consolidation: Cleaned up untracked artifacts and duplicates; updated .gitignore (.dcl/, *.IDX, *.idx, DATABASE, *.rpt, test executables); updated test_compiler.py and test_linker.py to reflect current opcode specification and VM runtime; added compiled batch procedure test in tests/test_dcl.py; achieved 100% pass rate across entire project test suite (47/47 pytest tests and 28/28 unittest tests passed); structured git history into clean commits on master.",
+    "Rewrite of Compiler and Linker in DEC BASIC-PLUS-2: Preserved original Python ANTLR4 toolchain in bootstrap/ (basicc.py, basiclink.py, grammar/, requirements.txt). Implemented standalone DEC BASIC-PLUS-2 Linker in linker/basiclink.bas (multi-module linking, ODL overlay parsing, SAVEDB/LOADDB intercept, executable packaging) compiled to native ELF binary linker/basiclink. Implemented standalone DEC BASIC-PLUS-2 Compiler in compiler/basicc.bas (multi-pass parsing, DATA pre-scan, expression evaluation with operator precedence, alphanumeric/numeric label relocations, .bobj/.bin output) compiled to native ELF binary compiler/basicc. Created automated build scripts (compiler/build.sh, linker/build.sh), documentation (compiler/README.md, linker/README.md), backwards-compatibility CLI shims (compiler/basicc.py, compiler/basiclink.py), and test suite tests/test_native_toolchain.py. All 51 pytest unit and integration tests passing (100%).",
+    "Distribution System and DEC Documentation Modernization: Created distribution kit builder (distrib/build_kit.sh), standalone installer with custom prefix support (distrib/install.sh), clean uninstaller (distrib/uninstall.sh), 6-point post-install verification test suite (distrib/verify_kit.sh), KIT.INI manifest, and SHA-256 integrity checksums (distrib/MANIFEST.TXT). Built release archives DEC-BASIC-PLUS-2-V10.1-L-Linux-x86_64.tar.gz (binary release kit, 2.2MB) and DEC-BASIC-PLUS-2-V10.1-L-Source.tar.gz (source release kit, 2.1MB). Authored System Architecture & Implementation Manual (docs/ARCHITECTURE.md), in-depth scholarly analysis and suggestions for original DEC documentation (docs/DEC_DOCUMENTATION_SUGGESTIONS.md), User Guide & Quick Start (docs/USER_GUIDE.md), and repository README.md. Organized curated samples in samples/. Added automated pytest tests in tests/test_distrib.py. Complete test suite: 53 passed out of 53 tests (100%)."
   ]
 }
