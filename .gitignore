@@ -23,3 +23,7 @@ chan*.dat
 # Editor & Agent metadata
 .agy/
 .DS_Store
+
+# Distribution Kits
+distrib/kit/
+distrib/*.tar.gz

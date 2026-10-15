@@ -4,7 +4,7 @@
 APPS_DIR := apps
 SUBDIRS := $(wildcard $(APPS_DIR)/*)
 
-.PHONY: all build test clean help $(SUBDIRS)
+.PHONY: all build test clean dist install uninstall help list $(SUBDIRS)
 
 all: build
 
@@ -12,10 +12,13 @@ help:
 	@echo "DEC-APPS Master Build System"
 	@echo "----------------------------"
 	@echo "Available targets:"
-	@echo "  make build  - Compile and link all sub-projects"
-	@echo "  make test   - Run test suites for all sub-projects (via pytest)"
-	@echo "  make clean  - Clean build artifacts across all sub-projects"
-	@echo "  make list   - List all registered sub-projects"
+	@echo "  make build      - Compile and link all sub-projects"
+	@echo "  make test       - Run test suites for all sub-projects (via pytest)"
+	@echo "  make dist       - Build distribution kits (master and per-application archives)"
+	@echo "  make install    - Install all applications (or specify APP=<name>)"
+	@echo "  make uninstall  - Uninstall all applications (or specify APP=<name>)"
+	@echo "  make clean      - Clean build artifacts across all sub-projects and distrib"
+	@echo "  make list       - List all registered sub-projects"
 
 list:
 	@echo "Registered sub-projects:"
@@ -36,6 +39,15 @@ build:
 test:
 	@pytest
 
+dist: build
+	@./distrib/build_kit.sh
+
+install:
+	@./distrib/install.sh $(APP)
+
+uninstall:
+	@./distrib/uninstall.sh $(APP)
+
 clean:
 	@for dir in $(SUBDIRS); do \
 		if [ -f "$$dir/Makefile" ]; then \
@@ -43,3 +55,4 @@ clean:
 			$(MAKE) -C "$$dir" clean || true; \
 		fi \
 	done
+	@rm -rf distrib/kit distrib/*.tar.gz

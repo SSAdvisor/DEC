@@ -72,6 +72,35 @@ To execute all test suites across all sub-projects:
 make test
 ```
 
+### Building Distribution Kits
+To build release packages (both a unified master kit and individual per-application kits):
+```bash
+make dist
+```
+This produces ready-to-deploy `.tar.gz` archives in `distrib/`.
+
+### Installing Applications
+Install all applications into `${HOME}/.local/dec-apps` (with symlinks in `~/.local/bin`):
+```bash
+make install
+```
+Or install an individual application:
+```bash
+make install APP=sort11
+# or
+make install APP=hamurabi
+```
+
+### Uninstalling Applications
+Uninstall all applications:
+```bash
+make uninstall
+```
+Or uninstall an individual application:
+```bash
+make uninstall APP=sort11
+```
+
 ### Cleaning Build Artifacts
 ```bash
 make clean
