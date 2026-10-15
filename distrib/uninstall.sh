@@ -33,7 +33,10 @@ for b in basicc basiclink dcl edt rsts_vm dec-printq; do
 done
 
 # 2. Remove installation prefix
-if [ -d "${PREFIX}" ]; then
+if [ "${PREFIX}" = "${HOME}/.local" ] || [ "${PREFIX}" = "${HOME}" ] || [ "${PREFIX}" = "/usr" ] || [ "${PREFIX}" = "/usr/local" ]; then
+    echo "-> Warning: Refusing to delete system or user root directory: ${PREFIX}"
+    echo "   Only symlinks were unlinked. Application files inside ${PREFIX} must be removed manually if desired."
+elif [ -d "${PREFIX}" ]; then
     echo "-> Removing installation directory ${PREFIX}..."
     rm -rf "${PREFIX}"
     echo "   Removed ${PREFIX}"

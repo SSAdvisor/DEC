@@ -60,7 +60,8 @@ cp "${ROOT_DIR}/vm/build/rsts_vm" "${STAGING_DIR}/bin/"
 # Wrapper for dec-printq
 cat << 'EOF' > "${STAGING_DIR}/bin/dec-printq"
 #!/usr/bin/env bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REAL_BIN="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "${REAL_BIN}")"
 LIB_DIR="$(cd "${SCRIPT_DIR}/../lib/dcl" && pwd)"
 export PYTHONPATH="${LIB_DIR}:${PYTHONPATH}"
 exec python3 "${LIB_DIR}/print_service.py" "$@"

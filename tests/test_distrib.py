@@ -36,7 +36,7 @@ def test_kit_installation_and_verification():
             text=True,
         )
         assert res_inst.returncode == 0, f"Install failed: {res_inst.stderr}\n{res_inst.stdout}"
-        assert "ALL 6 VERIFICATION CHECKS PASSED SUCCESSFULLY!" in res_inst.stdout
+        assert "ALL 7 VERIFICATION CHECKS PASSED SUCCESSFULLY!" in res_inst.stdout
 
         # 3. Check installed layout
         bin_dir = os.path.join(install_prefix, "bin")

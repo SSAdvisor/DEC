@@ -98,7 +98,14 @@ if [ -d "${SCRIPT_DIR}/bootstrap" ]; then
     cp -a "${SCRIPT_DIR}/bootstrap/"* "${PREFIX}/bootstrap/"
 fi
 
-# 6. Generate basic_env.sh
+# 6. Copy libraries and subsystems
+if [ -d "${SCRIPT_DIR}/lib" ]; then
+    echo "-> Installing libraries..."
+    mkdir -p "${PREFIX}/lib"
+    cp -a "${SCRIPT_DIR}/lib/"* "${PREFIX}/lib/"
+fi
+
+# 7. Generate basic_env.sh
 echo "-> Generating environment profile snippet..."
 cat << EOF > "${PREFIX}/bin/basic_env.sh"
 # DEC RSTS/E BASIC-PLUS-2 Environment Settings
@@ -107,15 +114,19 @@ export PATH="\${DEC_BASIC_HOME}/bin:\${PATH}"
 EOF
 chmod 644 "${PREFIX}/bin/basic_env.sh"
 
-# 7. Create symlinks in global bin if enabled
+# 8. Create symlinks in global bin if enabled
 if [ "${CREATE_SYMLINKS}" = true ]; then
-    echo "-> Creating symlinks in ${LINK_BIN}..."
-    mkdir -p "${LINK_BIN}"
-    for b in basicc basiclink dcl edt rsts_vm dec-printq; do
-        if [ -x "${PREFIX}/bin/${b}" ]; then
-            ln -sf "${PREFIX}/bin/${b}" "${LINK_BIN}/${b}"
-        fi
-    done
+    if [ "${PREFIX}/bin" = "${LINK_BIN}" ]; then
+        echo "-> Binaries are directly installed in ${LINK_BIN}; skipping symlinks."
+    else
+        echo "-> Creating symlinks in ${LINK_BIN}..."
+        mkdir -p "${LINK_BIN}"
+        for b in basicc basiclink dcl edt rsts_vm dec-printq; do
+            if [ -x "${PREFIX}/bin/${b}" ]; then
+                ln -sf "${PREFIX}/bin/${b}" "${LINK_BIN}/${b}"
+            fi
+        done
+    fi
 fi
 
 # 8. Run verification if requested

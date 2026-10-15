@@ -32,7 +32,7 @@ trap 'rm -rf "${TMP_DIR}"' EXIT
 
 # Check 1: Check required executables exist
 echo -n "Checking binary presence... "
-for b in basicc basiclink dcl edt rsts_vm; do
+for b in basicc basiclink dcl edt rsts_vm dec-printq; do
     if [ ! -x "${BIN_DIR}/${b}" ]; then
         echo "FAILED"
         echo "Error: Required binary ${BIN_DIR}/${b} is missing or not executable."
@@ -102,7 +102,17 @@ if [[ "${EDT_OUT}" != *"EDT"* ]]; then
 fi
 echo "PASSED"
 
+# Check 7: DEC Print Queue Service (dec-printq)
+echo -n "Testing DEC Print Queue Service (dec-printq)... "
+PRINTQ_OUT="$("${BIN_DIR}/dec-printq" status 2>&1)"
+if [[ "${PRINTQ_OUT}" != *"PBS Symbiont"* ]]; then
+    echo "FAILED"
+    echo "Unexpected dec-printq output: ${PRINTQ_OUT}"
+    exit 1
+fi
+echo "PASSED"
+
 echo ""
 echo "================================================================================"
-echo "    ALL 6 VERIFICATION CHECKS PASSED SUCCESSFULLY!"
+echo "    ALL 7 VERIFICATION CHECKS PASSED SUCCESSFULLY!"
 echo "================================================================================"
