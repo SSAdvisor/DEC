@@ -98,6 +98,9 @@ cp "${ROOT_DIR}/compiler/README.md" "${STAGING_DIR}/docs/compiler.md"
 cp "${ROOT_DIR}/linker/README.md" "${STAGING_DIR}/docs/linker.md"
 cp "${ROOT_DIR}/dcl/README.md" "${STAGING_DIR}/docs/dcl.md"
 cp "${ROOT_DIR}/edt/README.md" "${STAGING_DIR}/docs/edt.md"
+if [ -f "${ROOT_DIR}/LICENSE" ]; then
+    cp "${ROOT_DIR}/LICENSE" "${STAGING_DIR}/"
+fi
 
 # Top-level README for the kit
 cat << EOF > "${STAGING_DIR}/README.md"

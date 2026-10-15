@@ -84,9 +84,12 @@ echo "-> Installing executables..."
 cp -a "${SCRIPT_DIR}/bin/"* "${PREFIX}/bin/"
 chmod 755 "${PREFIX}/bin/"*
 
-# 3. Copy documentation
+# 3. Copy documentation and license
 echo "-> Installing documentation..."
 cp -a "${SCRIPT_DIR}/docs/"* "${PREFIX}/docs/"
+if [ -f "${SCRIPT_DIR}/LICENSE" ]; then
+    cp -a "${SCRIPT_DIR}/LICENSE" "${PREFIX}/"
+fi
 
 # 4. Copy samples
 echo "-> Installing sample applications..."
