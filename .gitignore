@@ -1,0 +1,25 @@
+# Python and test caches
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+
+# Compiler and Linker intermediate and binary artifacts
+*.bobj
+*.bin
+build/
+bin/
+
+# RMS and runtime database files
+*.db
+*.IDX
+*.idx
+DATABASE
+chan*.dat
+*.rpt
+*.RPT
+.dcl/
+
+# Editor & Agent metadata
+.agy/
+.DS_Store
