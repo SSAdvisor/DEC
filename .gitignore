@@ -14,6 +14,8 @@ bin/
 *.db
 *.IDX
 *.idx
+*.sch
+*.dat
 DATABASE
 chan*.dat
 *.rpt

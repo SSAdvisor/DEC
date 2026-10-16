@@ -14,6 +14,7 @@ HAMURABI_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-hamurabi-V1.0-L-Linux-x86
 SORT11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-sort11-V1.0-L-Linux-x86_64.tar.gz")
 RMSUTILS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-rmsutils-V1.0-L-Linux-x86_64.tar.gz")
 ADE_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-ade-V1.0-L-Linux-x86_64.tar.gz")
+DATATRIEVE11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-datatrieve11-V1.0-L-Linux-x86_64.tar.gz")
 SRC_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Source.tar.gz")
 
 def test_distrib_build_kit():
@@ -26,6 +27,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(SORT11_ARCHIVE), f"SORT-11 archive {SORT11_ARCHIVE} not created"
     assert os.path.isfile(RMSUTILS_ARCHIVE), f"RMSUTILS archive {RMSUTILS_ARCHIVE} not created"
     assert os.path.isfile(ADE_ARCHIVE), f"ADE archive {ADE_ARCHIVE} not created"
+    assert os.path.isfile(DATATRIEVE11_ARCHIVE), f"DATATRIEVE-11 archive {DATATRIEVE11_ARCHIVE} not created"
     assert os.path.isfile(SRC_ARCHIVE), f"Source archive {SRC_ARCHIVE} not created"
 
     # Verify staging contents of master kit
@@ -43,6 +45,9 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsrst"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "rmsdsp"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "ade"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "datatrieve11"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "dtr"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "dtr11"))
 
 def test_install_individual_app(tmp_path):
     """Verify that an individual application can be installed independently."""
@@ -198,4 +203,39 @@ def test_installer_list_apps():
     assert "sort11" in res.stdout
     assert "rmsutils" in res.stdout
     assert "ade" in res.stdout
+    assert "datatrieve11" in res.stdout
+
+def test_install_datatrieve11_individual(tmp_path):
+    """Verify that datatrieve11 can be installed and uninstalled independently with symlinks."""
+    prefix = tmp_path / "dtr_install"
+    res = subprocess.run(
+        [INSTALL_SH, f"--prefix={prefix}", "--no-symlinks", "datatrieve11"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res.returncode == 0, f"DATATRIEVE-11 install failed:\n{res.stdout}\n{res.stderr}"
+    assert "Installing application: datatrieve11" in res.stdout
+    assert "Verification Summary: 1 Passed, 0 Failed" in res.stdout
+
+    dtr_bin = prefix / "bin" / "datatrieve11"
+    assert dtr_bin.is_file()
+    assert os.access(dtr_bin, os.X_OK)
+
+    # Verify execution via binary
+    run_res = subprocess.run([str(dtr_bin), "HELP"], capture_output=True, text=True, timeout=5)
+    assert "DATATRIEVE-11 Query & Data Management Commands" in run_res.stdout
+
+    assert (prefix / "docs" / "datatrieve11.md").is_file()
+
+    # Uninstall datatrieve11
+    res_un = subprocess.run(
+        [UNINSTALL_SH, f"--prefix={prefix}", "datatrieve11"],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+    assert res_un.returncode == 0
+    assert not dtr_bin.exists()
+    assert not (prefix / "docs" / "datatrieve11.md").exists()
 

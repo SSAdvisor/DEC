@@ -116,4 +116,5 @@ make clean
 | [`sort11`](apps/sort11) | System Utility | RMS file sort and index utility supporting sequential and SQLite-backed indexed files | Digital Equipment Corporation PDP-11 / RSTS/E / RSX-11M RMS-11 facility |
 | [`rmsutils`](apps/rmsutils) | System Utilities | RMS-11 file design, definition, load, conversion, backup, restore, and display suite (`RMSDES`, `RMSDEF`, `RMSIFL`, `RMSCNV`, `RMSBCK`, `RMSRST`, `RMSDSP`) | Digital Equipment Corporation PDP-11 / RSTS/E / RSX-11M / VAX/VMS RMS-11 facility |
 | [`ade`](apps/ade) | 4GL / Database | Application Development Environment: interactive 4GL departmental data manager, reporting, and graphing | Digital Equipment Corporation PDP-11 / RSTS/E & VAX/VMS ADE system (1979-1985) |
+| [`datatrieve11`](apps/datatrieve11) | 4GL Query & Report | DATATRIEVE-11: interactive query language, report writer, and plotting system with classic DEC YACHTS domain | Digital Equipment Corporation PDP-11 (RSX-11M, RSTS/E) & VAX/VMS (1979-1990) |
 

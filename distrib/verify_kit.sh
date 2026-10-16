@@ -20,6 +20,8 @@ elif command -v sort11 >/dev/null 2>&1; then
     BIN_DIR="$(dirname "$(command -v sort11)")"
 elif command -v ade >/dev/null 2>&1; then
     BIN_DIR="$(dirname "$(command -v ade)")"
+elif command -v datatrieve11 >/dev/null 2>&1; then
+    BIN_DIR="$(dirname "$(command -v datatrieve11)")"
 else
     BIN_DIR="/usr/local/dec-apps/bin"
 fi
@@ -230,6 +232,17 @@ for APP in "${TARGET_APPS[@]}"; do
             OUT="$("${EXE}" "HELP" 2>&1 || true)"
             if echo "${OUT}" | grep -q "ADE V3.0"; then
                 echo "PASSED (ADE 4GL environment & help verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        datatrieve11|dtr|dtr11)
+            OUT="$(printf "READY YACHTS\nPRINT FIRST 1\nEXIT\n" | "${EXE}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "readied"; then
+                echo "PASSED (DATATRIEVE-11 domain & query verified)"
                 PASSED_COUNT=$((PASSED_COUNT + 1))
             else
                 echo "FAILED"

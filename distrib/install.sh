@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -102,6 +102,9 @@ list_apps() {
                 ;;
             ade)
                 printf "%-16s %-18s %s\n" "ade" "4GL / Database" "Application Development Environment & 4GL data manager"
+                ;;
+            datatrieve11)
+                printf "%-16s %-18s %s\n" "datatrieve11" "4GL Query & Report" "DEC DATATRIEVE-11 interactive query, report, and data management"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
