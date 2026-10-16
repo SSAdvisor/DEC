@@ -15,6 +15,7 @@ SORT11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-sort11-V1.0-L-Linux-x86_64.
 RMSUTILS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-rmsutils-V1.0-L-Linux-x86_64.tar.gz")
 ADE_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-ade-V1.0-L-Linux-x86_64.tar.gz")
 DATATRIEVE11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-datatrieve11-V1.0-L-Linux-x86_64.tar.gz")
+DECGRAPH_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decgraph-V1.0-L-Linux-x86_64.tar.gz")
 SRC_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Source.tar.gz")
 
 def test_distrib_build_kit():
@@ -28,6 +29,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(RMSUTILS_ARCHIVE), f"RMSUTILS archive {RMSUTILS_ARCHIVE} not created"
     assert os.path.isfile(ADE_ARCHIVE), f"ADE archive {ADE_ARCHIVE} not created"
     assert os.path.isfile(DATATRIEVE11_ARCHIVE), f"DATATRIEVE-11 archive {DATATRIEVE11_ARCHIVE} not created"
+    assert os.path.isfile(DECGRAPH_ARCHIVE), f"DECgraph archive {DECGRAPH_ARCHIVE} not created"
     assert os.path.isfile(SRC_ARCHIVE), f"Source archive {SRC_ARCHIVE} not created"
 
     # Verify staging contents of master kit
@@ -48,6 +50,9 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "datatrieve11"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "dtr"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "dtr11"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "decgraph"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "graph"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "decg"))
 
 def test_install_individual_app(tmp_path):
     """Verify that an individual application can be installed independently."""
@@ -204,6 +209,7 @@ def test_installer_list_apps():
     assert "rmsutils" in res.stdout
     assert "ade" in res.stdout
     assert "datatrieve11" in res.stdout
+    assert "decgraph" in res.stdout
 
 def test_install_datatrieve11_individual(tmp_path):
     """Verify that datatrieve11 can be installed and uninstalled independently with symlinks."""
@@ -238,4 +244,39 @@ def test_install_datatrieve11_individual(tmp_path):
     assert res_un.returncode == 0
     assert not dtr_bin.exists()
     assert not (prefix / "docs" / "datatrieve11.md").exists()
+
+def test_install_decgraph_individual(tmp_path):
+    """Verify that decgraph can be installed and uninstalled independently with symlinks."""
+    prefix = tmp_path / "decgraph_install"
+    res = subprocess.run(
+        [INSTALL_SH, f"--prefix={prefix}", "--no-symlinks", "decgraph"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res.returncode == 0, f"DECgraph install failed:\n{res.stdout}\n{res.stderr}"
+    assert "Installing application: decgraph" in res.stdout
+    assert "Verification Summary: 1 Passed, 0 Failed" in res.stdout
+
+    graph_bin = prefix / "bin" / "decgraph"
+    assert graph_bin.is_file()
+    assert os.access(graph_bin, os.X_OK)
+
+    # Verify execution via binary
+    run_res = subprocess.run([str(graph_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "DECgraph Graphics & Charting Commands" in run_res.stdout
+
+    assert (prefix / "docs" / "decgraph.md").is_file()
+
+    # Uninstall decgraph
+    res_un = subprocess.run(
+        [UNINSTALL_SH, f"--prefix={prefix}", "decgraph"],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+    assert res_un.returncode == 0
+    assert not graph_bin.exists()
+    assert not (prefix / "docs" / "decgraph.md").exists()
+
 

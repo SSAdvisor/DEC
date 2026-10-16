@@ -130,6 +130,10 @@ for app in "${SELECTED_APPS[@]}"; do
         fi
     elif [ "$app" = "rmsutils" ]; then
         COMPANIONS=("rmsdes" "rmsdef" "rmsifl" "rmscnv" "rmsbck" "rmsrst" "rmsdsp")
+    elif [ "$app" = "datatrieve11" ]; then
+        COMPANIONS=("dtr" "dtr11")
+    elif [ "$app" = "decgraph" ]; then
+        COMPANIONS=("graph" "decg")
     fi
 
     # 1. Remove symlink
@@ -153,14 +157,14 @@ for app in "${SELECTED_APPS[@]}"; do
     done
 
     # 3. Remove binary
-    if [ -f "${PREFIX}/bin/${app}" ]; then
+    if [ -f "${PREFIX}/bin/${app}" ] || [ -L "${PREFIX}/bin/${app}" ]; then
         rm -f "${PREFIX}/bin/${app}"
         echo "   Removed binary ${PREFIX}/bin/${app}"
     fi
 
     # 4. Remove companion binaries
     for c in "${COMPANIONS[@]}"; do
-        if [ -f "${PREFIX}/bin/${c}" ]; then
+        if [ -f "${PREFIX}/bin/${c}" ] || [ -L "${PREFIX}/bin/${c}" ]; then
             rm -f "${PREFIX}/bin/${c}"
             echo "   Removed companion binary ${PREFIX}/bin/${c}"
         fi

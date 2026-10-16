@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -105,6 +105,9 @@ list_apps() {
                 ;;
             datatrieve11)
                 printf "%-16s %-18s %s\n" "datatrieve11" "4GL Query & Report" "DEC DATATRIEVE-11 interactive query, report, and data management"
+                ;;
+            decgraph)
+                printf "%-16s %-18s %s\n" "decgraph" "Business Graphics" "DECgraph presentation graphics and scientific charting system"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
@@ -248,6 +251,12 @@ for app in "${VALID_APPS[@]}"; do
     COMPANIONS=()
     if [ "${app}" = "rmsutils" ]; then
         COMPANIONS=("rmsdes" "rmsdef" "rmsifl" "rmscnv" "rmsbck" "rmsrst" "rmsdsp")
+    elif [ "${app}" = "datatrieve11" ]; then
+        COMPANIONS=("dtr" "dtr11")
+    elif [ "${app}" = "decgraph" ]; then
+        COMPANIONS=("graph" "decg")
+    fi
+    if [ ${#COMPANIONS[@]} -gt 0 ]; then
         for c in "${COMPANIONS[@]}"; do
             C_SRC=""
             if [ -f "${SCRIPT_DIR}/bin/${c}" ]; then
