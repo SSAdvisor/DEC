@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -108,6 +108,9 @@ list_apps() {
                 ;;
             decgraph)
                 printf "%-16s %-18s %s\n" "decgraph" "Business Graphics" "DECgraph presentation graphics and scientific charting system"
+                ;;
+            decmail)
+                printf "%-16s %-18s %s\n" "decmail" "Office / Messaging" "DECmail electronic messaging and mailbox management system"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
@@ -255,6 +258,8 @@ for app in "${VALID_APPS[@]}"; do
         COMPANIONS=("dtr" "dtr11")
     elif [ "${app}" = "decgraph" ]; then
         COMPANIONS=("graph" "decg")
+    elif [ "${app}" = "decmail" ]; then
+        COMPANIONS=("mail" "decmail11")
     fi
     if [ ${#COMPANIONS[@]} -gt 0 ]; then
         for c in "${COMPANIONS[@]}"; do
