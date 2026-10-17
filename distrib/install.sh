@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -111,6 +111,9 @@ list_apps() {
                 ;;
             decmail)
                 printf "%-16s %-18s %s\n" "decmail" "Office / Messaging" "DECmail electronic messaging and mailbox management system"
+                ;;
+            decword)
+                printf "%-16s %-18s %s\n" "decword" "Word & Data Proc" "DECword/DP word processing, WPS ruler formatting, and mail-merge"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
@@ -260,6 +263,8 @@ for app in "${VALID_APPS[@]}"; do
         COMPANIONS=("graph" "decg")
     elif [ "${app}" = "decmail" ]; then
         COMPANIONS=("mail" "decmail11")
+    elif [ "${app}" = "decword" ]; then
+        COMPANIONS=("decworddp" "wps")
     fi
     if [ ${#COMPANIONS[@]} -gt 0 ]; then
         for c in "${COMPANIONS[@]}"; do

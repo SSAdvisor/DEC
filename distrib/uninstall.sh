@@ -136,6 +136,8 @@ for app in "${SELECTED_APPS[@]}"; do
         COMPANIONS=("graph" "decg")
     elif [ "$app" = "decmail" ]; then
         COMPANIONS=("mail" "decmail11")
+    elif [ "$app" = "decword" ]; then
+        COMPANIONS=("decworddp" "wps")
     fi
 
     # 1. Remove symlink
