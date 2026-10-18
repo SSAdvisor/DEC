@@ -19,6 +19,7 @@ DECGRAPH_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decgraph-V1.0-L-Linux-x86
 DECMAIL_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decmail-V1.0-L-Linux-x86_64.tar.gz")
 DECWORD_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decword-V1.0-L-Linux-x86_64.tar.gz")
 DIBS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-dibs-V1.0-L-Linux-x86_64.tar.gz")
+FMS11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-fms11-V1.0-L-Linux-x86_64.tar.gz")
 SRC_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Source.tar.gz")
 
 def test_distrib_build_kit():
@@ -36,6 +37,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(DECMAIL_ARCHIVE), f"DECmail archive {DECMAIL_ARCHIVE} not created"
     assert os.path.isfile(DECWORD_ARCHIVE), f"DECword archive {DECWORD_ARCHIVE} not created"
     assert os.path.isfile(DIBS_ARCHIVE), f"DIBS archive {DIBS_ARCHIVE} not created"
+    assert os.path.isfile(FMS11_ARCHIVE), f"FMS-11 archive {FMS11_ARCHIVE} not created"
     assert os.path.isfile(SRC_ARCHIVE), f"Source archive {SRC_ARCHIVE} not created"
 
     # Verify staging contents of master kit
@@ -68,6 +70,10 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "dibs"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "dibs11"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "cts500"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "fms11"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "fms"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "fed"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "fdv"))
 
 def test_install_individual_app(tmp_path):
     """Verify that an individual application can be installed independently."""
@@ -228,6 +234,7 @@ def test_installer_list_apps():
     assert "decmail" in res.stdout
     assert "decword" in res.stdout
     assert "dibs" in res.stdout
+    assert "fms11" in res.stdout
 
 def test_install_datatrieve11_individual(tmp_path):
     """Verify that datatrieve11 can be installed and uninstalled independently with symlinks."""
@@ -402,6 +409,44 @@ def test_install_dibs_individual(tmp_path):
     assert res_un.returncode == 0
     assert not dibs_bin.exists()
     assert not (prefix / "docs" / "dibs.md").exists()
+
+def test_install_fms11_individual(tmp_path):
+    """Verify that fms11 can be installed and uninstalled independently with symlinks."""
+    prefix = tmp_path / "fms11_install"
+    res = subprocess.run(
+        [INSTALL_SH, f"--prefix={prefix}", "--no-symlinks", "fms11"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res.returncode == 0, f"FMS-11 install failed:\n{res.stdout}\n{res.stderr}"
+    assert "Installing application: fms11" in res.stdout
+    assert "Verification Summary: 1 Passed, 0 Failed" in res.stdout
+
+    fms_bin = prefix / "bin" / "fms11"
+    assert fms_bin.is_file()
+    assert os.access(fms_bin, os.X_OK)
+    assert (prefix / "bin" / "fms").exists()
+    assert (prefix / "bin" / "fed").exists()
+    assert (prefix / "bin" / "fdv").exists()
+
+    # Verify execution via binary
+    run_res = subprocess.run([str(fms_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "FMS-11 Forms Management System Commands" in run_res.stdout
+
+    assert (prefix / "docs" / "fms11.md").is_file()
+
+    # Uninstall fms11
+    res_un = subprocess.run(
+        [UNINSTALL_SH, f"--prefix={prefix}", "fms11"],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+    assert res_un.returncode == 0
+    assert not fms_bin.exists()
+    assert not (prefix / "docs" / "fms11.md").exists()
+
 
 
 
