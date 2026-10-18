@@ -120,6 +120,8 @@ make clean
 | [`decgraph`](apps/decgraph) | Business Graphics | DECgraph: business and scientific graphics presentation system supporting BAR, VBAR, LINE, PIE, and SCATTER charts | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M) & VAX/VMS (1981-1988) |
 | [`decmail`](apps/decmail) | Office / Messaging | DECmail: electronic messaging and mailbox management system supporting folders, reading, sending, replying, and archiving | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M) & VAX/VMS (1981-1989) |
 | [`decword`](apps/decword) | Word & Data Processing | DECword/DP: integrated word and data processing system supporting document libraries, WPS rulers, formatting, and mail-merge | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M) & VAX/VMS (1980-1988) |
+| [`dibs`](apps/dibs) | Business / Accounting | DIBS-11: DEC Integrated Business System supporting General Ledger, Trial Balance, P&L, Balance Sheet, AR, AP, and Inventory | Digital Equipment Corporation PDP-11 (CTS-300, CTS-500, RSTS/E) (1976-1985) |
+
 
 
 

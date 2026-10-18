@@ -18,6 +18,7 @@ DATATRIEVE11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-datatrieve11-V1.0-L-L
 DECGRAPH_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decgraph-V1.0-L-Linux-x86_64.tar.gz")
 DECMAIL_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decmail-V1.0-L-Linux-x86_64.tar.gz")
 DECWORD_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decword-V1.0-L-Linux-x86_64.tar.gz")
+DIBS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-dibs-V1.0-L-Linux-x86_64.tar.gz")
 SRC_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Source.tar.gz")
 
 def test_distrib_build_kit():
@@ -34,6 +35,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(DECGRAPH_ARCHIVE), f"DECgraph archive {DECGRAPH_ARCHIVE} not created"
     assert os.path.isfile(DECMAIL_ARCHIVE), f"DECmail archive {DECMAIL_ARCHIVE} not created"
     assert os.path.isfile(DECWORD_ARCHIVE), f"DECword archive {DECWORD_ARCHIVE} not created"
+    assert os.path.isfile(DIBS_ARCHIVE), f"DIBS archive {DIBS_ARCHIVE} not created"
     assert os.path.isfile(SRC_ARCHIVE), f"Source archive {SRC_ARCHIVE} not created"
 
     # Verify staging contents of master kit
@@ -63,6 +65,9 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "decword"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "decworddp"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "wps"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "dibs"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "dibs11"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "cts500"))
 
 def test_install_individual_app(tmp_path):
     """Verify that an individual application can be installed independently."""
@@ -222,6 +227,7 @@ def test_installer_list_apps():
     assert "decgraph" in res.stdout
     assert "decmail" in res.stdout
     assert "decword" in res.stdout
+    assert "dibs" in res.stdout
 
 def test_install_datatrieve11_individual(tmp_path):
     """Verify that datatrieve11 can be installed and uninstalled independently with symlinks."""
@@ -360,6 +366,43 @@ def test_install_decword_individual(tmp_path):
     assert res_un.returncode == 0
     assert not word_bin.exists()
     assert not (prefix / "docs" / "decword.md").exists()
+
+def test_install_dibs_individual(tmp_path):
+    """Verify that dibs can be installed and uninstalled independently with symlinks."""
+    prefix = tmp_path / "dibs_install"
+    res = subprocess.run(
+        [INSTALL_SH, f"--prefix={prefix}", "--no-symlinks", "dibs"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res.returncode == 0, f"DIBS install failed:\n{res.stdout}\n{res.stderr}"
+    assert "Installing application: dibs" in res.stdout
+    assert "Verification Summary: 1 Passed, 0 Failed" in res.stdout
+
+    dibs_bin = prefix / "bin" / "dibs"
+    assert dibs_bin.is_file()
+    assert os.access(dibs_bin, os.X_OK)
+    assert (prefix / "bin" / "dibs11").exists()
+    assert (prefix / "bin" / "cts500").exists()
+
+    # Verify execution via binary
+    run_res = subprocess.run([str(dibs_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "DIBS-11 Integrated Business System Commands" in run_res.stdout
+
+    assert (prefix / "docs" / "dibs.md").is_file()
+
+    # Uninstall dibs
+    res_un = subprocess.run(
+        [UNINSTALL_SH, f"--prefix={prefix}", "dibs"],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+    assert res_un.returncode == 0
+    assert not dibs_bin.exists()
+    assert not (prefix / "docs" / "dibs.md").exists()
+
 
 
 
