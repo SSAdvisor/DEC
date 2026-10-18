@@ -144,6 +144,8 @@ for app in "${SELECTED_APPS[@]}"; do
         COMPANIONS=("fms" "fed" "fdv")
     elif [ "$app" = "menu11" ]; then
         COMPANIONS=("menu" "mcf")
+    elif [ "$app" = "indent" ]; then
+        COMPANIONS=("bp2fmt" "pretty")
     fi
 
     # 1. Remove symlink

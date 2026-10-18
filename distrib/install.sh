@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|dibs11|cts500|fms|fed|fdv|menu|mcf)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|dibs11|cts500|fms|fed|fdv|menu|mcf|bp2fmt|pretty)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -123,6 +123,9 @@ list_apps() {
                 ;;
             menu11)
                 printf "%-16s %-18s %s\n" "menu11" "Menu Control" "MENU-11 DEC Menu Control & Application Dispatch Facility (MCF)"
+                ;;
+            indent)
+                printf "%-16s %-18s %s\n" "indent" "Dev Utility" "INDENT DEC BASIC-PLUS-2 source code formatter & structure analyzer"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
@@ -280,6 +283,8 @@ for app in "${VALID_APPS[@]}"; do
         COMPANIONS=("fms" "fed" "fdv")
     elif [ "${app}" = "menu11" ]; then
         COMPANIONS=("menu" "mcf")
+    elif [ "${app}" = "indent" ]; then
+        COMPANIONS=("bp2fmt" "pretty")
     fi
     if [ ${#COMPANIONS[@]} -gt 0 ]; then
         for c in "${COMPANIONS[@]}"; do

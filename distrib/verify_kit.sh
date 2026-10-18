@@ -316,6 +316,17 @@ for APP in "${TARGET_APPS[@]}"; do
                 FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
             ;;
+        indent|bp2fmt|pretty)
+            OUT="$(printf "SAMPLE\nCHECK\nEXIT\n" | "${EXE}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Audit PASSED: All BASIC-PLUS-2 block structures are balanced"; then
+                echo "PASSED (INDENT BASIC-PLUS-2 formatter & analyzer verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
         *)
             # Generic sanity check
             OUT="$("${EXE}" 2>&1 || true)"

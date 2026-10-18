@@ -21,6 +21,7 @@ DECWORD_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decword-V1.0-L-Linux-x86_6
 DIBS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-dibs-V1.0-L-Linux-x86_64.tar.gz")
 FMS11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-fms11-V1.0-L-Linux-x86_64.tar.gz")
 MENU11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-menu11-V1.0-L-Linux-x86_64.tar.gz")
+INDENT_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-indent-V1.0-L-Linux-x86_64.tar.gz")
 SRC_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Source.tar.gz")
 
 def test_distrib_build_kit():
@@ -40,6 +41,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(DIBS_ARCHIVE), f"DIBS archive {DIBS_ARCHIVE} not created"
     assert os.path.isfile(FMS11_ARCHIVE), f"FMS-11 archive {FMS11_ARCHIVE} not created"
     assert os.path.isfile(MENU11_ARCHIVE), f"MENU-11 archive {MENU11_ARCHIVE} not created"
+    assert os.path.isfile(INDENT_ARCHIVE), f"INDENT archive {INDENT_ARCHIVE} not created"
     assert os.path.isfile(SRC_ARCHIVE), f"Source archive {SRC_ARCHIVE} not created"
 
     # Verify staging contents of master kit
@@ -79,6 +81,9 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "menu11"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "menu"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "mcf"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "indent"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "bp2fmt"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "pretty"))
 
 def test_install_individual_app(tmp_path):
     """Verify that an individual application can be installed independently."""
@@ -241,6 +246,7 @@ def test_installer_list_apps():
     assert "dibs" in res.stdout
     assert "fms11" in res.stdout
     assert "menu11" in res.stdout
+    assert "indent" in res.stdout
 
 def test_install_datatrieve11_individual(tmp_path):
     """Verify that datatrieve11 can be installed and uninstalled independently with symlinks."""
@@ -488,6 +494,43 @@ def test_install_menu11_individual(tmp_path):
     assert res_un.returncode == 0
     assert not menu_bin.exists()
     assert not (prefix / "docs" / "menu11.md").exists()
+
+def test_install_indent_individual(tmp_path):
+    """Verify that indent can be installed and uninstalled independently with symlinks."""
+    prefix = tmp_path / "indent_install"
+    res = subprocess.run(
+        [INSTALL_SH, f"--prefix={prefix}", "--no-symlinks", "indent"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res.returncode == 0, f"INDENT install failed:\n{res.stdout}\n{res.stderr}"
+    assert "Installing application: indent" in res.stdout
+    assert "Verification Summary: 1 Passed, 0 Failed" in res.stdout
+
+    indent_bin = prefix / "bin" / "indent"
+    assert indent_bin.is_file()
+    assert os.access(indent_bin, os.X_OK)
+    assert (prefix / "bin" / "bp2fmt").exists()
+    assert (prefix / "bin" / "pretty").exists()
+
+    # Verify execution via binary
+    run_res = subprocess.run([str(indent_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "INDENT BASIC-PLUS-2 Source Formatter & Analyzer Commands" in run_res.stdout
+
+    assert (prefix / "docs" / "indent.md").is_file()
+
+    # Uninstall indent
+    res_un = subprocess.run(
+        [UNINSTALL_SH, f"--prefix={prefix}", "indent"],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+    assert res_un.returncode == 0
+    assert not indent_bin.exists()
+    assert not (prefix / "docs" / "indent.md").exists()
+
 
 
 

@@ -1,0 +1,265 @@
+10 MAP (REC_BUF) STRING MAP_LINE$ = 255% \ DIM SRC_LINE$(60%)
+20 NUM_LINES% = 0% \ IND_STEP% = 4% \ BASE_MARG% = 2% \ CASE_MODE$ = "UPPER" \ SRC_FILE$ = "PROGRAM.BAS"
+30 BLANKS$ = "                                                                                " \ LBRK$ = "[" \ RBRK$ = "]" \ LP$ = "(" \ RP$ = ")"
+40 SEP$    = "--------------------------------------------------------------------------------"
+50 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ CMD_LINE$ = COMMAND$
+60 IF CMD_LINE$ = "" THEN GOTO 80
+70 IS_BATCH% = 1% \ SC_REM$ = CMD_LINE$ \ GOTO 180
+80 PRINT EQU$ \ PRINT "    INDENT V2.0 - DEC BASIC-PLUS-2 Source Formatter & Structure Analyzer" \ PRINT "    Digital Equipment Corporation (DEC) PDP-11 / RSTS/E / RSX-11M / VAX" \ PRINT EQU$
+90 PRINT "Type HELP for commands, or EXIT to quit." \ PRINT ""
+100 PRINT "INDENT> "; \ LINE INPUT RAW_INPUT$
+110 IF LEN(RAW_INPUT$) = 0% THEN GOTO 3400
+120 IF ASCII(LEFT$(RAW_INPUT$, 1%)) = 26% THEN GOTO 3400
+130 IF ASCII(LEFT$(RAW_INPUT$, 1%)) = 0% THEN GOTO 3400
+140 T_IN$ = RAW_INPUT$ \ GOSUB 500
+150 IF T_OUT$ = "" THEN GOTO 100
+160 SC_REM$ = T_OUT$
+180 IF SC_REM$ = "" THEN GOTO 240
+190 SC_P% = INSTR(1%, SC_REM$, ";")
+200 IF SC_P% = 0% THEN GOTO 220
+210 RAW_CMD$ = LEFT$(SC_REM$, SC_P% - 1%) \ SC_REM$ = MID$(SC_REM$, SC_P% + 1%, LEN(SC_REM$) - SC_P%) \ GOTO 230
+220 RAW_CMD$ = SC_REM$ \ SC_REM$ = ""
+230 GOSUB 260 \ GOTO 180
+240 IF IS_BATCH% = 1% THEN GOTO 3400
+250 GOTO 100
+260 T_IN$ = RAW_CMD$ \ GOSUB 500 \ WORK_CMD$ = T_OUT$
+270 IF WORK_CMD$ = "" THEN GOTO 495
+280 SP% = INSTR(1%, WORK_CMD$, " ")
+290 IF SP% = 0% THEN GOTO 310
+300 VERB$ = LEFT$(WORK_CMD$, SP% - 1%) \ ARGS$ = MID$(WORK_CMD$, SP% + 1%, LEN(WORK_CMD$) - SP%) \ GOTO 320
+310 VERB$ = WORK_CMD$ \ ARGS$ = ""
+320 U_IN$ = VERB$ \ GOSUB 580 \ VERB$ = U_OUT$ \ T_IN$ = ARGS$ \ GOSUB 500 \ ARGS$ = T_OUT$
+330 IF VERB$ = "EXIT" OR VERB$ = "QUIT" OR VERB$ = "BYE" THEN GOTO 3400
+340 IF VERB$ = "HELP" OR VERB$ = "?" THEN GOTO 3220
+350 IF VERB$ = "SAMPLE" OR VERB$ = "DEMO" THEN GOTO 800
+360 IF VERB$ = "RAW" OR VERB$ = "LIST" OR VERB$ = "SOURCE" THEN GOTO 1020
+370 IF VERB$ = "ADDLINE" OR VERB$ = "ADD" THEN GOTO 1140
+380 IF VERB$ = "DELLINE" OR VERB$ = "DELETE" OR VERB$ = "DEL" THEN GOTO 1230
+390 IF VERB$ = "STEP" OR VERB$ = "WIDTH" THEN GOTO 1350
+400 IF VERB$ = "MARGIN" THEN GOTO 1430
+410 IF VERB$ = "CASE" THEN GOTO 1510
+420 IF VERB$ = "CHECK" OR VERB$ = "ANALYZE" OR VERB$ = "VERIFY" THEN GOTO 1600
+430 IF VERB$ = "XREF" OR VERB$ = "LINES" OR VERB$ = "TABLE" THEN GOTO 1920
+440 IF VERB$ = "FORMAT" OR VERB$ = "INDENT" OR VERB$ = "PRETTY" OR VERB$ = "PRINT" OR VERB$ = "EXPORT" THEN GOTO 2200
+450 IF VERB$ = "SHOW" OR VERB$ = "STATUS" THEN GOTO 2750
+460 IF VERB$ = "SAVE" THEN GOTO 2880
+470 IF VERB$ = "LOAD" OR VERB$ = "IMPORT" THEN GOTO 2980
+480 IF VERB$ = "CLEAR" OR VERB$ = "RESET" THEN GOTO 3190
+494 PRINT "INDENT: Unknown command '"; VERB$; "'. Type HELP for syntax."
+495 RETURN
+500 T_OUT$ = T_IN$
+510 IF LEN(T_OUT$) = 0% THEN GOTO 570
+520 IF LEFT$(T_OUT$, 1%) = " " THEN T_OUT$ = MID$(T_OUT$, 2%, LEN(T_OUT$) - 1%)
+530 IF LEFT$(T_OUT$, 1%) = " " THEN GOTO 510
+540 IF LEN(T_OUT$) = 0% THEN GOTO 570
+550 IF MID$(T_OUT$, LEN(T_OUT$), 1%) = " " THEN T_OUT$ = LEFT$(T_OUT$, LEN(T_OUT$) - 1%)
+560 IF MID$(T_OUT$, LEN(T_OUT$), 1%) = " " THEN GOTO 540
+570 RETURN
+580 U_OUT$ = "" \ UJ% = 1%
+590 IF UJ% > LEN(U_IN$) THEN GOTO 630
+600 UCH$ = MID$(U_IN$, UJ%, 1%) \ UA% = ASCII(UCH$)
+610 IF UA% >= 97% AND UA% <= 122% THEN UCH$ = CHR$(UA% - 32%)
+620 U_OUT$ = U_OUT$ + UCH$ \ UJ% = UJ% + 1% \ GOTO 590
+630 RETURN
+635 T_IN$ = Q_IN$ \ GOSUB 500 \ Q_OUT$ = T_OUT$ \ QCH$ = CHR$(34%) \ QL% = LEN(Q_OUT$)
+638 IF QL% < 2% THEN GOTO 646
+640 IF LEFT$(Q_OUT$, 1%) <> QCH$ THEN GOTO 646
+642 IF MID$(Q_OUT$, QL%, 1%) = QCH$ THEN Q_OUT$ = MID$(Q_OUT$, 2%, QL% - 2%)
+646 RETURN
+650 T_IN$ = P_IN$ \ GOSUB 500 \ P_WORK$ = T_OUT$ \ P_LNUM$ = "" \ P_BODY$ = P_WORK$
+655 IF LEN(P_WORK$) = 0% THEN GOTO 690
+660 CH0% = ASCII(LEFT$(P_WORK$, 1%))
+665 IF CH0% < 48% OR CH0% > 57% THEN GOTO 690
+670 SP1% = INSTR(1%, P_WORK$, " ")
+675 IF SP1% = 0% THEN GOTO 685
+680 P_LNUM$ = LEFT$(P_WORK$, SP1% - 1%) \ T_IN$ = MID$(P_WORK$, SP1% + 1%, LEN(P_WORK$) - SP1%) \ GOSUB 500 \ P_BODY$ = T_OUT$ \ GOTO 690
+685 P_LNUM$ = P_WORK$ \ P_BODY$ = ""
+690 U_IN$ = P_BODY$ \ GOSUB 580 \ P_UBODY$ = U_OUT$
+695 P_KIND$ = "STMT" \ P_DEC% = 0% \ P_POST% = 0% \ P_TARG$ = "-"
+700 IF LEFT$(P_UBODY$, 1%) = "!" THEN P_KIND$ = "COMMENT"
+705 IF LEFT$(P_UBODY$, 3%) = "REM" THEN P_KIND$ = "COMMENT"
+710 IF P_KIND$ = "COMMENT" THEN GOTO 790
+715 IF LEFT$(P_UBODY$, 4%) = "SUB " OR LEFT$(P_UBODY$, 9%) = "FUNCTION " OR LEFT$(P_UBODY$, 4%) = "DEF " THEN P_KIND$ = "SUB-OPEN"
+720 IF P_KIND$ = "SUB-OPEN" THEN P_POST% = 1%
+725 IF LEFT$(P_UBODY$, 7%) = "END SUB" OR LEFT$(P_UBODY$, 12%) = "END FUNCTION" OR LEFT$(P_UBODY$, 7%) = "END DEF" THEN P_KIND$ = "SUB-CLOSE"
+730 IF P_KIND$ = "SUB-CLOSE" THEN P_DEC% = 1%
+735 IF LEFT$(P_UBODY$, 4%) = "FOR " OR LEFT$(P_UBODY$, 6%) = "WHILE " OR LEFT$(P_UBODY$, 6%) = "UNTIL " THEN P_KIND$ = "LOOP-OPEN"
+740 IF P_KIND$ = "LOOP-OPEN" THEN P_POST% = 1%
+745 IF LEFT$(P_UBODY$, 4%) = "NEXT" THEN P_KIND$ = "LOOP-CLOSE"
+750 IF P_KIND$ = "LOOP-CLOSE" THEN P_DEC% = 1%
+755 IF LEFT$(P_UBODY$, 7%) = "SELECT " THEN P_KIND$ = "SEL-OPEN"
+760 IF P_KIND$ = "SEL-OPEN" THEN P_POST% = 1%
+765 IF LEFT$(P_UBODY$, 4%) = "CASE" THEN P_KIND$ = "SEL-CASE"
+768 IF P_KIND$ = "SEL-CASE" THEN P_DEC% = 1%
+770 IF P_KIND$ = "SEL-CASE" THEN P_POST% = 1%
+772 IF LEFT$(P_UBODY$, 10%) = "END SELECT" THEN P_KIND$ = "SEL-CLOSE"
+775 IF P_KIND$ = "SEL-CLOSE" THEN P_DEC% = 1%
+778 GT_P% = INSTR(1%, P_UBODY$, "GOTO ")
+780 IF GT_P% = 0% THEN GOTO 784
+782 P_KIND$ = "BRANCH" \ T_IN$ = MID$(P_UBODY$, GT_P% + 5%, LEN(P_UBODY$) - GT_P% - 4%) \ GOSUB 500 \ P_TARG$ = T_OUT$
+784 GS_P% = INSTR(1%, P_UBODY$, "GOSUB ")
+786 IF GS_P% = 0% THEN GOTO 790
+788 P_KIND$ = "BRANCH" \ T_IN$ = MID$(P_UBODY$, GS_P% + 6%, LEN(P_UBODY$) - GS_P% - 5%) \ GOSUB 500 \ P_TARG$ = T_OUT$
+790 RETURN
+800 NUM_LINES% = 15% \ SRC_FILE$ = "PAYROLL.BAS"
+810 SRC_LINE$(1%)  = "10 REM DEC RSTS/E PAYROLL BATCH CALCULATION MODULE"
+820 SRC_LINE$(2%)  = "20 SUB CALC_PAYROLL(EMP_CNT%, TOT_PAY)"
+830 SRC_LINE$(3%)  = "30 TOT_PAY = 0.0"
+840 SRC_LINE$(4%)  = "40 for i% = 1% to emp_cnt%"
+850 SRC_LINE$(5%)  = "50 select dept_code%(i%)"
+860 SRC_LINE$(6%)  = "60 case 10%"
+870 SRC_LINE$(7%)  = "70 rate = 18.50"
+880 SRC_LINE$(8%)  = "80 case else"
+890 SRC_LINE$(9%)  = "90 rate = 14.25"
+900 SRC_LINE$(10%) = "100 end select"
+910 SRC_LINE$(11%) = "110 tot_pay = tot_pay + hours(i%) * rate"
+920 SRC_LINE$(12%) = "120 next i%"
+930 SRC_LINE$(13%) = "130 IF TOT_PAY > 10000.0 THEN GOSUB 150"
+940 SRC_LINE$(14%) = "140 END SUB"
+950 SRC_LINE$(15%) = "150 PRINT TOT_PAY \ RETURN"
+960 PRINT "[Sample BASIC-PLUS-2 program PAYROLL.BAS loaded - 15 source lines]" \ GOTO 495
+1020 IF NUM_LINES% = 0% THEN GOTO 3370
+1030 PRINT EQU$ \ PRINT "  INDENT Raw Source Buffer - File: "; SRC_FILE$; " ("; NUM_LINES%; " lines)" \ PRINT SEP$
+1040 LI% = 1%
+1050 IF LI% > NUM_LINES% THEN GOTO 1090
+1060 L_S$ = STR$(LI%) \ T_IN$ = L_S$ \ GOSUB 500 \ L_P$ = LEFT$(T_OUT$ + "    ", 4%)
+1070 PRINT L_P$; ": "; SRC_LINE$(LI%) \ LI% = LI% + 1% \ GOTO 1050
+1090 PRINT EQU$ \ GOTO 495
+1140 IF NUM_LINES% >= 60% THEN GOTO 3390
+1150 IF ARGS$ = "" THEN GOTO 1210
+1160 Q_IN$ = ARGS$ \ GOSUB 635 \ NUM_LINES% = NUM_LINES% + 1% \ SRC_LINE$(NUM_LINES%) = Q_OUT$
+1170 PRINT "[Line #"; NUM_LINES%; " added to source buffer: "; Q_OUT$; "]" \ GOTO 495
+1210 PRINT "INDENT: Syntax is ADDLINE <basic_statement>" \ GOTO 495
+1230 IF NUM_LINES% = 0% THEN GOTO 3370
+1240 D_IDX% = VAL(ARGS$)
+1250 IF D_IDX% < 1% OR D_IDX% > NUM_LINES% THEN GOTO 3380
+1260 D_TXT$ = SRC_LINE$(D_IDX%) \ DI% = D_IDX%
+1270 IF DI% >= NUM_LINES% THEN GOTO 1300
+1280 SRC_LINE$(DI%) = SRC_LINE$(DI% + 1%) \ DI% = DI% + 1% \ GOTO 1270
+1300 NUM_LINES% = NUM_LINES% - 1%
+1310 PRINT "[Deleted buffer line #"; D_IDX%; ": "; D_TXT$; "]" \ GOTO 495
+1350 IF ARGS$ = "" THEN GOTO 1400
+1360 N_ST% = VAL(ARGS$)
+1370 IF N_ST% < 1% OR N_ST% > 8% THEN GOTO 1410
+1380 IND_STEP% = N_ST%
+1400 PRINT "[Indentation step width set to "; IND_STEP%; " spaces per nesting level]" \ GOTO 495
+1410 PRINT "INDENT: Step width must be between 1 and 8 spaces" \ GOTO 495
+1430 IF ARGS$ = "" THEN GOTO 1480
+1440 N_MG% = VAL(ARGS$)
+1450 IF N_MG% < 0% OR N_MG% > 12% THEN GOTO 1490
+1460 BASE_MARG% = N_MG%
+1480 PRINT "[Base left margin set to "; BASE_MARG%; " spaces]" \ GOTO 495
+1490 PRINT "INDENT: Base margin must be between 0 and 12 spaces" \ GOTO 495
+1510 IF ARGS$ = "" THEN GOTO 1570
+1520 Q_IN$ = ARGS$ \ GOSUB 635 \ U_IN$ = Q_OUT$ \ GOSUB 580 \ C_ARG$ = U_OUT$
+1530 IF C_ARG$ <> "UPPER" AND C_ARG$ <> "ASIS" THEN GOTO 1580
+1540 CASE_MODE$ = C_ARG$
+1570 PRINT "[Keyword/statement casing mode set to "; CASE_MODE$; "]" \ GOTO 495
+1580 PRINT "INDENT: Syntax is CASE UPPER or CASE ASIS" \ GOTO 495
+1600 IF NUM_LINES% = 0% THEN GOTO 3370
+1610 C_DEPTH% = 0% \ MAX_D% = 0% \ C_ERR% = 0% \ C_CMT% = 0% \ C_BR% = 0% \ CI% = 1%
+1620 IF CI% > NUM_LINES% THEN GOTO 1760
+1630 P_IN$ = SRC_LINE$(CI%) \ GOSUB 650
+1640 IF P_KIND$ = "COMMENT" THEN C_CMT% = C_CMT% + 1%
+1650 IF P_KIND$ = "BRANCH" THEN C_BR% = C_BR% + 1%
+1660 C_DEPTH% = C_DEPTH% - P_DEC%
+1670 IF C_DEPTH% >= 0% THEN GOTO 1700
+1680 PRINT "  [ERROR] Unmatched block closer on line "; P_LNUM$; ": "; P_BODY$
+1690 C_ERR% = C_ERR% + 1% \ C_DEPTH% = 0%
+1700 C_DEPTH% = C_DEPTH% + P_POST%
+1710 IF C_DEPTH% > MAX_D% THEN MAX_D% = C_DEPTH%
+1720 CI% = CI% + 1% \ GOTO 1620
+1760 IF C_DEPTH% = 0% THEN GOTO 1790
+1770 PRINT "  [ERROR] "; C_DEPTH%; " unclosed block structure(s) at end of file"
+1780 C_ERR% = C_ERR% + C_DEPTH%
+1790 PRINT EQU$ \ PRINT "  INDENT Structural Nesting & Block Audit - File: "; SRC_FILE$ \ PRINT SEP$
+1800 PRINT "  Total Source Lines:     "; NUM_LINES% \ PRINT "  Comment Lines (REM/!):  "; C_CMT%
+1810 PRINT "  Branch Statements:      "; C_BR% \ PRINT "  Maximum Nesting Depth:  "; MAX_D%
+1820 PRINT "  Final Block Balance:    "; C_DEPTH%
+1830 IF C_ERR% = 0% THEN PRINT "  [Audit PASSED: All BASIC-PLUS-2 block structures are balanced]"
+1840 IF C_ERR% > 0% THEN PRINT "  [Audit FAILED: "; C_ERR%; " structural nesting error(s) detected]"
+1850 PRINT EQU$ \ GOTO 495
+1920 IF NUM_LINES% = 0% THEN GOTO 3370
+1930 PRINT EQU$ \ PRINT "  INDENT Control-Flow & Nesting Cross-Reference - File: "; SRC_FILE$ \ PRINT EQU$
+1940 PRINT "Buf#  Line#    Level  Construct     Branch Target   Statement Preview" \ PRINT SEP$
+1950 X_DEPTH% = 0% \ XI% = 1%
+1960 IF XI% > NUM_LINES% THEN GOTO 2120
+1970 P_IN$ = SRC_LINE$(XI%) \ GOSUB 650
+1980 X_DEPTH% = X_DEPTH% - P_DEC%
+1990 IF X_DEPTH% < 0% THEN X_DEPTH% = 0%
+2000 B_S$ = STR$(XI%) \ T_IN$ = B_S$ \ GOSUB 500 \ B_P$ = LEFT$(T_OUT$ + BLANKS$, 6%)
+2010 LN_P$ = LEFT$(P_LNUM$ + BLANKS$, 9%)
+2020 D_S$ = STR$(X_DEPTH%) \ T_IN$ = D_S$ \ GOSUB 500 \ LV_TMP$ = "L" + T_OUT$ \ LV_P$ = LEFT$(LV_TMP$ + BLANKS$, 7%)
+2030 KD_P$ = LEFT$(P_KIND$ + BLANKS$, 14%) \ TG_P$ = LEFT$(P_TARG$ + BLANKS$, 16%)
+2040 PRV$ = LEFT$(P_BODY$, 26%)
+2050 PRINT B_P$; LN_P$; LV_P$; KD_P$; TG_P$; PRV$
+2060 X_DEPTH% = X_DEPTH% + P_POST%
+2070 XI% = XI% + 1% \ GOTO 1960
+2120 PRINT SEP$ \ PRINT "  "; NUM_LINES%; " line(s) analyzed in "; SRC_FILE$ \ PRINT EQU$ \ GOTO 495
+2200 IF NUM_LINES% = 0% THEN GOTO 3370
+2210 TO_FILE% = 0% \ OUT_FILE$ = ""
+2220 IF VERB$ = "EXPORT" THEN GOTO 2260
+2230 IF ARGS$ = "" THEN GOTO 2280
+2240 U_IN$ = ARGS$ \ GOSUB 580
+2250 IF LEFT$(U_OUT$, 3%) = "ON " THEN GOTO 2270
+2255 GOTO 2280
+2260 IF ARGS$ = "" THEN GOTO 2700
+2265 Q_IN$ = ARGS$ \ GOSUB 635 \ OUT_FILE$ = Q_OUT$ \ TO_FILE% = 1% \ GOTO 2280
+2270 Q_IN$ = MID$(ARGS$, 4%, LEN(ARGS$) - 3%) \ GOSUB 635 \ OUT_FILE$ = Q_OUT$ \ TO_FILE% = 1%
+2280 IF TO_FILE% = 1% THEN OPEN OUT_FILE$ FOR OUTPUT AS FILE #2%
+2290 IF TO_FILE% = 1% THEN GOTO 2310
+2300 PRINT EQU$ \ PRINT "  INDENT Formatted BASIC-PLUS-2 Listing - File: "; SRC_FILE$; " (Step="; IND_STEP%; ", Case="; CASE_MODE$; ")" \ PRINT SEP$
+2310 F_DEPTH% = 0% \ FI% = 1%
+2320 IF FI% > NUM_LINES% THEN GOTO 2560
+2330 P_IN$ = SRC_LINE$(FI%) \ GOSUB 650
+2340 F_DEPTH% = F_DEPTH% - P_DEC%
+2350 IF F_DEPTH% < 0% THEN F_DEPTH% = 0%
+2360 LN_COL$ = LEFT$(P_LNUM$ + BLANKS$, 6%)
+2370 TOT_SP% = BASE_MARG% + (F_DEPTH% * IND_STEP%)
+2380 IF TOT_SP% > 40% THEN TOT_SP% = 40%
+2390 PAD_SP$ = LEFT$(BLANKS$, TOT_SP%)
+2400 OUT_BODY$ = P_BODY$
+2410 IF CASE_MODE$ = "UPPER" THEN OUT_BODY$ = P_UBODY$
+2420 FMT_LN$ = LN_COL$ + PAD_SP$ + OUT_BODY$
+2430 IF TO_FILE% = 0% THEN PRINT FMT_LN$
+2440 IF TO_FILE% = 1% THEN PRINT #2%, FMT_LN$
+2450 F_DEPTH% = F_DEPTH% + P_POST%
+2460 FI% = FI% + 1% \ GOTO 2320
+2560 IF TO_FILE% = 1% THEN GOTO 2590
+2580 PRINT SEP$ \ PRINT "  [Formatted "; NUM_LINES%; " line(s) - Final Nesting Depth: "; F_DEPTH%; "]" \ PRINT EQU$ \ GOTO 495
+2590 CLOSE #2% \ PRINT "[Formatted BASIC-PLUS-2 source written to "; OUT_FILE$; " ("; NUM_LINES%; " lines)]" \ GOTO 495
+2700 PRINT "INDENT: Specify output filename (EXPORT <file> or PRINT ON <file>)" \ GOTO 495
+2750 PRINT "INDENT System Status:" \ PRINT "  Active File:     "; SRC_FILE$ \ PRINT "  Buffer Lines:    "; NUM_LINES%
+2760 PRINT "  Indent Step:     "; IND_STEP%; " spaces" \ PRINT "  Base Margin:     "; BASE_MARG%; " spaces"
+2770 PRINT "  Case Mode:       "; CASE_MODE$ \ GOTO 495
+2880 IF NUM_LINES% = 0% THEN GOTO 3370
+2890 SV_FILE$ = SRC_FILE$
+2900 IF ARGS$ <> "" THEN Q_IN$ = ARGS$
+2905 IF ARGS$ <> "" THEN GOSUB 635
+2910 IF ARGS$ <> "" THEN SV_FILE$ = Q_OUT$
+2920 OPEN SV_FILE$ FOR OUTPUT AS FILE #2% \ SI% = 1%
+2930 IF SI% > NUM_LINES% THEN GOTO 2960
+2940 OUT_S$ = SRC_LINE$(SI%) \ PRINT #2%, OUT_S$ \ SI% = SI% + 1% \ GOTO 2930
+2960 CLOSE #2% \ PRINT "["; NUM_LINES%; " raw source line(s) saved to "; SV_FILE$; "]" \ GOTO 495
+2980 LD_FILE$ = SRC_FILE$
+2990 IF ARGS$ <> "" THEN Q_IN$ = ARGS$
+2995 IF ARGS$ <> "" THEN GOSUB 635
+3000 IF ARGS$ <> "" THEN LD_FILE$ = Q_OUT$
+3010 ON ERROR GOTO 3100 \ OPEN LD_FILE$ FOR INPUT AS FILE #2% \ NUM_LINES% = 0%
+3020 LINE INPUT #2%, T_LINE$ \ T_IN$ = T_LINE$ \ GOSUB 500
+3030 IF T_OUT$ = "" THEN GOTO 3020
+3040 IF NUM_LINES% >= 60% THEN GOTO 3100
+3050 NUM_LINES% = NUM_LINES% + 1% \ SRC_LINE$(NUM_LINES%) = T_OUT$ \ GOTO 3020
+3100 CLOSE #2% \ RESUME 3110
+3110 ON ERROR GOTO 0 \ SRC_FILE$ = LD_FILE$ \ PRINT "["; NUM_LINES%; " source line(s) loaded from "; LD_FILE$; "]" \ GOTO 495
+3190 NUM_LINES% = 0% \ SRC_FILE$ = "PROGRAM.BAS" \ PRINT "[INDENT source buffer cleared]" \ GOTO 495
+3220 PRINT EQU$ \ PRINT "    INDENT BASIC-PLUS-2 Source Formatter & Analyzer Commands" \ PRINT EQU$ \ PRINT "  SAMPLE / DEMO                    Load sample DEC BASIC-PLUS-2 payroll program"
+3225 PRINT "  RAW / LIST / SOURCE              Display unformatted raw source buffer" \ PRINT "  FORMAT / INDENT / PRETTY         Pretty-print structured BASIC-PLUS-2 listing"
+3230 PRINT "  PRINT ON <file> / EXPORT <file>  Write formatted BASIC-PLUS-2 source to file" \ PRINT "  CHECK / ANALYZE / VERIFY         Audit block nesting balance (SUB/FOR/SELECT)"
+3235 PRINT "  XREF / LINES / TABLE             Display nesting & control-flow cross-reference" \ PRINT "  STEP <1..8> / MARGIN <0..12>     Set indentation step spaces or left margin"
+3240 PRINT "  CASE <UPPER|ASIS>                Set keyword/statement case conversion mode" \ PRINT "  ADDLINE <stmt> / DELLINE <#>     Add or delete a source line in the buffer"
+3245 PRINT "  SAVE [file] / LOAD [file]        Save raw buffer or load .BAS source file" \ PRINT "  SHOW / CLEAR / EXIT              Display settings, clear buffer, or quit" \ PRINT EQU$ \ GOTO 495
+3370 PRINT "INDENT: Source buffer is empty. Use SAMPLE, LOAD, or ADDLINE." \ GOTO 495
+3380 PRINT "INDENT: Buffer line number out of range" \ GOTO 495
+3390 PRINT "INDENT: Source buffer is full (max 60 lines)" \ GOTO 495
+3400 END
