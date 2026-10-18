@@ -305,6 +305,17 @@ for APP in "${TARGET_APPS[@]}"; do
                 FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
             ;;
+        menu11|menu|mcf)
+            OUT="$(printf "SAMPLE\nRUN 1\nEXIT\n" | "${EXE}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "MCF Dispatch: SUBMENU -> ACCT_MENU"; then
+                echo "PASSED (MENU-11 menu control & dispatch verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
         *)
             # Generic sanity check
             OUT="$("${EXE}" 2>&1 || true)"

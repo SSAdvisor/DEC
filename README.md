@@ -122,6 +122,7 @@ make clean
 | [`decword`](apps/decword) | Word & Data Processing | DECword/DP: integrated word and data processing system supporting document libraries, WPS rulers, formatting, and mail-merge | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M) & VAX/VMS (1980-1988) |
 | [`dibs`](apps/dibs) | Business / Accounting | DIBS-11: DEC Integrated Business System supporting General Ledger, Trial Balance, P&L, Balance Sheet, AR, AP, and Inventory | Digital Equipment Corporation PDP-11 (CTS-300, CTS-500, RSTS/E) (1976-1985) |
 | [`fms11`](apps/fms11) | Forms Management | FMS-11: DEC Forms Management System supporting Form Editor (FED), Form Library (FLB), Form Utility (FUT), and Form Driver (FDV) | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M, RT-11) & VAX/VMS (1979-1986) |
+| [`menu11`](apps/menu11) | Menu Control / Shell | MENU-11: DEC Menu Control & Application Dispatch Facility (MCF) with PPN security privilege enforcement, hierarchical submenus, and audit logging | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M, CTS-300/500) & VAX/VMS (1978-1988) |
 
 
 

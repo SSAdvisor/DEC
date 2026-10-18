@@ -20,6 +20,7 @@ DECMAIL_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decmail-V1.0-L-Linux-x86_6
 DECWORD_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decword-V1.0-L-Linux-x86_64.tar.gz")
 DIBS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-dibs-V1.0-L-Linux-x86_64.tar.gz")
 FMS11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-fms11-V1.0-L-Linux-x86_64.tar.gz")
+MENU11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-menu11-V1.0-L-Linux-x86_64.tar.gz")
 SRC_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Source.tar.gz")
 
 def test_distrib_build_kit():
@@ -38,6 +39,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(DECWORD_ARCHIVE), f"DECword archive {DECWORD_ARCHIVE} not created"
     assert os.path.isfile(DIBS_ARCHIVE), f"DIBS archive {DIBS_ARCHIVE} not created"
     assert os.path.isfile(FMS11_ARCHIVE), f"FMS-11 archive {FMS11_ARCHIVE} not created"
+    assert os.path.isfile(MENU11_ARCHIVE), f"MENU-11 archive {MENU11_ARCHIVE} not created"
     assert os.path.isfile(SRC_ARCHIVE), f"Source archive {SRC_ARCHIVE} not created"
 
     # Verify staging contents of master kit
@@ -74,6 +76,9 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "fms"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "fed"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "fdv"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "menu11"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "menu"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "mcf"))
 
 def test_install_individual_app(tmp_path):
     """Verify that an individual application can be installed independently."""
@@ -235,6 +240,7 @@ def test_installer_list_apps():
     assert "decword" in res.stdout
     assert "dibs" in res.stdout
     assert "fms11" in res.stdout
+    assert "menu11" in res.stdout
 
 def test_install_datatrieve11_individual(tmp_path):
     """Verify that datatrieve11 can be installed and uninstalled independently with symlinks."""
@@ -446,6 +452,43 @@ def test_install_fms11_individual(tmp_path):
     assert res_un.returncode == 0
     assert not fms_bin.exists()
     assert not (prefix / "docs" / "fms11.md").exists()
+
+def test_install_menu11_individual(tmp_path):
+    """Verify that menu11 can be installed and uninstalled independently with symlinks."""
+    prefix = tmp_path / "menu11_install"
+    res = subprocess.run(
+        [INSTALL_SH, f"--prefix={prefix}", "--no-symlinks", "menu11"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res.returncode == 0, f"MENU-11 install failed:\n{res.stdout}\n{res.stderr}"
+    assert "Installing application: menu11" in res.stdout
+    assert "Verification Summary: 1 Passed, 0 Failed" in res.stdout
+
+    menu_bin = prefix / "bin" / "menu11"
+    assert menu_bin.is_file()
+    assert os.access(menu_bin, os.X_OK)
+    assert (prefix / "bin" / "menu").exists()
+    assert (prefix / "bin" / "mcf").exists()
+
+    # Verify execution via binary
+    run_res = subprocess.run([str(menu_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "MENU-11 Menu Control & Dispatch Facility Commands" in run_res.stdout
+
+    assert (prefix / "docs" / "menu11.md").is_file()
+
+    # Uninstall menu11
+    res_un = subprocess.run(
+        [UNINSTALL_SH, f"--prefix={prefix}", "menu11"],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+    assert res_un.returncode == 0
+    assert not menu_bin.exists()
+    assert not (prefix / "docs" / "menu11.md").exists()
+
 
 
 

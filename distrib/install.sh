@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|dibs11|cts500|fms|fed|fdv)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|dibs11|cts500|fms|fed|fdv|menu|mcf)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -120,6 +120,9 @@ list_apps() {
                 ;;
             fms11)
                 printf "%-16s %-18s %s\n" "fms11" "Forms Management" "FMS-11 DEC Forms Management System (FED, FLB, FUT, FDV)"
+                ;;
+            menu11)
+                printf "%-16s %-18s %s\n" "menu11" "Menu Control" "MENU-11 DEC Menu Control & Application Dispatch Facility (MCF)"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
@@ -275,6 +278,8 @@ for app in "${VALID_APPS[@]}"; do
         COMPANIONS=("dibs11" "cts500")
     elif [ "${app}" = "fms11" ]; then
         COMPANIONS=("fms" "fed" "fdv")
+    elif [ "${app}" = "menu11" ]; then
+        COMPANIONS=("menu" "mcf")
     fi
     if [ ${#COMPANIONS[@]} -gt 0 ]; then
         for c in "${COMPANIONS[@]}"; do
