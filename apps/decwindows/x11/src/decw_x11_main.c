@@ -19,7 +19,9 @@ static void print_usage(const char* prog) {
     printf("  --exec <binary>          Backing BASIC-PLUS-2 executable for interactive callbacks\n");
     printf("  --export-verb <verb>     Frame export verb (default: EXPORT)\n");
     printf("  --display <dpy>          Target X11 display string (default: $DISPLAY)\n");
-    printf("  --geometry <WxH>         Window dimensions in pixels (default: 780x600)\n");
+    printf("  --font <size|xlfd>       Font size (small, medium, large, xlarge, xxlarge, huge, 14..40, or XLFD)\n");
+    printf("  --scale <1..6>           Font & window scale preset (1=15px .. 3=24px HiDPI default .. 6=36px)\n");
+    printf("  --geometry <WxH>         Window dimensions in pixels (auto-scaled by font size if omitted)\n");
     printf("  --autoclose <ms>         Auto-close window after <ms> milliseconds following Expose\n");
     printf("  --verify                 Verify X11 window creation, Expose rendering, and exit\n");
     printf("  --test-interact          Synthesize X11 Motif button click event after Expose\n");
@@ -31,8 +33,8 @@ int main(int argc, char** argv) {
     strcpy(cfg.app_id, "decwindows");
     strcpy(cfg.title, "DECwindows Motif 1.1 Workstation Window");
     strcpy(cfg.export_verb, "EXPORT");
-    cfg.width = 780;
-    cfg.height = 600;
+    cfg.width = 0;
+    cfg.height = 0;
 
     int do_probe = 0;
     int do_check_gui = 0;
@@ -66,6 +68,10 @@ int main(int argc, char** argv) {
             strncpy(cfg.export_verb, argv[++i], sizeof(cfg.export_verb) - 1);
         } else if (strcmp(argv[i], "--display") == 0 && i + 1 < argc) {
             strncpy(cfg.display_name, argv[++i], sizeof(cfg.display_name) - 1);
+        } else if (strcmp(argv[i], "--font") == 0 && i + 1 < argc) {
+            strncpy(cfg.font_spec, argv[++i], sizeof(cfg.font_spec) - 1);
+        } else if (strcmp(argv[i], "--scale") == 0 && i + 1 < argc) {
+            cfg.font_scale = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--geometry") == 0 && i + 1 < argc) {
             int w = 0, h = 0;
             if (sscanf(argv[++i], "%dx%d", &w, &h) == 2 && w >= 320 && h >= 240) {

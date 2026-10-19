@@ -213,7 +213,7 @@ void decw_x11_resolve_defaults(DecwWindowConfig* cfg, const char* self_exe) {
 }
 
 static void setup_app_buttons(const char* app_id, DecwButton* btns, int* num_btns) {
-    *num_btns = 6;
+    *num_btns = 8;
     strcpy(btns[0].label, "Sample");
     strcpy(btns[0].command, "SAMPLE");
 
@@ -229,8 +229,14 @@ static void setup_app_buttons(const char* app_id, DecwButton* btns, int* num_btn
     strcpy(btns[4].label, "Clear");
     strcpy(btns[4].command, "CLEAR");
 
-    strcpy(btns[5].label, "Quit X11");
-    strcpy(btns[5].command, "__QUIT__");
+    strcpy(btns[5].label, "Font -");
+    strcpy(btns[5].command, "__FONT_DEC__");
+
+    strcpy(btns[6].label, "Font +");
+    strcpy(btns[6].command, "__FONT_INC__");
+
+    strcpy(btns[7].label, "Quit X11");
+    strcpy(btns[7].command, "__QUIT__");
 
     if (!app_id) return;
     if (strcasecmp(app_id, "decterm") == 0 || strcasecmp(app_id, "dxterm") == 0) {
@@ -347,15 +353,15 @@ int decw_x11_exec_app_cmd(const DecwWindowConfig* cfg, const char* b2_cmd, char*
 }
 
 static void draw_app_vector_widget(Display* dpy, Window win, GC gc, const DecwColors* c,
-                                   const char* app_id, int x, int y, int w, int h) {
+                                   const char* app_id, int x, int y, int w, int h, int font_h) {
     draw_bevel_rect(dpy, win, gc, c, x, y, w, h, c->bg_gray, 1);
 
     if (app_id && (strcasecmp(app_id, "clock") == 0 || strcasecmp(app_id, "dxclock") == 0)) {
         /* Native X11 Vector Analog Clock Dial */
         int cx = x + w / 2;
         int cy = y + h / 2;
-        int r = (w < h ? w : h) / 2 - 6;
-        if (r > 10) {
+        int r = (w < h ? w : h) / 2 - 4;
+        if (r > 8) {
             XSetForeground(dpy, gc, c->canvas_bg);
             XFillArc(dpy, win, gc, cx - r, cy - r, (unsigned int)(r * 2), (unsigned int)(r * 2), 0, 360 * 64);
             XSetForeground(dpy, gc, c->bevel_dark);
@@ -376,21 +382,93 @@ static void draw_app_vector_widget(Display* dpy, Window win, GC gc, const DecwCo
     } else if (app_id && (strcasecmp(app_id, "decsound") == 0 || strcasecmp(app_id, "dxsound") == 0)) {
         /* Native X11 VU Meter Bars */
         XSetForeground(dpy, gc, c->canvas_fg);
-        XDrawString(dpy, win, gc, x + 8, y + 18, "X11 Am79C30A VU", 15);
+        XDrawString(dpy, win, gc, x + 8, y + font_h, "X11 Am79C30A VU", 15);
         for (int b = 0; b < 8; b++) {
             unsigned long col = (b < 5) ? c->accent_green : c->accent_amber;
             XSetForeground(dpy, gc, col);
-            XFillRectangle(dpy, win, gc, x + 10 + b * 12, y + 24, 9, 14);
+            XFillRectangle(dpy, win, gc, x + 10 + b * 14, y + font_h + 4, 10, h - font_h - 8 > 8 ? h - font_h - 8 : 8);
         }
     } else {
         /* X11 Motif Protocol Telemetry Badge */
         XSetForeground(dpy, gc, c->title_bg);
-        XFillRectangle(dpy, win, gc, x + 6, y + 6, (unsigned int)(w - 12), 18);
+        XFillRectangle(dpy, win, gc, x + 4, y + 4, (unsigned int)(w - 8), (unsigned int)(h - 8));
         XSetForeground(dpy, gc, c->title_fg);
-        XDrawString(dpy, win, gc, x + 10, y + 19, "X11/Motif 1.1 GUI", 17);
-        XSetForeground(dpy, gc, c->canvas_fg);
-        XDrawString(dpy, win, gc, x + 10, y + 38, "Xlib Protocol: ACTIVE", 21);
+        XDrawString(dpy, win, gc, x + 10, y + (h + font_h) / 2 - 2, "X11/Motif 1.1", 13);
     }
+}
+
+static int parse_font_spec_to_scale(const char* spec, char* custom_xlfd, size_t xlfd_len) {
+    if (!spec || !spec[0]) return 0;
+    if (strcasecmp(spec, "small") == 0 || strcmp(spec, "1") == 0) return 1;
+    if (strcasecmp(spec, "medium") == 0 || strcmp(spec, "2") == 0) return 2;
+    if (strcasecmp(spec, "large") == 0 || strcmp(spec, "3") == 0) return 3;
+    if (strcasecmp(spec, "xlarge") == 0 || strcmp(spec, "4") == 0) return 4;
+    if (strcasecmp(spec, "xxlarge") == 0 || strcmp(spec, "5") == 0) return 5;
+    if (strcasecmp(spec, "huge") == 0 || strcmp(spec, "6") == 0) return 6;
+
+    int px = atoi(spec);
+    if (px >= 12 && px <= 48) {
+        if (px <= 16) return 1;
+        if (px <= 21) return 2;
+        if (px <= 25) return 3;
+        if (px <= 29) return 4;
+        if (px <= 33) return 5;
+        return 6;
+    }
+
+    if (custom_xlfd && xlfd_len > 0) {
+        strncpy(custom_xlfd, spec, xlfd_len - 1);
+        custom_xlfd[xlfd_len - 1] = '\0';
+    }
+    return 0;
+}
+
+static XFontStruct* load_scaled_font(Display* dpy, int scale, const char* custom_xlfd,
+                                     char* loaded_desc, size_t desc_len, int* rec_w, int* rec_h) {
+    static const char* scale_fonts[7][3] = {
+        { "12x24", "10x20", "9x15" },
+        { "9x15", "8x13", "fixed" }, /* 1: Small (15px) */
+        { "10x20", "-misc-fixed-medium-r-normal--20-140-100-100-c-100-iso8859-1", "9x15" }, /* 2: Medium (20px) */
+        { "12x24", "-sony-fixed-medium-r-normal--24-170-100-100-c-120-iso8859-1", "10x20" }, /* 3: Large (24px, HiDPI Default) */
+        { "-misc-fixed-bold-r-normal--28-0-100-100-c-0-iso8859-1", "12x24", "10x20" }, /* 4: XLarge (28px) */
+        { "-sony-fixed-medium-r-normal--32-0-100-100-c-0-iso8859-1", "-misc-fixed-bold-r-normal--32-0-100-100-c-0-iso8859-1", "12x24" }, /* 5: XXLarge (32px) */
+        { "-sony-fixed-medium-r-normal--36-0-100-100-c-0-iso8859-1", "-misc-fixed-bold-r-normal--36-0-100-100-c-0-iso8859-1", "12x24" }  /* 6: Huge (36px) */
+    };
+    static const int scale_dims[7][2] = {
+        { 1220, 880 },
+        { 780,  600 },
+        { 980,  740 },
+        { 1220, 880 },
+        { 1420, 1000 },
+        { 1620, 1120 },
+        { 1840, 1240 }
+    };
+    static const char* scale_names[7] = {
+        "Auto", "Small (15px)", "Medium (20px)", "Large (24px)", "XLarge (28px)", "XXLarge (32px)", "Huge (36px)"
+    };
+
+    if (scale < 1) scale = 1;
+    if (scale > 6) scale = 6;
+
+    if (rec_w) *rec_w = scale_dims[scale][0];
+    if (rec_h) *rec_h = scale_dims[scale][1];
+
+    XFontStruct* f = NULL;
+    if (custom_xlfd && custom_xlfd[0]) {
+        f = XLoadQueryFont(dpy, custom_xlfd);
+        if (f && loaded_desc && desc_len > 0) {
+            snprintf(loaded_desc, desc_len, "Custom (%s)", custom_xlfd);
+        }
+    }
+    for (int i = 0; !f && i < 3; i++) {
+        f = XLoadQueryFont(dpy, scale_fonts[scale][i]);
+    }
+    if (!f) f = XLoadQueryFont(dpy, "fixed");
+
+    if (loaded_desc && desc_len > 0 && (!custom_xlfd || !custom_xlfd[0])) {
+        snprintf(loaded_desc, desc_len, "%s [Scale %d/6]", scale_names[scale], scale);
+    }
+    return f;
 }
 
 int decw_x11_run_window(const DecwWindowConfig* cfg) {
@@ -404,11 +482,48 @@ int decw_x11_run_window(const DecwWindowConfig* cfg) {
     }
 
     int screen = DefaultScreen(dpy);
+    int disp_w = DisplayWidth(dpy, screen);
+    int disp_h = DisplayHeight(dpy, screen);
+
     DecwColors colors;
     init_colors(dpy, screen, cfg->app_id, &colors);
 
-    int win_w = (cfg->width > 400) ? cfg->width : 780;
-    int win_h = (cfg->height > 300) ? cfg->height : 600;
+    /* Determine initial font scale: default to 3 (24px Large) on HiDPI >=2560px displays, or 2 (20px) otherwise */
+    int font_scale = (disp_w >= 2560) ? 3 : 2;
+    char custom_xlfd[128] = "";
+
+    const char* env_fsize = getenv("DECW_FONT_SIZE");
+    const char* env_fx11 = getenv("DECW_X11_FONT");
+    const char* env_scale = getenv("DECW_SCALE");
+
+    if (env_scale && env_scale[0]) {
+        int s = parse_font_spec_to_scale(env_scale, custom_xlfd, sizeof(custom_xlfd));
+        if (s > 0) font_scale = s;
+    }
+    if (env_fsize && env_fsize[0]) {
+        int s = parse_font_spec_to_scale(env_fsize, custom_xlfd, sizeof(custom_xlfd));
+        if (s > 0) font_scale = s;
+    }
+    if (env_fx11 && env_fx11[0]) {
+        int s = parse_font_spec_to_scale(env_fx11, custom_xlfd, sizeof(custom_xlfd));
+        if (s > 0) font_scale = s;
+    }
+    if (cfg->font_scale >= 1 && cfg->font_scale <= 6) {
+        font_scale = cfg->font_scale;
+    }
+    if (cfg->font_spec[0]) {
+        int s = parse_font_spec_to_scale(cfg->font_spec, custom_xlfd, sizeof(custom_xlfd));
+        if (s > 0) font_scale = s;
+    }
+
+    char font_desc[96] = "";
+    int rec_w = 1220, rec_h = 880;
+    XFontStruct* font = load_scaled_font(dpy, font_scale, custom_xlfd, font_desc, sizeof(font_desc), &rec_w, &rec_h);
+
+    int win_w = (cfg->width >= 400) ? cfg->width : rec_w;
+    int win_h = (cfg->height >= 300) ? cfg->height : rec_h;
+    if (win_w > disp_w - 80) win_w = disp_w - 80;
+    if (win_h > disp_h - 80) win_h = disp_h - 80;
 
     Window root = RootWindow(dpy, screen);
     Window win = XCreateSimpleWindow(dpy, root, 60, 60, (unsigned int)win_w, (unsigned int)win_h,
@@ -430,9 +545,6 @@ int decw_x11_run_window(const DecwWindowConfig* cfg) {
     XSelectInput(dpy, win, ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | StructureNotifyMask);
 
     GC gc = XCreateGC(dpy, win, 0, NULL);
-    XFontStruct* font = XLoadQueryFont(dpy, "9x15");
-    if (!font) font = XLoadQueryFont(dpy, "8x13");
-    if (!font) font = XLoadQueryFont(dpy, "fixed");
     if (font) {
         XSetFont(dpy, gc, font->fid);
     }
@@ -450,10 +562,10 @@ int decw_x11_run_window(const DecwWindowConfig* cfg) {
     setup_app_buttons(cfg->app_id, buttons, &num_buttons);
 
     char cmd_input[192] = "";
-    char status_msg[192];
+    char status_msg[220];
     snprintf(status_msg, sizeof(status_msg),
-             "X11 Display %s connected | Click Motif toolbar buttons or type BASIC-PLUS-2 command + Enter",
-             DisplayString(dpy));
+             "Font: %s | Click [Font -] / [Font +] or press F10/F11 (PageDown/PageUp) to resize",
+             font_desc);
 
     XMapWindow(dpy, win);
     XFlush(dpy);
@@ -483,29 +595,41 @@ int decw_x11_run_window(const DecwWindowConfig* cfg) {
                 win_h = ev.xconfigure.height;
             } else if (ev.type == Expose && ev.xexpose.count == 0) {
                 exposed_once = 1;
+                int font_asc = font ? font->ascent : 14;
+                int font_desc_px = font ? font->descent : 4;
+                int font_h = font_asc + font_desc_px;
+                if (font_h < 14) font_h = 14;
+                int char_w = (font && font->max_bounds.width > 6) ? font->max_bounds.width : (font_h / 2 + 2);
+
+                int title_h = font_h + 14;
+                int tb_y = title_h + 12;
+                int btn_h = font_h + 14;
+                int btn_w = char_w * 10 + 14;
+                if (btn_w * num_buttons + 60 > win_w) {
+                    btn_w = (win_w - 64) / num_buttons - 6;
+                    if (btn_w < 64) btn_w = 64;
+                }
+
                 /* 1. Outer 3D Motif Frame */
                 draw_bevel_rect(dpy, win, gc, &colors, 0, 0, win_w, win_h, colors.bg_gray, 0);
 
                 /* 2. DECwindows Title Bar */
-                draw_bevel_rect(dpy, win, gc, &colors, 6, 6, win_w - 12, 28, colors.title_bg, 0);
-                draw_bevel_rect(dpy, win, gc, &colors, 10, 9, 24, 22, colors.btn_bg, 0);
+                draw_bevel_rect(dpy, win, gc, &colors, 6, 6, win_w - 12, title_h, colors.title_bg, 0);
+                draw_bevel_rect(dpy, win, gc, &colors, 10, 9, title_h - 4, title_h - 6, colors.btn_bg, 0);
                 XSetForeground(dpy, gc, colors.canvas_fg);
-                XDrawString(dpy, win, gc, 14, 24, "=", 1);
+                XDrawString(dpy, win, gc, 15, 9 + font_asc + 2, "=", 1);
 
                 XSetForeground(dpy, gc, colors.title_fg);
-                XDrawString(dpy, win, gc, 44, 25, title, (int)strlen(title));
+                XDrawString(dpy, win, gc, 18 + title_h, 9 + font_asc + 2, title, (int)strlen(title));
 
                 /* Minimize & Maximize Motif buttons */
-                draw_bevel_rect(dpy, win, gc, &colors, win_w - 60, 9, 22, 22, colors.btn_bg, 0);
-                draw_bevel_rect(dpy, win, gc, &colors, win_w - 34, 9, 22, 22, colors.btn_bg, 0);
+                draw_bevel_rect(dpy, win, gc, &colors, win_w - (title_h * 2 + 6), 9, title_h - 6, title_h - 6, colors.btn_bg, 0);
+                draw_bevel_rect(dpy, win, gc, &colors, win_w - (title_h + 2), 9, title_h - 6, title_h - 6, colors.btn_bg, 0);
                 XSetForeground(dpy, gc, colors.canvas_fg);
-                XDrawString(dpy, win, gc, win_w - 53, 24, "_", 1);
-                XDrawString(dpy, win, gc, win_w - 27, 24, "O", 1);
+                XDrawString(dpy, win, gc, win_w - (title_h * 2 - 2), 9 + font_asc + 2, "_", 1);
+                XDrawString(dpy, win, gc, win_w - (title_h - 6), 9 + font_asc + 2, "O", 1);
 
                 /* 3. Interactive Motif 3D PushButton Toolbar + X11 Vector Telemetry Widget */
-                int tb_y = 38;
-                int btn_w = 88;
-                int btn_h = 28;
                 for (int b = 0; b < num_buttons; b++) {
                     buttons[b].x = 8 + b * (btn_w + 6);
                     buttons[b].y = tb_y;
@@ -516,48 +640,50 @@ int decw_x11_run_window(const DecwWindowConfig* cfg) {
                                     colors.btn_bg, buttons[b].pressed);
                     XSetForeground(dpy, gc, colors.canvas_fg);
                     XDrawString(dpy, win, gc,
-                                buttons[b].x + 8, buttons[b].y + 19,
+                                buttons[b].x + 8, buttons[b].y + font_asc + 5,
                                 buttons[b].label, (int)strlen(buttons[b].label));
                 }
 
                 int vec_x = 8 + num_buttons * (btn_w + 6) + 4;
                 int vec_w = win_w - vec_x - 8;
-                if (vec_w >= 120) {
-                    draw_app_vector_widget(dpy, win, gc, &colors, cfg->app_id, vec_x, tb_y - 2, vec_w, 46);
+                if (vec_w >= 110) {
+                    draw_app_vector_widget(dpy, win, gc, &colors, cfg->app_id, vec_x, tb_y, vec_w, btn_h, font_asc);
                 }
 
                 /* 4. Main Sunken 3D Application Viewport Canvas */
-                int canvas_y = 86;
-                int canvas_h = win_h - canvas_y - 74;
+                int cmd_box_h = font_h + 14;
+                int st_box_h = font_h + 12;
+                int canvas_y = tb_y + btn_h + 8;
+                int canvas_h = win_h - canvas_y - cmd_box_h - st_box_h - 22;
                 if (canvas_h < 120) canvas_h = 120;
                 draw_bevel_rect(dpy, win, gc, &colors, 8, canvas_y, win_w - 16, canvas_h, colors.canvas_bg, 1);
 
                 XSetForeground(dpy, gc, colors.canvas_fg);
-                int line_h = 16;
-                int max_vis = (canvas_h - 16) / line_h;
+                int line_h = font_h + 3;
+                int max_vis = (canvas_h - 14) / line_h;
                 for (int i = 0; i < line_count && i < max_vis; i++) {
-                    XDrawString(dpy, win, gc, 18, canvas_y + 20 + i * line_h,
+                    XDrawString(dpy, win, gc, 18, canvas_y + font_asc + 8 + i * line_h,
                                 lines[i], (int)strlen(lines[i]));
                 }
 
                 /* 5. Sunken Motif XmTextField Command Entry Box */
-                int cmd_y = canvas_y + canvas_h + 8;
+                int cmd_y = canvas_y + canvas_h + 6;
                 XSetForeground(dpy, gc, colors.canvas_fg);
-                XDrawString(dpy, win, gc, 10, cmd_y + 19, "DECW Cmd>", 9);
+                XDrawString(dpy, win, gc, 10, cmd_y + font_asc + 5, "DECW Cmd>", 9);
 
-                int box_x = 96;
+                int box_x = 16 + char_w * 10;
                 int box_w = win_w - box_x - 10;
-                draw_bevel_rect(dpy, win, gc, &colors, box_x, cmd_y, box_w, 28, colors.cmd_bg, 1);
+                draw_bevel_rect(dpy, win, gc, &colors, box_x, cmd_y, box_w, cmd_box_h, colors.cmd_bg, 1);
                 char prompt_disp[220];
                 snprintf(prompt_disp, sizeof(prompt_disp), "%s_", cmd_input);
                 XSetForeground(dpy, gc, BlackPixel(dpy, screen));
-                XDrawString(dpy, win, gc, box_x + 8, cmd_y + 19, prompt_disp, (int)strlen(prompt_disp));
+                XDrawString(dpy, win, gc, box_x + 8, cmd_y + font_asc + 5, prompt_disp, (int)strlen(prompt_disp));
 
                 /* 6. Bottom Status Bar */
-                int st_y = cmd_y + 34;
-                draw_bevel_rect(dpy, win, gc, &colors, 8, st_y, win_w - 16, 26, colors.bg_gray, 1);
+                int st_y = cmd_y + cmd_box_h + 6;
+                draw_bevel_rect(dpy, win, gc, &colors, 8, st_y, win_w - 16, st_box_h, colors.bg_gray, 1);
                 XSetForeground(dpy, gc, colors.canvas_fg);
-                XDrawString(dpy, win, gc, 16, st_y + 18, status_msg, (int)strlen(status_msg));
+                XDrawString(dpy, win, gc, 16, st_y + font_asc + 4, status_msg, (int)strlen(status_msg));
 
                 XFlush(dpy);
 
@@ -597,6 +723,19 @@ int decw_x11_run_window(const DecwWindowConfig* cfg) {
                         my >= buttons[b].y && my <= buttons[b].y + buttons[b].h) {
                         if (strcmp(buttons[b].command, "__QUIT__") == 0) {
                             running = 0;
+                        } else if (strcmp(buttons[b].command, "__FONT_DEC__") == 0 ||
+                                   strcmp(buttons[b].command, "__FONT_INC__") == 0) {
+                            if (strcmp(buttons[b].command, "__FONT_DEC__") == 0 && font_scale > 1) font_scale--;
+                            if (strcmp(buttons[b].command, "__FONT_INC__") == 0 && font_scale < 6) font_scale++;
+                            custom_xlfd[0] = '\0';
+                            if (font) XFreeFont(dpy, font);
+                            font = load_scaled_font(dpy, font_scale, custom_xlfd, font_desc, sizeof(font_desc), &rec_w, &rec_h);
+                            if (font) XSetFont(dpy, gc, font->fid);
+                            win_w = (rec_w > disp_w - 80) ? disp_w - 80 : rec_w;
+                            win_h = (rec_h > disp_h - 80) ? disp_h - 80 : rec_h;
+                            XResizeWindow(dpy, win, (unsigned int)win_w, (unsigned int)win_h);
+                            snprintf(status_msg, sizeof(status_msg), "Resized X11 font to %s (%dx%d)", font_desc, win_w, win_h);
+                            XClearArea(dpy, win, 0, 0, 0, 0, True);
                         } else {
                             decw_x11_exec_app_cmd(cfg, buttons[b].command, status_msg, sizeof(status_msg));
                             line_count = decw_x11_load_frame(cfg->frame_path, lines, DECW_MAX_LINES);
@@ -612,9 +751,56 @@ int decw_x11_run_window(const DecwWindowConfig* cfg) {
 
                 if (ks == XK_Escape) {
                     running = 0;
+                } else if (ks == XK_F10 || ks == XK_Next || ((ev.xkey.state & ControlMask) && (ks == XK_minus || ks == XK_underscore))) {
+                    if (font_scale > 1) font_scale--;
+                    custom_xlfd[0] = '\0';
+                    if (font) XFreeFont(dpy, font);
+                    font = load_scaled_font(dpy, font_scale, custom_xlfd, font_desc, sizeof(font_desc), &rec_w, &rec_h);
+                    if (font) XSetFont(dpy, gc, font->fid);
+                    win_w = (rec_w > disp_w - 80) ? disp_w - 80 : rec_w;
+                    win_h = (rec_h > disp_h - 80) ? disp_h - 80 : rec_h;
+                    XResizeWindow(dpy, win, (unsigned int)win_w, (unsigned int)win_h);
+                    snprintf(status_msg, sizeof(status_msg), "Resized X11 font to %s (%dx%d)", font_desc, win_w, win_h);
+                    XClearArea(dpy, win, 0, 0, 0, 0, True);
+                } else if (ks == XK_F11 || ks == XK_Prior || ((ev.xkey.state & ControlMask) && (ks == XK_equal || ks == XK_plus))) {
+                    if (font_scale < 6) font_scale++;
+                    custom_xlfd[0] = '\0';
+                    if (font) XFreeFont(dpy, font);
+                    font = load_scaled_font(dpy, font_scale, custom_xlfd, font_desc, sizeof(font_desc), &rec_w, &rec_h);
+                    if (font) XSetFont(dpy, gc, font->fid);
+                    win_w = (rec_w > disp_w - 80) ? disp_w - 80 : rec_w;
+                    win_h = (rec_h > disp_h - 80) ? disp_h - 80 : rec_h;
+                    XResizeWindow(dpy, win, (unsigned int)win_w, (unsigned int)win_h);
+                    snprintf(status_msg, sizeof(status_msg), "Resized X11 font to %s (%dx%d)", font_desc, win_w, win_h);
+                    XClearArea(dpy, win, 0, 0, 0, 0, True);
                 } else if (ks == XK_Return || ks == XK_KP_Enter) {
                     if (strcasecmp(cmd_input, "EXIT") == 0 || strcasecmp(cmd_input, "QUIT") == 0) {
                         running = 0;
+                    } else if (strncasecmp(cmd_input, "FONT ", 5) == 0 || strncasecmp(cmd_input, "SCALE ", 6) == 0) {
+                        const char* arg = strchr(cmd_input, ' ');
+                        while (arg && *arg == ' ') arg++;
+                        if (arg && (strcmp(arg, "+") == 0 || strcasecmp(arg, "UP") == 0)) {
+                            if (font_scale < 6) font_scale++;
+                            custom_xlfd[0] = '\0';
+                        } else if (arg && (strcmp(arg, "-") == 0 || strcasecmp(arg, "DOWN") == 0)) {
+                            if (font_scale > 1) font_scale--;
+                            custom_xlfd[0] = '\0';
+                        } else if (arg && *arg) {
+                            int s = parse_font_spec_to_scale(arg, custom_xlfd, sizeof(custom_xlfd));
+                            if (s > 0) {
+                                font_scale = s;
+                                custom_xlfd[0] = '\0';
+                            }
+                        }
+                        if (font) XFreeFont(dpy, font);
+                        font = load_scaled_font(dpy, font_scale, custom_xlfd, font_desc, sizeof(font_desc), &rec_w, &rec_h);
+                        if (font) XSetFont(dpy, gc, font->fid);
+                        win_w = (rec_w > disp_w - 80) ? disp_w - 80 : rec_w;
+                        win_h = (rec_h > disp_h - 80) ? disp_h - 80 : rec_h;
+                        XResizeWindow(dpy, win, (unsigned int)win_w, (unsigned int)win_h);
+                        snprintf(status_msg, sizeof(status_msg), "Resized X11 font to %s (%dx%d)", font_desc, win_w, win_h);
+                        cmd_input[0] = '\0';
+                        XClearArea(dpy, win, 0, 0, 0, 0, True);
                     } else if (cmd_input[0]) {
                         decw_x11_exec_app_cmd(cfg, cmd_input, status_msg, sizeof(status_msg));
                         line_count = decw_x11_load_frame(cfg->frame_path, lines, DECW_MAX_LINES);
@@ -668,8 +854,8 @@ int decw_x11_run_window(const DecwWindowConfig* cfg) {
     {
         char info[256];
         decw_x11_probe_display(dname, info, sizeof(info));
-        printf("[DECwindows X11 Engine] Window '%s' (%s) rendered (%d lines, %d Motif buttons) | %s\n",
-               title, cfg->app_id[0] ? cfg->app_id : "decw", line_count, num_buttons, info);
+        printf("[DECwindows X11 Engine] Window '%s' (%s) rendered (%d lines, %d Motif buttons, Font: %s) | %s\n",
+               title, cfg->app_id[0] ? cfg->app_id : "decw", line_count, num_buttons, font_desc, info);
         fflush(stdout);
     }
 

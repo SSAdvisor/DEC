@@ -30,6 +30,8 @@ typedef struct {
     char state_path[256];
     char exec_bin[256];
     char export_verb[32];
+    char font_spec[128];
+    int font_scale;
     int width;
     int height;
     int autoclose_ms;

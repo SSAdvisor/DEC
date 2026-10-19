@@ -130,6 +130,18 @@ def test_04_decw_x11_window_render_and_synthetic_button_callback():
     assert "[DECwindows X11 Engine] Window 'DECwindows Calculator" in res.stdout
     assert "Motif buttons" in res.stdout
 
+    # Verify font scaling via DECW_FONT_SIZE / --font / --scale
+    env_xl = get_x11_env(DECW_X11_AUTOCLOSE_MS="100", DECW_FONT_SIZE="xlarge")
+    res_xl = subprocess.run(
+        [str(DECW_X11_BIN), "--app", "decterm", "--autoclose", "100", "--verify"],
+        env=env_xl,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert res_xl.returncode == 0
+    assert "Font: XLarge (28px) [Scale 4/6]" in res_xl.stdout
+
 
 def test_05_decwx11_session_manager_commands(tmp_path):
     export_file = tmp_path / "session_frame.txt"
