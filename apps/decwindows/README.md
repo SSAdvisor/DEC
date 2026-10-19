@@ -13,7 +13,7 @@ The `apps/decwindows/` sub-project contains 11 independent DECwindows applicatio
 | 1 | **DECterm** | [`decterm/`](decterm) | `decterm`, `dxterm` | **Completed** | VT300/VT220/VT100/VT52 terminal emulator, UDK programmable keys, ANSI/CSI parser, and scrollback manager |
 | 2 | **Bookreader** | [`bookreader/`](bookreader) | `bookreader`, `dxbook` | **Completed** | Online documentation library, bookshelf navigation, topic hierarchy, and full-text search |
 | 3 | **Calendar** | [`calendar/`](calendar) | `calendar`, `dxcalendar` | **Completed** | Personal & group time management, daily/monthly schedules, appointments, and alarms |
-| 4 | **Cardfiler** | `cardfiler/` | `cardfiler`, `dxcardfiler` | Pending | Index card database manager for contacts, reference notes, sorting, and card decks |
+| 4 | **Cardfiler** | [`cardfiler/`](cardfiler) | `cardfiler`, `dxcardfiler` | **Completed** | Index card database manager for contacts, reference notes, sorting, and card decks |
 | 5 | **CDA Viewer** | `cdaviewer/` | `cdaviewer`, `dxvdoc` | Pending | Compound Document Architecture (DDIF/DTIF/DOTS) document inspector and page renderer |
 | 6 | **Calculator** | `calculator/` | `calculator`, `dxcalc` | Pending | Desktop scientific, financial, and programmer (DEC/HEX/OCT) calculator with memory tape |
 | 7 | **Clock** | `clock/` | `clock`, `dxclock` | Pending | Analog/digital workstation clock, multi-timezone display, chime, and countdown timer/alarm |
