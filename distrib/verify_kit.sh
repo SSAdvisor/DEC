@@ -371,6 +371,17 @@ for APP in "${TARGET_APPS[@]}"; do
                 FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
             ;;
+        cdaviewer|dxvdoc)
+            OUT="$(printf "SAMPLE\nINSPECT\nEXIT\n" | "${EXE}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "CONFORMANT (ASN.1 TLV & DDIF/DTIF Descriptors Valid)"; then
+                echo "PASSED (DECwindows CDA Viewer DDIF/DTIF inspector verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
         *)
             # Generic sanity check
             OUT="$("${EXE}" 2>&1 || true)"

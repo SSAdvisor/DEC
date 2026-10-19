@@ -565,6 +565,8 @@ def test_install_decwindows_individual(tmp_path):
     dxcalendar_bin = prefix / "bin" / "dxcalendar"
     cardfiler_bin = prefix / "bin" / "cardfiler"
     dxcardfiler_bin = prefix / "bin" / "dxcardfiler"
+    cdaviewer_bin = prefix / "bin" / "cdaviewer"
+    dxvdoc_bin = prefix / "bin" / "dxvdoc"
     assert decwin_bin.exists()
     assert decterm_bin.is_file()
     assert os.access(decterm_bin, os.X_OK)
@@ -578,6 +580,9 @@ def test_install_decwindows_individual(tmp_path):
     assert cardfiler_bin.is_file()
     assert os.access(cardfiler_bin, os.X_OK)
     assert dxcardfiler_bin.exists()
+    assert cdaviewer_bin.is_file()
+    assert os.access(cdaviewer_bin, os.X_OK)
+    assert dxvdoc_bin.exists()
 
     run_res = subprocess.run([str(decterm_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "DECwindows DECterm Terminal Emulator Commands" in run_res.stdout
@@ -590,6 +595,9 @@ def test_install_decwindows_individual(tmp_path):
 
     run_crd = subprocess.run([str(cardfiler_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "DECwindows Cardfiler Rotary Index Card Manager Commands" in run_crd.stdout
+
+    run_cda = subprocess.run([str(cdaviewer_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "--- DECwindows CDA Viewer V3.0 Commands ---" in run_cda.stdout
 
     assert (prefix / "docs" / "decwindows.md").is_file()
 
@@ -604,6 +612,7 @@ def test_install_decwindows_individual(tmp_path):
     assert not bookreader_bin.exists()
     assert not calendar_bin.exists()
     assert not cardfiler_bin.exists()
+    assert not cdaviewer_bin.exists()
     assert not (prefix / "docs" / "decwindows.md").exists()
 
 
