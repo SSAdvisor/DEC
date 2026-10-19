@@ -571,6 +571,8 @@ def test_install_decwindows_individual(tmp_path):
     dxcalc_bin = prefix / "bin" / "dxcalc"
     clock_bin = prefix / "bin" / "clock"
     dxclock_bin = prefix / "bin" / "dxclock"
+    decsound_bin = prefix / "bin" / "decsound"
+    dxsound_bin = prefix / "bin" / "dxsound"
     assert decwin_bin.exists()
     assert decterm_bin.is_file()
     assert os.access(decterm_bin, os.X_OK)
@@ -593,6 +595,9 @@ def test_install_decwindows_individual(tmp_path):
     assert clock_bin.is_file()
     assert os.access(clock_bin, os.X_OK)
     assert dxclock_bin.exists()
+    assert decsound_bin.is_file()
+    assert os.access(decsound_bin, os.X_OK)
+    assert dxsound_bin.exists()
 
     run_res = subprocess.run([str(decterm_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "DECwindows DECterm Terminal Emulator Commands" in run_res.stdout
@@ -615,6 +620,9 @@ def test_install_decwindows_individual(tmp_path):
     run_clk = subprocess.run([str(clock_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "--- DECwindows Clock V3.0 Commands ---" in run_clk.stdout
 
+    run_snd = subprocess.run([str(decsound_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "--- DECwindows DECsound V3.0 Commands ---" in run_snd.stdout
+
     assert (prefix / "docs" / "decwindows.md").is_file()
 
     res_un = subprocess.run(
@@ -631,6 +639,7 @@ def test_install_decwindows_individual(tmp_path):
     assert not cdaviewer_bin.exists()
     assert not calculator_bin.exists()
     assert not clock_bin.exists()
+    assert not decsound_bin.exists()
     assert not (prefix / "docs" / "decwindows.md").exists()
 
 
