@@ -146,6 +146,8 @@ for app in "${SELECTED_APPS[@]}"; do
         COMPANIONS=("menu" "mcf")
     elif [ "$app" = "indent" ]; then
         COMPANIONS=("bp2fmt" "pretty")
+    elif [ "$app" = "decwindows" ]; then
+        COMPANIONS=("decterm" "dxterm" "bookreader" "dxbook" "calendar" "dxcalendar" "cardfiler" "dxcardfiler" "cdaviewer" "dxvdoc" "calculator" "dxcalc" "clock" "dxclock" "decsound" "dxsound" "dxmail" "decwinmail" "fileview" "dxfileview" "notepad" "dxnotepad")
     fi
 
     # 1. Remove symlink

@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|dibs11|cts500|fms|fed|fdv|menu|mcf|bp2fmt|pretty)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|dibs11|cts500|fms|fed|fdv|menu|mcf|bp2fmt|pretty|decterm|dxterm|bookreader|dxbook|calendar|dxcalendar|cardfiler|dxcardfiler|cdaviewer|dxvdoc|calculator|dxcalc|clock|dxclock|decsound|dxsound|dxmail|decwinmail|fileview|dxfileview|notepad|dxnotepad)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -30,7 +30,7 @@ fi
 # Fallback discovery if running directly from project root/distrib
 if [ ${#AVAILABLE_APPS[@]} -eq 0 ] && [ -d "${SCRIPT_DIR}/../apps" ]; then
     for d in "${SCRIPT_DIR}/../apps"/*; do
-        if [ -d "$d" ] && [ -f "$d/src/$(basename "$d").bas" ]; then
+        if [ -d "$d" ] && [ -f "$d/Makefile" ]; then
             AVAILABLE_APPS+=("$(basename "$d")")
         fi
     done
@@ -126,6 +126,9 @@ list_apps() {
                 ;;
             indent)
                 printf "%-16s %-18s %s\n" "indent" "Dev Utility" "INDENT DEC BASIC-PLUS-2 source code formatter & structure analyzer"
+                ;;
+            decwindows)
+                printf "%-16s %-18s %s\n" "decwindows" "Workstation GUI" "DECwindows XUI/Motif desktop suite (DECterm, Bookreader, Calendar, etc.)"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
@@ -285,6 +288,8 @@ for app in "${VALID_APPS[@]}"; do
         COMPANIONS=("menu" "mcf")
     elif [ "${app}" = "indent" ]; then
         COMPANIONS=("bp2fmt" "pretty")
+    elif [ "${app}" = "decwindows" ]; then
+        COMPANIONS=("decterm" "dxterm" "bookreader" "dxbook" "calendar" "dxcalendar" "cardfiler" "dxcardfiler" "cdaviewer" "dxvdoc" "calculator" "dxcalc" "clock" "dxclock" "decsound" "dxsound" "dxmail" "decwinmail" "fileview" "dxfileview" "notepad" "dxnotepad")
     fi
     if [ ${#COMPANIONS[@]} -gt 0 ]; then
         for c in "${COMPANIONS[@]}"; do

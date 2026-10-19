@@ -124,6 +124,8 @@ make clean
 | [`fms11`](apps/fms11) | Forms Management | FMS-11: DEC Forms Management System supporting Form Editor (FED), Form Library (FLB), Form Utility (FUT), and Form Driver (FDV) | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M, RT-11) & VAX/VMS (1979-1986) |
 | [`menu11`](apps/menu11) | Menu Control / Shell | MENU-11: DEC Menu Control & Application Dispatch Facility (MCF) with PPN security privilege enforcement, hierarchical submenus, and audit logging | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M, CTS-300/500) & VAX/VMS (1978-1988) |
 | [`indent`](apps/indent) | Developer Utility | INDENT: DEC BASIC-PLUS-2 source code pretty-printer, block-structure formatter, nesting auditor, and control-flow cross-reference analyzer | Digital Equipment Corporation & DECUS PDP-11 / RSTS/E / VAX/VMS (1977-1986) |
+| [`decwindows`](apps/decwindows) | Workstation Desktop Suite | DECwindows XUI/Motif Application Suite (`DECterm`, `Bookreader`, `Calendar`, `Cardfiler`, `CDA Viewer`, `Calculator`, `Clock`, `DECsound`, `DECwindows Mail`, `FileView`, `Notepad`) | Digital Equipment Corporation VAX/VMS, ULTRIX & OSF/1 (1988-1995) |
+
 
 
 
