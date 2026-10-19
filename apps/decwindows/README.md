@@ -15,7 +15,7 @@ The `apps/decwindows/` sub-project contains 11 independent DECwindows applicatio
 | 3 | **Calendar** | [`calendar/`](calendar) | `calendar`, `dxcalendar` | **Completed** | Personal & group time management, daily/monthly schedules, appointments, and alarms |
 | 4 | **Cardfiler** | [`cardfiler/`](cardfiler) | `cardfiler`, `dxcardfiler` | **Completed** | Index card database manager for contacts, reference notes, sorting, and card decks |
 | 5 | **CDA Viewer** | [`cdaviewer/`](cdaviewer) | `cdaviewer`, `dxvdoc` | **Completed** | Compound Document Architecture (DDIF/DTIF/DOTS) document inspector and page renderer |
-| 6 | **Calculator** | `calculator/` | `calculator`, `dxcalc` | Pending | Desktop scientific, financial, and programmer (DEC/HEX/OCT) calculator with memory tape |
+| 6 | **Calculator** | [`calculator/`](calculator) | `calculator`, `dxcalc` | **Completed** | Desktop scientific, financial, and programmer (DEC/HEX/OCT) calculator with memory tape |
 | 7 | **Clock** | `clock/` | `clock`, `dxclock` | Pending | Analog/digital workstation clock, multi-timezone display, chime, and countdown timer/alarm |
 | 8 | **DECsound** | `decsound/` | `decsound`, `dxsound` | Pending | Workstation audio clip recorder/player, mu-law waveform analyzer, and voice annotation manager |
 | 9 | **DECwindows Mail** | `dxmail/` | `dxmail`, `decwinmail` | Pending | XUI/Motif graphical mail cabinet, folder drawer, message viewer, and composition window |

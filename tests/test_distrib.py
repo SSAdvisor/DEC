@@ -567,6 +567,8 @@ def test_install_decwindows_individual(tmp_path):
     dxcardfiler_bin = prefix / "bin" / "dxcardfiler"
     cdaviewer_bin = prefix / "bin" / "cdaviewer"
     dxvdoc_bin = prefix / "bin" / "dxvdoc"
+    calculator_bin = prefix / "bin" / "calculator"
+    dxcalc_bin = prefix / "bin" / "dxcalc"
     assert decwin_bin.exists()
     assert decterm_bin.is_file()
     assert os.access(decterm_bin, os.X_OK)
@@ -583,6 +585,9 @@ def test_install_decwindows_individual(tmp_path):
     assert cdaviewer_bin.is_file()
     assert os.access(cdaviewer_bin, os.X_OK)
     assert dxvdoc_bin.exists()
+    assert calculator_bin.is_file()
+    assert os.access(calculator_bin, os.X_OK)
+    assert dxcalc_bin.exists()
 
     run_res = subprocess.run([str(decterm_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "DECwindows DECterm Terminal Emulator Commands" in run_res.stdout
@@ -599,6 +604,9 @@ def test_install_decwindows_individual(tmp_path):
     run_cda = subprocess.run([str(cdaviewer_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "--- DECwindows CDA Viewer V3.0 Commands ---" in run_cda.stdout
 
+    run_clc = subprocess.run([str(calculator_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "--- DECwindows Calculator V3.0 Commands ---" in run_clc.stdout
+
     assert (prefix / "docs" / "decwindows.md").is_file()
 
     res_un = subprocess.run(
@@ -613,6 +621,7 @@ def test_install_decwindows_individual(tmp_path):
     assert not calendar_bin.exists()
     assert not cardfiler_bin.exists()
     assert not cdaviewer_bin.exists()
+    assert not calculator_bin.exists()
     assert not (prefix / "docs" / "decwindows.md").exists()
 
 
