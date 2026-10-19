@@ -577,6 +577,8 @@ def test_install_decwindows_individual(tmp_path):
     decwinmail_bin = prefix / "bin" / "decwinmail"
     fileview_bin = prefix / "bin" / "fileview"
     dxfileview_bin = prefix / "bin" / "dxfileview"
+    notepad_bin = prefix / "bin" / "notepad"
+    dxnotepad_bin = prefix / "bin" / "dxnotepad"
     assert decwin_bin.exists()
     assert decterm_bin.is_file()
     assert os.access(decterm_bin, os.X_OK)
@@ -608,6 +610,9 @@ def test_install_decwindows_individual(tmp_path):
     assert fileview_bin.is_file()
     assert os.access(fileview_bin, os.X_OK)
     assert dxfileview_bin.exists()
+    assert notepad_bin.is_file()
+    assert os.access(notepad_bin, os.X_OK)
+    assert dxnotepad_bin.exists()
 
     run_res = subprocess.run([str(decterm_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "DECwindows DECterm Terminal Emulator Commands" in run_res.stdout
@@ -639,6 +644,9 @@ def test_install_decwindows_individual(tmp_path):
     run_fvw = subprocess.run([str(fileview_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "--- DECwindows FileView V3.0 (VUE$MASTER) Commands ---" in run_fvw.stdout
 
+    run_npd = subprocess.run([str(notepad_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "--- DECwindows Notepad V3.0 (DECW$NOTEPAD) Commands ---" in run_npd.stdout
+
     assert (prefix / "docs" / "decwindows.md").is_file()
 
     res_un = subprocess.run(
@@ -658,6 +666,7 @@ def test_install_decwindows_individual(tmp_path):
     assert not decsound_bin.exists()
     assert not dxmail_bin.exists()
     assert not fileview_bin.exists()
+    assert not notepad_bin.exists()
     assert not (prefix / "docs" / "decwindows.md").exists()
 
 

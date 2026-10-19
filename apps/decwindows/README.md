@@ -20,7 +20,7 @@ The `apps/decwindows/` sub-project contains 11 independent DECwindows applicatio
 | 8 | **DECsound** | [`decsound/`](decsound) | `decsound`, `dxsound` | **Completed** | Workstation audio clip recorder/player, mu-law waveform analyzer, and voice annotation manager |
 | 9 | **DECwindows Mail** | [`dxmail/`](dxmail) | `dxmail`, `decwinmail` | **Completed** | XUI/Motif graphical mail cabinet, folder drawer, message viewer, and composition window |
 | 10 | **FileView** | [`fileview/`](fileview) | `fileview`, `dxfileview` | **Completed** | Workstation graphical file manager, directory browser, DCL verb launcher, and file inspector |
-| 11 | **Notepad** | `notepad/` | `notepad`, `dxnotepad` | Pending | Desktop text editor with cut/copy/paste clipboard, search/replace, and line wrapping |
+| 11 | **Notepad** | [`notepad/`](notepad) | `notepad`, `dxnotepad` | **Completed** | Desktop text editor with cut/copy/paste clipboard, search/replace, and line wrapping |
 
 ---
 
