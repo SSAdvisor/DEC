@@ -9,7 +9,16 @@
 90 PIPE$ = "|" \ COLON$ = ":" \ LBRK$ = "[" \ RBRK$ = "]" \ SP1$ = " " \ STAR$ = "*"
 100 MSG_CNT% = 0% \ CUR_MSG% = 0% \ CUR_DRW$ = "MAIN" \ CUR_FLD$ = "INBOX"
 110 CAB_NAME$ = "SYS$LOGIN:DECW$MAIL.DAT" \ USER_ADDR$ = "ZKO::SYSTEM"
-120 PRT_CH% = 0% \ BANNER_SHOWN% = 0% \ CMD_LINE$ = COMMAND$
+120 PRT_CH% = 0% \ BANNER_SHOWN% = 0% \ FORCE_CLI% = 0%
+122 C_STR$ = COMMAND$ \ GOSUB 3520 \ CMD_LINE$ = C_STR$
+124 IF LEFT$(CMD_LINE$, 5%) = "--cli" THEN FORCE_CLI% = 1%
+126 IF FORCE_CLI% = 1% THEN C_STR$ = MID$(CMD_LINE$, 6%, LEN(CMD_LINE$) - 5%)
+128 IF FORCE_CLI% = 1% THEN GOSUB 3520
+130 IF FORCE_CLI% = 1% THEN CMD_LINE$ = C_STR$
+132 IF CMD_LINE$ = "--x11" OR CMD_LINE$ = "-gui" THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
+134 IF_X11% = 1% \ CHK_X11$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --check-gui"
+136 IF CMD_LINE$ = "" AND FORCE_CLI% = 0% THEN IF_X11% = SYS(CHK_X11$)
+138 IF IF_X11% = 0% THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
 140 IF LEN(CMD_LINE$) > 0% THEN GOTO 240
 150 PRINT "=============================================================================="
 160 PRINT " DECwindows Mail V3.0 (DECW$MAIL - XUI/Motif Mail Cabinet & DDIF Viewer)"
@@ -23,7 +32,7 @@
 240 IF BANNER_SHOWN% = 0% THEN RAW_LINE$ = CMD_LINE$
 250 GOSUB 3310 \ Q_IDX% = 1%
 270 IF Q_IDX% > Q_CNT% THEN GOTO 320
-280 ONE_CMD$ = CMD_Q$(Q_IDX%) \ GOSUB 350 \ Q_IDX% = Q_IDX% + 1% \ GOTO 270
+280 ONE_CMD$ = CMD_Q$( Q_IDX% ) \ GOSUB 350 \ Q_IDX% = Q_IDX% + 1% \ GOTO 270
 320 IF BANNER_SHOWN% = 0% THEN GOTO 4500
 330 GOTO 210
 350 C_STR$ = ONE_CMD$ \ GOSUB 3520
@@ -62,6 +71,7 @@
 690 IF VERB$ = "SAVE" THEN GOTO 4320
 700 IF VERB$ = "LOAD" THEN GOTO 4400
 710 IF VERB$ = "CLEAR" THEN GOTO 1230
+715 IF VERB$ = "X11" OR VERB$ = "GUI" OR VERB$ = "XDISPLAY" THEN GOTO 4496
 720 PRINT "%DXMAIL-E-INVCMD, unrecognized command: "; VERB$
 1040 RETURN
 1050 PRINT "--- DECwindows Mail V3.0 (DECW$MAIL) Commands ---"
@@ -414,4 +424,8 @@
 4485 CLOSE #1%
 4490 PRINT "%DXMAIL-I-LOADED, loaded "; MSG_CNT%; " messages from "; ARG$
 4495 RETURN
+4496 IF MSG_CNT% = 0% THEN GOSUB 1270
+4497 ARG$ = "/tmp/decw_dxmail.dat" \ GOSUB 4320 \ ARG$ = "/tmp/decw_dxmail.txt" \ GOSUB 4150
+4498 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app dxmail --frame /tmp/decw_dxmail.txt"
+4499 X_RC% = SYS(X_CMD$) \ RETURN
 4500 END

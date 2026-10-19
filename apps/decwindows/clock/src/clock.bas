@@ -11,18 +11,19 @@
 27 PIPE$ = "|" \ SEMI$ = ";" \ COLON$ = ":" \ SP1$ = " " \ ZERO$ = "0"
 28 LBRK$ = "[" \ RBRK$ = "]" \ PLUS$ = "+" \ MINUS$ = "-"
 29 BLANKS$ = "                                                                                "
-30 NUM_WZ% = 0% \ IS_BATCH% = 0% \ CMD_INIT$ = COMMAND$
-31 IF CMD_INIT$ <> "" THEN IS_BATCH% = 1%
-32 IF CMD_INIT$ <> "" THEN REM_CHAIN$ = CMD_INIT$
-33 IF CMD_INIT$ <> "" THEN GOTO 54
-34 PRINT "======================================================================"
-35 PRINT " DECwindows Clock V3.0 (DECW$CLOCK / dxclock)"
-36 PRINT " Digital Equipment Corporation - Desktop Analog/Digital Timekeeper"
-37 PRINT " Type HELP for commands, SAMPLE for Maynard/Nashua clock demo, EXIT."
-38 PRINT "======================================================================"
-39 PRINT ""
-40 REM --- Main Interactive REPL & Command Chain Loop ---
-42 REM_CHAIN$ = ""
+30 NUM_WZ% = 0% \ IS_BATCH% = 0% \ FORCE_CLI% = 0% \ S_IN$ = COMMAND$ \ GOSUB 500 \ CMD_INIT$ = S_OUT$
+31 IF LEFT$(CMD_INIT$, 5%) = "--cli" THEN FORCE_CLI% = 1%
+32 IF FORCE_CLI% = 1% THEN S_IN$ = MID$(CMD_INIT$, 6%, LEN(CMD_INIT$) - 5%)
+33 IF FORCE_CLI% = 1% THEN GOSUB 500
+34 IF FORCE_CLI% = 1% THEN CMD_INIT$ = S_OUT$
+35 IF CMD_INIT$ = "--x11" OR CMD_INIT$ = "-gui" THEN CMD_INIT$ = "SAMPLE; X11; EXIT"
+36 IF_X11% = 1% \ CHK_X11$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --check-gui"
+37 IF CMD_INIT$ = "" AND FORCE_CLI% = 0% THEN IF_X11% = SYS(CHK_X11$)
+38 IF IF_X11% = 0% THEN CMD_INIT$ = "SAMPLE; X11; EXIT"
+39 IF CMD_INIT$ <> "" THEN IS_BATCH% = 1%
+40 IF CMD_INIT$ <> "" THEN REM_CHAIN$ = CMD_INIT$
+41 IF CMD_INIT$ <> "" THEN GOTO 54
+42 PRINT "======================================================================" \ PRINT " DECwindows Clock V3.0 (DECW$CLOCK / dxclock)" \ PRINT " Digital Equipment Corporation - Desktop Analog/Digital Timekeeper" \ PRINT " Type HELP for commands, SAMPLE for Maynard/Nashua clock demo, EXIT." \ PRINT "======================================================================" \ PRINT "" \ REM_CHAIN$ = ""
 44 IF REM_CHAIN$ <> "" THEN GOTO 54
 45 IF IS_BATCH% = 1% THEN GOTO 990
 46 PRINT "CLOCK> "; \ LINE INPUT RAW_IN$
@@ -91,6 +92,7 @@
 160 IF VERB$ = "LOAD" THEN GOTO 472
 162 IF VERB$ = "CLEAR" THEN GOTO 490
 164 IF VERB$ = "RESET" THEN GOTO 490
+165 IF VERB$ = "X11" OR VERB$ = "GUI" OR VERB$ = "XDISPLAY" THEN GOTO 495
 166 PRINT "%CLOCK-E-INVCMD, Unrecognized command: "; VERB$
 168 GOTO 44
 170 REM --- SAMPLE / DEMO ---
@@ -257,6 +259,9 @@
 490 REM --- CLEAR / RESET ---
 492 CLK_HR% = 0% \ CLK_MN% = 0% \ CLK_SC% = 0% \ ALM_ON% = 0%
 494 PRINT "[Clock reset to 00:00:00 and alarm cleared]" \ GOTO 44
+495 OUT_FILE$ = "/tmp/decw_clock.txt" \ GOSUB 600
+496 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app clock --frame /tmp/decw_clock.txt"
+497 X_RC% = SYS(X_CMD$) \ GOTO 44
 500 REM --- Subroutine: Trim leading/trailing spaces (S_IN$ -> S_OUT$) ---
 502 S_OUT$ = S_IN$
 504 IF LEN(S_OUT$) = 0% THEN GOTO 518

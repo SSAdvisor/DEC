@@ -448,6 +448,28 @@ for APP in "${TARGET_APPS[@]}"; do
                 FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
             ;;
+        decw_x11)
+            OUT="$("${EXE}" --version 2>&1 || true)"
+            if echo "${OUT}" | grep -q "DECwindows X11/Motif 1.1 Interfacing Library"; then
+                echo "PASSED (DECwindows X11/Motif 1.1 interfacing library & bridge verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        decwx11|dxsession)
+            OUT="$(printf "APPS\nEXIT\n" | DECW_FORCE_CLI=1 "${EXE}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "DECwindows V3.0 - X11 Protocol & Motif Session Manager"; then
+                echo "PASSED (DECwindows X11 Session Manager verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
         *)
             # Generic sanity check
             OUT="$("${EXE}" 2>&1 || true)"

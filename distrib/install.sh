@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|dibs11|cts500|fms|fed|fdv|menu|mcf|bp2fmt|pretty|decterm|dxterm|bookreader|dxbook|calendar|dxcalendar|cardfiler|dxcardfiler|cdaviewer|dxvdoc|calculator|dxcalc|clock|dxclock|decsound|dxsound|dxmail|decwinmail|fileview|dxfileview|notepad|dxnotepad)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|dibs11|cts500|fms|fed|fdv|menu|mcf|bp2fmt|pretty|decw_x11|decwx11|dxsession|decterm|dxterm|bookreader|dxbook|calendar|dxcalendar|cardfiler|dxcardfiler|cdaviewer|dxvdoc|calculator|dxcalc|clock|dxclock|decsound|dxsound|dxmail|decwinmail|fileview|dxfileview|notepad|dxnotepad)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -289,7 +289,18 @@ for app in "${VALID_APPS[@]}"; do
     elif [ "${app}" = "indent" ]; then
         COMPANIONS=("bp2fmt" "pretty")
     elif [ "${app}" = "decwindows" ]; then
-        COMPANIONS=("decterm" "dxterm" "bookreader" "dxbook" "calendar" "dxcalendar" "cardfiler" "dxcardfiler" "cdaviewer" "dxvdoc" "calculator" "dxcalc" "clock" "dxclock" "decsound" "dxsound" "dxmail" "decwinmail" "fileview" "dxfileview" "notepad" "dxnotepad")
+        COMPANIONS=("decw_x11" "decwx11" "dxsession" "decterm" "dxterm" "bookreader" "dxbook" "calendar" "dxcalendar" "cardfiler" "dxcardfiler" "cdaviewer" "dxvdoc" "calculator" "dxcalc" "clock" "dxclock" "decsound" "dxsound" "dxmail" "decwinmail" "fileview" "dxfileview" "notepad" "dxnotepad")
+        mkdir -p "${PREFIX}/lib" "${PREFIX}/include"
+        if [ -d "${SCRIPT_DIR}/lib" ]; then
+            cp -a "${SCRIPT_DIR}/lib"/* "${PREFIX}/lib/" 2>/dev/null || true
+        elif [ -d "${SCRIPT_DIR}/../apps/${app}/lib" ]; then
+            cp -a "${SCRIPT_DIR}/../apps/${app}/lib"/* "${PREFIX}/lib/" 2>/dev/null || true
+        fi
+        if [ -d "${SCRIPT_DIR}/include" ]; then
+            cp -a "${SCRIPT_DIR}/include"/* "${PREFIX}/include/" 2>/dev/null || true
+        elif [ -d "${SCRIPT_DIR}/../apps/${app}/include" ]; then
+            cp -a "${SCRIPT_DIR}/../apps/${app}/include"/* "${PREFIX}/include/" 2>/dev/null || true
+        fi
     fi
     if [ ${#COMPANIONS[@]} -gt 0 ]; then
         for c in "${COMPANIONS[@]}"; do

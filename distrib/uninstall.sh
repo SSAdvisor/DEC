@@ -147,7 +147,11 @@ for app in "${SELECTED_APPS[@]}"; do
     elif [ "$app" = "indent" ]; then
         COMPANIONS=("bp2fmt" "pretty")
     elif [ "$app" = "decwindows" ]; then
-        COMPANIONS=("decterm" "dxterm" "bookreader" "dxbook" "calendar" "dxcalendar" "cardfiler" "dxcardfiler" "cdaviewer" "dxvdoc" "calculator" "dxcalc" "clock" "dxclock" "decsound" "dxsound" "dxmail" "decwinmail" "fileview" "dxfileview" "notepad" "dxnotepad")
+        COMPANIONS=("decw_x11" "decwx11" "dxsession" "decterm" "dxterm" "bookreader" "dxbook" "calendar" "dxcalendar" "cardfiler" "dxcardfiler" "cdaviewer" "dxvdoc" "calculator" "dxcalc" "clock" "dxclock" "decsound" "dxsound" "dxmail" "decwinmail" "fileview" "dxfileview" "notepad" "dxnotepad")
+    fi
+
+    if [ "$app" = "decwindows" ]; then
+        rm -f "${PREFIX}/lib/libdecw_x11.so" "${PREFIX}/lib/libdecw_x11.a" "${PREFIX}/include/decw_x11.h"
     fi
 
     # 1. Remove symlink
@@ -212,6 +216,8 @@ if [ "$REMAINING" -eq 0 ]; then
     rmdir "${PREFIX}/share/dec-apps/installed" 2>/dev/null || true
     rmdir "${PREFIX}/share/dec-apps" 2>/dev/null || true
     rmdir "${PREFIX}/share" 2>/dev/null || true
+    rmdir "${PREFIX}/lib" 2>/dev/null || true
+    rmdir "${PREFIX}/include" 2>/dev/null || true
     rmdir "${PREFIX}/bin" 2>/dev/null || true
     rmdir "${PREFIX}/docs" 2>/dev/null || true
 

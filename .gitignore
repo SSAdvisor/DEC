@@ -9,6 +9,8 @@ __pycache__/
 *.bin
 build/
 bin/
+lib/
+apps/decwindows/include/
 
 # RMS and runtime database files
 *.db

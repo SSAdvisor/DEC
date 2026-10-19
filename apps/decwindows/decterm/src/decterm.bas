@@ -3,7 +3,16 @@
 30 AUTO_WRAP$ = "ON" \ MAX_SCROLL% = 500% \ WIN_TITLE$ = "DECterm - VAX/VMS Session 1" \ SESS_FILE$ = "DECTERM.LOG"
 40 BLANKS$ = "                                                                                " \ LBRK$ = "[" \ RBRK$ = "]" \ VBAR$ = "|"
 50 SEP$    = "--------------------------------------------------------------------------------"
-60 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ CMD_LINE$ = COMMAND$
+60 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ FORCE_CLI% = 0%
+61 T_IN$ = COMMAND$ \ GOSUB 500 \ CMD_LINE$ = T_OUT$
+62 IF LEFT$(CMD_LINE$, 5%) = "--cli" THEN FORCE_CLI% = 1%
+63 IF FORCE_CLI% = 1% THEN T_IN$ = MID$(CMD_LINE$, 6%, LEN(CMD_LINE$) - 5%)
+64 IF FORCE_CLI% = 1% THEN GOSUB 500
+65 IF FORCE_CLI% = 1% THEN CMD_LINE$ = T_OUT$
+66 IF CMD_LINE$ = "--x11" OR CMD_LINE$ = "-gui" THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
+67 IF_X11% = 1% \ CHK_X11$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --check-gui"
+68 IF CMD_LINE$ = "" AND FORCE_CLI% = 0% THEN IF_X11% = SYS(CHK_X11$)
+69 IF IF_X11% = 0% THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
 70 GOSUB 700
 80 IF CMD_LINE$ = "" THEN GOTO 100
 90 IS_BATCH% = 1% \ SC_REM$ = CMD_LINE$ \ GOTO 180
@@ -52,6 +61,7 @@
 486 IF VERB$ = "SAVE" THEN GOTO 2990
 488 IF VERB$ = "LOAD" OR VERB$ = "IMPORT" THEN GOTO 3090
 490 IF VERB$ = "CLEAR" OR VERB$ = "RESET" THEN GOTO 3190
+492 IF VERB$ = "X11" OR VERB$ = "GUI" OR VERB$ = "XDISPLAY" THEN GOTO 3392
 494 PRINT "DECTERM: Unknown command '"; VERB$; "'. Type HELP for syntax."
 495 RETURN
 500 T_OUT$ = T_IN$
@@ -290,4 +300,9 @@
 3370 PRINT "DECTERM: Scrollback buffer is empty. Use SAMPLE, SEND, or LOAD first." \ GOTO 495
 3380 PRINT "DECTERM: Invalid line number." \ GOTO 495
 3390 PRINT "DECTERM: Scrollback buffer is full (maximum 60 lines)." \ GOTO 495
+3392 IF NUM_LINES% = 0% THEN GOSUB 800
+3393 ARGS$ = "/tmp/decw_decterm.dat" \ GOSUB 2990
+3394 VERB$ = "EXPORT" \ ARGS$ = "/tmp/decw_decterm.txt" \ GOSUB 2560
+3395 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app decterm --frame /tmp/decw_decterm.txt"
+3396 X_RC% = SYS(X_CMD$) \ GOTO 495
 3400 END

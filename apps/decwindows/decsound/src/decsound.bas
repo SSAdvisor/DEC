@@ -11,18 +11,19 @@
 27 LBRK$ = "[" \ RBRK$ = "]" \ HASH$ = "#" \ BAR_CH$ = "="
 28 BLANKS$ = "                                                                                "
 29 BARS$ = "=================================================="
-30 IS_BATCH% = 0% \ CMD_INIT$ = COMMAND$
-31 IF CMD_INIT$ <> "" THEN IS_BATCH% = 1%
-32 IF CMD_INIT$ <> "" THEN REM_CHAIN$ = CMD_INIT$
-33 IF CMD_INIT$ <> "" THEN GOTO 54
-34 PRINT "======================================================================"
-35 PRINT " DECwindows DECsound V3.0 (DECW$SOUND / dxsound)"
-36 PRINT " Digital Equipment Corporation - Workstation Audio & Voice Annotations"
-37 PRINT " Type HELP for commands, SAMPLE for DECaudio clip library, EXIT."
-38 PRINT "======================================================================"
-39 PRINT ""
-40 REM --- Main Interactive REPL & Command Chain Loop ---
-42 REM_CHAIN$ = ""
+30 IS_BATCH% = 0% \ FORCE_CLI% = 0% \ S_IN$ = COMMAND$ \ GOSUB 500 \ CMD_INIT$ = S_OUT$
+31 IF LEFT$(CMD_INIT$, 5%) = "--cli" THEN FORCE_CLI% = 1%
+32 IF FORCE_CLI% = 1% THEN S_IN$ = MID$(CMD_INIT$, 6%, LEN(CMD_INIT$) - 5%)
+33 IF FORCE_CLI% = 1% THEN GOSUB 500
+34 IF FORCE_CLI% = 1% THEN CMD_INIT$ = S_OUT$
+35 IF CMD_INIT$ = "--x11" OR CMD_INIT$ = "-gui" THEN CMD_INIT$ = "SAMPLE; X11; EXIT"
+36 IF_X11% = 1% \ CHK_X11$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --check-gui"
+37 IF CMD_INIT$ = "" AND FORCE_CLI% = 0% THEN IF_X11% = SYS(CHK_X11$)
+38 IF IF_X11% = 0% THEN CMD_INIT$ = "SAMPLE; X11; EXIT"
+39 IF CMD_INIT$ <> "" THEN IS_BATCH% = 1%
+40 IF CMD_INIT$ <> "" THEN REM_CHAIN$ = CMD_INIT$
+41 IF CMD_INIT$ <> "" THEN GOTO 54
+42 PRINT "======================================================================" \ PRINT " DECwindows DECsound V3.0 (DECW$SOUND / dxsound)" \ PRINT " Digital Equipment Corporation - Workstation Audio & Voice Annotations" \ PRINT " Type HELP for commands, SAMPLE for DECaudio clip library, EXIT." \ PRINT "======================================================================" \ PRINT "" \ REM_CHAIN$ = ""
 44 IF REM_CHAIN$ <> "" THEN GOTO 54
 45 IF IS_BATCH% = 1% THEN GOTO 990
 46 PRINT "DECSOUND> "; \ LINE INPUT RAW_IN$
@@ -92,6 +93,7 @@
 160 IF VERB$ = "LOAD" THEN GOTO 472
 162 IF VERB$ = "CLEAR" THEN GOTO 490
 164 IF VERB$ = "RESET" THEN GOTO 490
+165 IF VERB$ = "X11" OR VERB$ = "GUI" OR VERB$ = "XDISPLAY" THEN GOTO 495
 166 PRINT "%DECSOUND-E-INVCMD, Unrecognized command: "; VERB$
 168 GOTO 44
 170 REM --- SAMPLE / DEMO ---
@@ -287,6 +289,9 @@
 490 REM --- CLEAR / RESET ---
 492 NUM_CLIPS% = 0% \ CUR_CLIP% = 0%
 494 PRINT "[DECsound clip library cleared]" \ GOTO 44
+495 OUT_FILE$ = "/tmp/decw_decsound.txt" \ GOSUB 600
+496 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app decsound --frame /tmp/decw_decsound.txt"
+497 X_RC% = SYS(X_CMD$) \ GOTO 44
 500 REM --- Subroutine: Trim leading/trailing spaces (S_IN$ -> S_OUT$) ---
 502 S_OUT$ = S_IN$
 504 IF LEN(S_OUT$) = 0% THEN GOTO 518

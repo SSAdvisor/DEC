@@ -87,6 +87,12 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "bp2fmt"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "pretty"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "decwindows"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "decw_x11"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "decwx11"))
+    assert os.path.exists(os.path.join(staging_dir, "bin", "dxsession"))
+    assert os.path.isfile(os.path.join(staging_dir, "lib", "libdecw_x11.so"))
+    assert os.path.isfile(os.path.join(staging_dir, "lib", "libdecw_x11.a"))
+    assert os.path.isfile(os.path.join(staging_dir, "include", "decw_x11.h"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "decterm"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "dxterm"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "bookreader"))
@@ -557,6 +563,10 @@ def test_install_decwindows_individual(tmp_path):
     assert "Verification Summary: 1 Passed, 0 Failed" in res.stdout
 
     decwin_bin = prefix / "bin" / "decwindows"
+    decw_x11_bin = prefix / "bin" / "decw_x11"
+    decwx11_bin = prefix / "bin" / "decwx11"
+    dxsession_bin = prefix / "bin" / "dxsession"
+    libdecw_so = prefix / "lib" / "libdecw_x11.so"
     decterm_bin = prefix / "bin" / "decterm"
     dxterm_bin = prefix / "bin" / "dxterm"
     bookreader_bin = prefix / "bin" / "bookreader"
@@ -580,6 +590,12 @@ def test_install_decwindows_individual(tmp_path):
     notepad_bin = prefix / "bin" / "notepad"
     dxnotepad_bin = prefix / "bin" / "dxnotepad"
     assert decwin_bin.exists()
+    assert decw_x11_bin.is_file()
+    assert os.access(decw_x11_bin, os.X_OK)
+    assert decwx11_bin.is_file()
+    assert os.access(decwx11_bin, os.X_OK)
+    assert dxsession_bin.exists()
+    assert libdecw_so.is_file()
     assert decterm_bin.is_file()
     assert os.access(decterm_bin, os.X_OK)
     assert dxterm_bin.exists()
@@ -613,6 +629,9 @@ def test_install_decwindows_individual(tmp_path):
     assert notepad_bin.is_file()
     assert os.access(notepad_bin, os.X_OK)
     assert dxnotepad_bin.exists()
+
+    run_x11 = subprocess.run([str(decw_x11_bin), "--version"], capture_output=True, text=True, timeout=5)
+    assert "DECwindows X11/Motif 1.1 Interfacing Library" in run_x11.stdout
 
     run_res = subprocess.run([str(decterm_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "DECwindows DECterm Terminal Emulator Commands" in run_res.stdout
@@ -656,6 +675,9 @@ def test_install_decwindows_individual(tmp_path):
         timeout=10
     )
     assert res_un.returncode == 0
+    assert not decw_x11_bin.exists()
+    assert not decwx11_bin.exists()
+    assert not libdecw_so.exists()
     assert not decterm_bin.exists()
     assert not bookreader_bin.exists()
     assert not calendar_bin.exists()

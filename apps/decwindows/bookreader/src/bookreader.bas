@@ -4,7 +4,16 @@
 40 NUM_BOOKS% = 0% \ NUM_TOPICS% = 0% \ NUM_BM% = 0% \ CUR_BOOK% = 0% \ CUR_TOPIC% = 0% \ SHELF_FILE$ = "LIBRARY.BKS"
 50 BLANKS$ = "                                                                                " \ LBRK$ = "[" \ RBRK$ = "]" \ VBAR$ = "|" \ PIPE$ = "|"
 60 SEP$    = "--------------------------------------------------------------------------------"
-70 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ CMD_LINE$ = COMMAND$
+70 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ FORCE_CLI% = 0%
+71 T_IN$ = COMMAND$ \ GOSUB 500 \ CMD_LINE$ = T_OUT$
+72 IF LEFT$(CMD_LINE$, 5%) = "--cli" THEN FORCE_CLI% = 1%
+73 IF FORCE_CLI% = 1% THEN T_IN$ = MID$(CMD_LINE$, 6%, LEN(CMD_LINE$) - 5%)
+74 IF FORCE_CLI% = 1% THEN GOSUB 500
+75 IF FORCE_CLI% = 1% THEN CMD_LINE$ = T_OUT$
+76 IF CMD_LINE$ = "--x11" OR CMD_LINE$ = "-gui" THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
+77 IF_X11% = 1% \ CHK_X11$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --check-gui"
+78 IF CMD_LINE$ = "" AND FORCE_CLI% = 0% THEN IF_X11% = SYS(CHK_X11$)
+79 IF IF_X11% = 0% THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
 80 IF CMD_LINE$ = "" THEN GOTO 100
 90 IS_BATCH% = 1% \ SC_REM$ = CMD_LINE$ \ GOTO 180
 100 PRINT EQU$ \ PRINT "    DECwindows Bookreader V3.0 - XUI/Motif Online Documentation Viewer" \ PRINT "    Digital Equipment Corporation (DEC) VAX/VMS & ULTRIX Workstation Software" \ PRINT EQU$
@@ -52,6 +61,7 @@
 486 IF VERB$ = "SAVE" THEN GOTO 3040
 488 IF VERB$ = "LOAD" OR VERB$ = "IMPORT" THEN GOTO 3120
 490 IF VERB$ = "CLEAR" OR VERB$ = "RESET" THEN GOTO 3200
+492 IF VERB$ = "X11" OR VERB$ = "GUI" OR VERB$ = "XDISPLAY" THEN GOTO 3392
 494 PRINT "BOOKREADER: Unknown command '"; VERB$; "'. Type HELP for syntax."
 495 RETURN
 500 T_OUT$ = T_IN$
@@ -336,4 +346,9 @@
 3360 PRINT "  SHOW / SAVE <f> / LOAD <f> / CLEAR / EXIT" \ PRINT EQU$ \ GOTO 495
 3370 PRINT "BOOKREADER: Library is empty. Use SAMPLE, ADDBOOK, or LOAD first." \ GOTO 495
 3380 PRINT "BOOKREADER: Invalid topic number." \ GOTO 495
+3392 IF NUM_BOOKS% = 0% THEN GOSUB 750
+3393 ARGS$ = "/tmp/decw_bookreader.dat" \ GOSUB 3040
+3394 VERB$ = "EXPORT" \ ARGS$ = "/tmp/decw_bookreader.txt" \ GOSUB 2640
+3395 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app bookreader --frame /tmp/decw_bookreader.txt"
+3396 X_RC% = SYS(X_CMD$) \ GOTO 495
 3400 END

@@ -3,7 +3,16 @@
 30 NUM_APPT% = 0% \ CUR_DATE$ = "1991-10-18" \ CAL_TITLE$ = "Maynard Engineering (ZKO)" \ CAL_FILE$ = "DECWCAL.DAT"
 40 BLANKS$ = "                                                                                " \ LBRK$ = "[" \ RBRK$ = "]" \ VBAR$ = "|" \ PIPE$ = "|"
 50 SEP$    = "--------------------------------------------------------------------------------"
-60 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ CMD_LINE$ = COMMAND$
+60 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ FORCE_CLI% = 0%
+61 T_IN$ = COMMAND$ \ GOSUB 500 \ CMD_LINE$ = T_OUT$
+62 IF LEFT$(CMD_LINE$, 5%) = "--cli" THEN FORCE_CLI% = 1%
+63 IF FORCE_CLI% = 1% THEN T_IN$ = MID$(CMD_LINE$, 6%, LEN(CMD_LINE$) - 5%)
+64 IF FORCE_CLI% = 1% THEN GOSUB 500
+65 IF FORCE_CLI% = 1% THEN CMD_LINE$ = T_OUT$
+66 IF CMD_LINE$ = "--x11" OR CMD_LINE$ = "-gui" THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
+67 IF_X11% = 1% \ CHK_X11$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --check-gui"
+68 IF CMD_LINE$ = "" AND FORCE_CLI% = 0% THEN IF_X11% = SYS(CHK_X11$)
+69 IF IF_X11% = 0% THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
 70 IF CMD_LINE$ = "" THEN GOTO 100
 80 IS_BATCH% = 1% \ SC_REM$ = CMD_LINE$ \ GOTO 180
 100 PRINT EQU$ \ PRINT "    DECwindows Calendar V3.0 - XUI/Motif Time & Schedule Manager" \ PRINT "    Digital Equipment Corporation (DEC) VAX/VMS & ULTRIX Workstation Software" \ PRINT EQU$
@@ -48,6 +57,7 @@
 486 IF VERB$ = "SAVE" THEN GOTO 2950
 488 IF VERB$ = "LOAD" OR VERB$ = "IMPORT" THEN GOTO 3060
 490 IF VERB$ = "CLEAR" OR VERB$ = "RESET" THEN GOTO 3190
+492 IF VERB$ = "X11" OR VERB$ = "GUI" OR VERB$ = "XDISPLAY" THEN GOTO 3392
 494 PRINT "CALENDAR: Unknown command '"; VERB$; "'. Type HELP for syntax."
 495 RETURN
 500 T_OUT$ = T_IN$
@@ -307,4 +317,9 @@
 3350 PRINT "  SHOW / SAVE <f> / LOAD <f> / CLEAR / EXIT" \ PRINT EQU$ \ GOTO 495
 3370 PRINT "CALENDAR: No appointments scheduled. Use SAMPLE, ADD, or LOAD first." \ GOTO 495
 3380 PRINT "CALENDAR: Invalid appointment ID." \ GOTO 495
+3392 IF NUM_APPT% = 0% THEN GOSUB 750
+3393 ARGS$ = "/tmp/decw_calendar.dat" \ GOSUB 2950
+3394 VERB$ = "EXPORT" \ ARGS$ = "/tmp/decw_calendar.txt" \ GOSUB 2450
+3395 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app calendar --frame /tmp/decw_calendar.txt"
+3396 X_RC% = SYS(X_CMD$) \ GOTO 495
 3400 END

@@ -8,8 +8,17 @@
 80 DIM CMD_Q$(30%) \ DIM FLD_P$(15%)
 90 PIPE$ = "|" \ COLON$ = ":" \ SEMI$ = ";" \ LBRK$ = "[" \ RBRK$ = "]" \ SP1$ = " "
 100 FILE_CNT% = 0% \ CUR_FILE% = 0% \ CUR_DIR$ = "SYS$SYSROOT:[SYSMGR]" \ CUR_FLT$ = "*.*"
-110 PRT_CH% = 0% \ BANNER_SHOWN% = 0% \ CMD_LINE$ = COMMAND$
-120 IF LEN(CMD_LINE$) > 0% THEN GOTO 240
+110 PRT_CH% = 0% \ BANNER_SHOWN% = 0% \ FORCE_CLI% = 0%
+112 C_STR$ = COMMAND$ \ GOSUB 3520 \ CMD_LINE$ = C_STR$
+114 IF LEFT$(CMD_LINE$, 5%) = "--cli" THEN FORCE_CLI% = 1%
+116 IF FORCE_CLI% = 1% THEN C_STR$ = MID$(CMD_LINE$, 6%, LEN(CMD_LINE$) - 5%)
+118 IF FORCE_CLI% = 1% THEN GOSUB 3520
+120 IF FORCE_CLI% = 1% THEN CMD_LINE$ = C_STR$
+122 IF CMD_LINE$ = "--x11" OR CMD_LINE$ = "-gui" THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
+124 IF_X11% = 1% \ CHK_X11$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --check-gui"
+126 IF CMD_LINE$ = "" AND FORCE_CLI% = 0% THEN IF_X11% = SYS(CHK_X11$)
+128 IF IF_X11% = 0% THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
+130 IF LEN(CMD_LINE$) > 0% THEN GOTO 240
 150 PRINT "=============================================================================="
 160 PRINT " DECwindows FileView V3.0 (VUE$MASTER - Workstation File & DCL Manager)"
 170 PRINT " Digital Equipment Corporation - VAX/VMS & DEC OSF/1 Workstation Desktop"
@@ -57,6 +66,7 @@
 650 IF VERB$ = "SAVE" THEN GOTO 4320
 660 IF VERB$ = "LOAD" THEN GOTO 4400
 670 IF VERB$ = "CLEAR" THEN GOTO 1230
+680 IF VERB$ = "X11" OR VERB$ = "GUI" OR VERB$ = "XDISPLAY" THEN GOTO 4496
 720 PRINT "%FILEVIEW-E-INVCMD, unrecognized command: "; VERB$
 1040 RETURN
 1050 PRINT "--- DECwindows FileView V3.0 (VUE$MASTER) Commands ---"
@@ -369,4 +379,8 @@
 4485 CLOSE #1%
 4490 PRINT "%FILEVIEW-I-LOADED, loaded "; FILE_CNT%; " files from "; ARG$
 4495 RETURN
+4496 IF FILE_CNT% = 0% THEN GOSUB 1270
+4497 ARG$ = "/tmp/decw_fileview.dat" \ GOSUB 4320 \ ARG$ = "/tmp/decw_fileview.txt" \ GOSUB 4150
+4498 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app fileview --frame /tmp/decw_fileview.txt"
+4499 X_RC% = SYS(X_CMD$) \ RETURN
 4500 END

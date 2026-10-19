@@ -52,6 +52,14 @@ for app in "${APP_LIST[@]}"; do
         cp -a "${ROOT_DIR}/apps/${app}/bin"/* "${STAGING_DIR}/bin/"
         chmod 755 "${STAGING_DIR}/bin"/*
     fi
+    if [ -d "${ROOT_DIR}/apps/${app}/lib" ]; then
+        mkdir -p "${STAGING_DIR}/lib"
+        cp -a "${ROOT_DIR}/apps/${app}/lib"/* "${STAGING_DIR}/lib/"
+    fi
+    if [ -d "${ROOT_DIR}/apps/${app}/include" ]; then
+        mkdir -p "${STAGING_DIR}/include"
+        cp -a "${ROOT_DIR}/apps/${app}/include"/* "${STAGING_DIR}/include/"
+    fi
 
     DOC_SRC="${ROOT_DIR}/apps/${app}/README.md"
     if [ -f "${DOC_SRC}" ]; then
@@ -151,6 +159,14 @@ for app in "${APP_LIST[@]}"; do
     if [ -d "${ROOT_DIR}/apps/${app}/bin" ]; then
         cp -a "${ROOT_DIR}/apps/${app}/bin"/* "${APP_STAGING}/bin/"
         chmod 755 "${APP_STAGING}/bin"/*
+    fi
+    if [ -d "${ROOT_DIR}/apps/${app}/lib" ]; then
+        mkdir -p "${APP_STAGING}/lib"
+        cp -a "${ROOT_DIR}/apps/${app}/lib"/* "${APP_STAGING}/lib/"
+    fi
+    if [ -d "${ROOT_DIR}/apps/${app}/include" ]; then
+        mkdir -p "${APP_STAGING}/include"
+        cp -a "${ROOT_DIR}/apps/${app}/include"/* "${APP_STAGING}/include/"
     fi
 
     if [ -f "${ROOT_DIR}/apps/${app}/README.md" ]; then

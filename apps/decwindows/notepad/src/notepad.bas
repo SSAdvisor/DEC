@@ -8,8 +8,17 @@
 90 PIPE$ = "|" \ COLON$ = ":" \ LBRK$ = "[" \ RBRK$ = "]" \ SP1$ = " "
 100 LINE_CNT% = 0% \ CUR_LN% = 0% \ CLIP_CNT% = 0% \ WRAP_COL% = 72%
 110 MOD_FLAG% = 0% \ RO_FLAG% = 0% \ DOC_NAME$ = "SYS$LOGIN:UNTITLED.TXT"
-120 PRT_CH% = 0% \ BANNER_SHOWN% = 0% \ CMD_LINE$ = COMMAND$
-130 IF LEN(CMD_LINE$) > 0% THEN GOTO 240
+115 PRT_CH% = 0% \ BANNER_SHOWN% = 0% \ FORCE_CLI% = 0%
+118 C_STR$ = COMMAND$ \ GOSUB 3520 \ CMD_LINE$ = C_STR$
+120 IF LEFT$(CMD_LINE$, 5%) = "--cli" THEN FORCE_CLI% = 1%
+122 IF FORCE_CLI% = 1% THEN C_STR$ = MID$(CMD_LINE$, 6%, LEN(CMD_LINE$) - 5%)
+124 IF FORCE_CLI% = 1% THEN GOSUB 3520
+126 IF FORCE_CLI% = 1% THEN CMD_LINE$ = C_STR$
+128 IF CMD_LINE$ = "--x11" OR CMD_LINE$ = "-gui" THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
+130 IF_X11% = 1% \ CHK_X11$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --check-gui"
+132 IF CMD_LINE$ = "" AND FORCE_CLI% = 0% THEN IF_X11% = SYS(CHK_X11$)
+134 IF IF_X11% = 0% THEN CMD_LINE$ = "SAMPLE; X11; EXIT"
+136 IF LEN(CMD_LINE$) > 0% THEN GOTO 240
 150 PRINT "=============================================================================="
 160 PRINT " DECwindows Notepad V3.0 (DECW$NOTEPAD - Motif Text & Clipboard Editor)"
 170 PRINT " Digital Equipment Corporation - VAX/VMS & DEC OSF/1 Workstation Desktop"
@@ -58,6 +67,7 @@
 660 IF VERB$ = "SAVE" THEN GOTO 4320
 670 IF VERB$ = "LOAD" THEN GOTO 4400
 680 IF VERB$ = "CLEAR" OR VERB$ = "NEW" THEN GOTO 1230
+685 IF VERB$ = "X11" OR VERB$ = "GUI" OR VERB$ = "XDISPLAY" THEN GOTO 4496
 720 PRINT "%NOTEPAD-E-INVCMD, unrecognized command: "; VERB$
 1040 RETURN
 1050 PRINT "--- DECwindows Notepad V3.0 (DECW$NOTEPAD) Commands ---"
@@ -381,4 +391,8 @@
 4485 CLOSE #1% \ CUR_LN% = 1%
 4490 PRINT "%NOTEPAD-I-LOADED, loaded "; LINE_CNT%; " lines from "; ARG$
 4495 RETURN
+4496 IF LINE_CNT% = 0% THEN GOSUB 1270
+4497 ARG$ = "/tmp/decw_notepad.dat" \ GOSUB 4320 \ ARG$ = "/tmp/decw_notepad.txt" \ GOSUB 4150
+4498 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app notepad --frame /tmp/decw_notepad.txt"
+4499 X_RC% = SYS(X_CMD$) \ RETURN
 4500 END
