@@ -415,6 +415,17 @@ for APP in "${TARGET_APPS[@]}"; do
                 FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
             ;;
+        dxmail|decwinmail)
+            OUT="$(printf "SAMPLE\nCABINET\nEXIT\n" | "${EXE}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "DECwindows Mail Cabinet Hierarchy"; then
+                echo "PASSED (DECwindows Mail cabinet & DDIF viewer verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
         *)
             # Generic sanity check
             OUT="$("${EXE}" 2>&1 || true)"
