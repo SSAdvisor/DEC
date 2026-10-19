@@ -89,6 +89,8 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "decwindows"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "decterm"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "dxterm"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "bookreader"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "dxbook"))
 
 def test_install_individual_app(tmp_path):
     """Verify that an individual application can be installed independently."""
@@ -553,13 +555,21 @@ def test_install_decwindows_individual(tmp_path):
     decwin_bin = prefix / "bin" / "decwindows"
     decterm_bin = prefix / "bin" / "decterm"
     dxterm_bin = prefix / "bin" / "dxterm"
+    bookreader_bin = prefix / "bin" / "bookreader"
+    dxbook_bin = prefix / "bin" / "dxbook"
     assert decwin_bin.exists()
     assert decterm_bin.is_file()
     assert os.access(decterm_bin, os.X_OK)
     assert dxterm_bin.exists()
+    assert bookreader_bin.is_file()
+    assert os.access(bookreader_bin, os.X_OK)
+    assert dxbook_bin.exists()
 
     run_res = subprocess.run([str(decterm_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
     assert "DECwindows DECterm Terminal Emulator Commands" in run_res.stdout
+
+    run_bk = subprocess.run([str(bookreader_bin), "HELP; EXIT"], capture_output=True, text=True, timeout=5)
+    assert "DECwindows Bookreader Online Documentation Commands" in run_bk.stdout
 
     assert (prefix / "docs" / "decwindows.md").is_file()
 
@@ -571,6 +581,7 @@ def test_install_decwindows_individual(tmp_path):
     )
     assert res_un.returncode == 0
     assert not decterm_bin.exists()
+    assert not bookreader_bin.exists()
     assert not (prefix / "docs" / "decwindows.md").exists()
 
 
