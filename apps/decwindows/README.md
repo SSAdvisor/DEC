@@ -19,7 +19,7 @@ The `apps/decwindows/` sub-project contains 11 independent DECwindows applicatio
 | 7 | **Clock** | [`clock/`](clock) | `clock`, `dxclock` | **Completed** | Analog/digital workstation clock, multi-timezone display, chime, and countdown timer/alarm |
 | 8 | **DECsound** | [`decsound/`](decsound) | `decsound`, `dxsound` | **Completed** | Workstation audio clip recorder/player, mu-law waveform analyzer, and voice annotation manager |
 | 9 | **DECwindows Mail** | [`dxmail/`](dxmail) | `dxmail`, `decwinmail` | **Completed** | XUI/Motif graphical mail cabinet, folder drawer, message viewer, and composition window |
-| 10 | **FileView** | `fileview/` | `fileview`, `dxfileview` | Pending | Workstation graphical file manager, directory browser, DCL verb launcher, and file inspector |
+| 10 | **FileView** | [`fileview/`](fileview) | `fileview`, `dxfileview` | **Completed** | Workstation graphical file manager, directory browser, DCL verb launcher, and file inspector |
 | 11 | **Notepad** | `notepad/` | `notepad`, `dxnotepad` | Pending | Desktop text editor with cut/copy/paste clipboard, search/replace, and line wrapping |
 
 ---

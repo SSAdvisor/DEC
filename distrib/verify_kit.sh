@@ -426,6 +426,17 @@ for APP in "${TARGET_APPS[@]}"; do
                 FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
             ;;
+        fileview|dxfileview)
+            OUT="$(printf "SAMPLE\nDIR\nEXIT\n" | "${EXE}" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "SYSTARTUP_V5.COM;4"; then
+                echo "PASSED (DECwindows FileView VMS file & DCL manager verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
         *)
             # Generic sanity check
             OUT="$("${EXE}" 2>&1 || true)"
