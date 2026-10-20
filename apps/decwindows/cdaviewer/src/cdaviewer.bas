@@ -267,15 +267,7 @@
 455 REM --- SAVE <file> ---
 456 IF ARG$ = "" THEN PRINT "%CDAVIEWER-E-NOFILE, Specify filename for SAVE."
 457 IF ARG$ = "" THEN GOTO 44
-458 OPEN ARG$ FOR OUTPUT AS FILE #1%
-459 S_IN$ = STR$(MAX_PG%) \ GOSUB 500 \ MP_S$ = S_OUT$
-460 S_REC$ = "HDR" + PIPE$ + DOC_NAME$ + PIPE$ + DOC_FMT$ + PIPE$ + DOC_AUTH$ + PIPE$ + MP_S$
-461 PRINT #1%, S_REC$ \ I% = 1%
-464 IF I% > NUM_SEGS% THEN GOTO 469
-465 S_IN$ = STR$(SEG_PG%(I%)) \ GOSUB 500 \ PG_S$ = S_OUT$
-466 S_REC$ = "SEG" + PIPE$ + PG_S$ + PIPE$ + SEG_TYPE$(I%) + PIPE$ + SEG_DESC$(I%) + PIPE$ + SEG_BODY$(I%)
-467 PRINT #1%, S_REC$ \ I% = I% + 1% \ GOTO 464
-469 CLOSE #1%
+458 SAVE_PATH$ = ARG$ \ GOSUB 700
 470 PRINT "[Saved "; NUM_SEGS%; " CDA segments to "; ARG$; "]" \ GOTO 44
 472 REM --- LOAD <file> ---
 473 IF ARG$ = "" THEN PRINT "%CDAVIEWER-E-NOFILE, Specify filename for LOAD."
@@ -294,8 +286,8 @@
 490 REM --- CLEAR / RESET ---
 492 NUM_SEGS% = 0% \ CUR_PG% = 1% \ MAX_PG% = 1% \ DOC_NAME$ = "UNTITLED.DDIF"
 494 PRINT "[CDA document cleared]" \ GOTO 44
-495 OUT_FILE$ = "/tmp/decw_cdaviewer.txt" \ GOSUB 600
-496 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app cdaviewer --frame /tmp/decw_cdaviewer.txt"
+495 OUT_FILE$ = "/tmp/decw_cdaviewer.txt" \ GOSUB 600 \ SAVE_PATH$ = "/tmp/decw_cdaviewer.dat" \ GOSUB 700
+496 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app cdaviewer --frame /tmp/decw_cdaviewer.txt --state /tmp/decw_cdaviewer.dat"
 497 X_RC% = SYS(X_CMD$) \ GOTO 44
 500 REM --- Subroutine: Trim leading/trailing spaces (S_IN$ -> S_OUT$) ---
 502 S_OUT$ = S_IN$
@@ -376,5 +368,14 @@
 696 SEG_DESC$(NUM_SEGS%) = G_DS$ \ SEG_BODY$(NUM_SEGS%) = G_BD$
 698 IF G_PG% > MAX_PG% THEN MAX_PG% = G_PG%
 699 RETURN
+700 OPEN SAVE_PATH$ FOR OUTPUT AS FILE #1%
+702 S_IN$ = STR$(MAX_PG%) \ GOSUB 500 \ MP_S$ = S_OUT$
+704 S_REC$ = "HDR" + PIPE$ + DOC_NAME$ + PIPE$ + DOC_FMT$ + PIPE$ + DOC_AUTH$ + PIPE$ + MP_S$
+706 PRINT #1%, S_REC$ \ I% = 1%
+708 IF I% > NUM_SEGS% THEN GOTO 716
+710 S_IN$ = STR$(SEG_PG%(I%)) \ GOSUB 500 \ PG_S$ = S_OUT$
+712 S_REC$ = "SEG" + PIPE$ + PG_S$ + PIPE$ + SEG_TYPE$(I%) + PIPE$ + SEG_DESC$(I%) + PIPE$ + SEG_BODY$(I%)
+714 PRINT #1%, S_REC$ \ I% = I% + 1% \ GOTO 708
+716 CLOSE #1% \ RETURN
 990 PRINT "DECwindows CDA Viewer V3.0 session terminated."
 999 END

@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "decw_x11.h"
 
 #include <stdio.h>
@@ -22,6 +23,8 @@ static void print_usage(const char* prog) {
     printf("  --font <size|xlfd>       Font size (small, medium, large, xlarge, xxlarge, huge, 14..40, or XLFD)\n");
     printf("  --scale <1..6>           Font & window scale preset (1=15px .. 3=24px HiDPI default .. 6=36px)\n");
     printf("  --geometry <WxH>         Window dimensions in pixels (auto-scaled by font size if omitted)\n");
+    printf("  --detach, -bg            Detach window from active terminal into background (default)\n");
+    printf("  --foreground, -fg        Keep window attached to the active foreground terminal\n");
     printf("  --autoclose <ms>         Auto-close window after <ms> milliseconds following Expose\n");
     printf("  --verify                 Verify X11 window creation, Expose rendering, and exit\n");
     printf("  --test-interact          Synthesize X11 Motif button click event after Expose\n");
@@ -80,6 +83,10 @@ int main(int argc, char** argv) {
             }
         } else if (strcmp(argv[i], "--autoclose") == 0 && i + 1 < argc) {
             cfg.autoclose_ms = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--foreground") == 0 || strcmp(argv[i], "-fg") == 0) {
+            setenv("DECW_X11_FOREGROUND", "1", 1);
+        } else if (strcmp(argv[i], "--detach") == 0 || strcmp(argv[i], "-bg") == 0) {
+            setenv("DECW_X11_FORCE_DETACH", "1", 1);
         }
     }
 

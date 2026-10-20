@@ -261,15 +261,7 @@
 455 REM --- SAVE <file> ---
 456 IF ARG$ = "" THEN PRINT "%DECSOUND-E-NOFILE, Specify filename for SAVE."
 457 IF ARG$ = "" THEN GOTO 44
-458 OPEN ARG$ FOR OUTPUT AS FILE #1%
-459 S_IN$ = STR$(VOL_PCT%) \ GOSUB 500 \ V_S$ = S_OUT$ \ S_IN$ = STR$(GAIN_PCT%) \ GOSUB 500 \ G_S$ = S_OUT$
-460 S_REC$ = "CFG" + PIPE$ + OUT_DEV$ + PIPE$ + IN_DEV$ + PIPE$ + V_S$ + PIPE$ + G_S$
-461 PRINT #1%, S_REC$ \ I% = 1%
-463 IF I% > NUM_CLIPS% THEN GOTO 469
-464 S_IN$ = STR$(CLIP_SEC%(I%)) \ GOSUB 500 \ SC_S$ = S_OUT$ \ S_IN$ = STR$(CLIP_PK%(I%)) \ GOSUB 500 \ PK_S$ = S_OUT$
-465 S_REC$ = "CLP" + PIPE$ + CLIP_NAME$(I%) + PIPE$ + CLIP_FMT$(I%) + PIPE$ + SC_S$ + PIPE$ + PK_S$ + PIPE$ + CLIP_DESC$(I%)
-467 PRINT #1%, S_REC$ \ I% = I% + 1% \ GOTO 463
-469 CLOSE #1%
+458 SAVE_PATH$ = ARG$ \ GOSUB 700
 470 PRINT "[Saved "; NUM_CLIPS%; " audio clips to "; ARG$; "]" \ GOTO 44
 472 REM --- LOAD <file> ---
 473 IF ARG$ = "" THEN PRINT "%DECSOUND-E-NOFILE, Specify filename for LOAD."
@@ -289,8 +281,8 @@
 490 REM --- CLEAR / RESET ---
 492 NUM_CLIPS% = 0% \ CUR_CLIP% = 0%
 494 PRINT "[DECsound clip library cleared]" \ GOTO 44
-495 OUT_FILE$ = "/tmp/decw_decsound.txt" \ GOSUB 600
-496 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app decsound --frame /tmp/decw_decsound.txt"
+495 OUT_FILE$ = "/tmp/decw_decsound.txt" \ GOSUB 600 \ SAVE_PATH$ = "/tmp/decw_decsound.dat" \ GOSUB 700
+496 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app decsound --frame /tmp/decw_decsound.txt --state /tmp/decw_decsound.dat"
 497 X_RC% = SYS(X_CMD$) \ GOTO 44
 500 REM --- Subroutine: Trim leading/trailing spaces (S_IN$ -> S_OUT$) ---
 502 S_OUT$ = S_IN$
@@ -360,5 +352,14 @@
 696 NUM_CLIPS% = NUM_CLIPS% + 1% \ CLIP_NAME$(NUM_CLIPS%) = C_N$ \ CLIP_FMT$(NUM_CLIPS%) = C_F$
 697 CLIP_SEC%(NUM_CLIPS%) = C_S% \ CLIP_PK%(NUM_CLIPS%) = C_P% \ CLIP_DESC$(NUM_CLIPS%) = C_D$
 699 RETURN
+700 OPEN SAVE_PATH$ FOR OUTPUT AS FILE #1%
+702 S_IN$ = STR$(VOL_PCT%) \ GOSUB 500 \ V_S$ = S_OUT$ \ S_IN$ = STR$(GAIN_PCT%) \ GOSUB 500 \ G_S$ = S_OUT$
+704 S_REC$ = "CFG" + PIPE$ + OUT_DEV$ + PIPE$ + IN_DEV$ + PIPE$ + V_S$ + PIPE$ + G_S$
+706 PRINT #1%, S_REC$ \ I% = 1%
+708 IF I% > NUM_CLIPS% THEN GOTO 716
+710 S_IN$ = STR$(CLIP_SEC%(I%)) \ GOSUB 500 \ SC_S$ = S_OUT$ \ S_IN$ = STR$(CLIP_PK%(I%)) \ GOSUB 500 \ PK_S$ = S_OUT$
+712 S_REC$ = "CLP" + PIPE$ + CLIP_NAME$(I%) + PIPE$ + CLIP_FMT$(I%) + PIPE$ + SC_S$ + PIPE$ + PK_S$ + PIPE$ + CLIP_DESC$(I%)
+714 PRINT #1%, S_REC$ \ I% = I% + 1% \ GOTO 708
+716 CLOSE #1% \ RETURN
 990 PRINT "DECwindows DECsound V3.0 session terminated."
 999 END

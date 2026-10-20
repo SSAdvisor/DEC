@@ -68,10 +68,17 @@ def test_06_alarm_and_chime_configuration():
 
 
 def test_07_face_mode_selection():
-    out = run_clock("SAMPLE; FACE ANALOG; SHOW; FACE DIGITAL; SHOW; EXIT")
+    out = run_clock("SAMPLE; FACE ANALOG; SHOW; FACE DIGITAL; SHOW; ANALOG ON; DATEPART OFF; MENUBAR OFF; OPTIONS DISPLAY; RESTORE; SHOW; EXIT")
     assert "[Clock Face Mode set to: ANALOG]" in out
     assert "Clock Face     : ANALOG" in out
     assert "[Clock Face Mode set to: DIGITAL]" in out
+    assert "[Display Options: Analog Part set to ON]" in out
+    assert "[Display Options: Date Part set to OFF]" in out
+    assert "[Display Options: Menubar set to OFF]" in out
+    assert "| [=] Clock: Display Options Dialog                        |" in out
+    assert "|  [X] Analog Part      [ ] Menubar                    |" in out
+    assert "[Restored DECwindows Clock System Options (Analog+Digital+Date, 12-Hour)]" in out
+    assert "Display Parts  : Analog=ON Digital=ON Date=ON Menubar=ON" in out
 
 
 def test_08_world_zones_and_addzone():
@@ -86,17 +93,20 @@ def test_08_world_zones_and_addzone():
 
 
 def test_09_analog_dial_rendering():
-    out = run_clock("SAMPLE; DIAL; EXIT")
+    out = run_clock("SAMPLE; DIAL; SETTIME 09:00:00; DIAL; EXIT")
     assert "Analog Hands : Hour->02  Min->30" in out
     assert "Digital Time : 14:30:00" in out
     assert "Date Banner  : TUE 19-OCT-1993" in out
+    assert "Analog Hands : Hour->09  Min->00" in out
 
 
 def test_10_display_and_export_motif_window(tmp_path):
     win_file = tmp_path / "clock_win.txt"
-    out = run_clock(f"SAMPLE; DISPLAY; EXPORT {win_file}; EXIT")
+    out = run_clock(f"SAMPLE; OPTIONS ALARM; DISPLAY; EXPORT {win_file}; EXIT")
+    assert "| [=] Clock: Alarm Options Dialog                          |" in out
     assert "| [=] DECwindows Clock (dxclock) - TUE 19-OCT-1993 [BOTH]                   [v][^] |" in out
-    assert "| File  Settings  Alarm  World-Zones  Help                                   |" in out
+    assert "| File  Options                                                         Help |" in out
+    assert "Date Part: TUE 19-OCT-1993" in out
     assert f"[Clock window exported to {win_file}]" in out
     assert win_file.exists()
     content = win_file.read_text()

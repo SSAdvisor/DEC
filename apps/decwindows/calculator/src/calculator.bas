@@ -233,15 +233,7 @@
 455 REM --- SAVE <file> ---
 456 IF ARG$ = "" THEN PRINT "%CALC-E-NOFILE, Specify filename for SAVE."
 457 IF ARG$ = "" THEN GOTO 44
-458 OPEN ARG$ FOR OUTPUT AS FILE #1%
-459 S_IN$ = STR$(ACC%) \ GOSUB 500 \ AC_S$ = S_OUT$ \ S_IN$ = STR$(MEM%) \ GOSUB 500 \ MM_S$ = S_OUT$
-460 S_REC$ = "STATE" + PIPE$ + CALC_MODE$ + PIPE$ + BASE_MODE$ + PIPE$ + AC_S$ + PIPE$ + MM_S$
-461 PRINT #1%, S_REC$ \ I% = 1%
-464 IF I% > NUM_TAPE% THEN GOTO 469
-465 S_IN$ = STR$(TAPE_RES%(I%)) \ GOSUB 500 \ TR_S$ = S_OUT$
-466 S_REC$ = "TAPE" + PIPE$ + TAPE_OP$(I%) + PIPE$ + TR_S$
-467 PRINT #1%, S_REC$ \ I% = I% + 1% \ GOTO 464
-469 CLOSE #1%
+458 SAVE_PATH$ = ARG$ \ GOSUB 700
 470 PRINT "[Saved "; NUM_TAPE%; " tape entries to "; ARG$; "]" \ GOTO 44
 472 REM --- LOAD <file> ---
 473 IF ARG$ = "" THEN PRINT "%CALC-E-NOFILE, Specify filename for LOAD."
@@ -260,8 +252,8 @@
 490 REM --- CLEAR / C / RESET ---
 492 ACC% = 0% \ MEM% = 0% \ NUM_TAPE% = 0%
 494 PRINT "[Calculator accumulator, memory, and tape cleared]" \ GOTO 44
-495 OUT_FILE$ = "/tmp/decw_calculator.txt" \ GOSUB 600
-496 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app calculator --frame /tmp/decw_calculator.txt"
+495 OUT_FILE$ = "/tmp/decw_calculator.txt" \ GOSUB 600 \ SAVE_PATH$ = "/tmp/decw_calculator.dat" \ GOSUB 700
+496 X_CMD$ = "PATH=./bin:../x11/bin:apps/decwindows/x11/bin:$PATH decw_x11 --app calculator --frame /tmp/decw_calculator.txt --state /tmp/decw_calculator.dat"
 497 X_RC% = SYS(X_CMD$) \ GOTO 44
 500 REM --- Subroutine: Trim leading/trailing spaces (S_IN$ -> S_OUT$) ---
 502 S_OUT$ = S_IN$
@@ -356,5 +348,14 @@
 686 TAPE_OP$(NUM_TAPE%) = LEFT$(G_R$, G1% - 1%)
 688 TAPE_RES%(NUM_TAPE%) = VAL(MID$(G_R$, G1% + 1%, LEN(G_R$) - G1%))
 690 RETURN
+700 OPEN SAVE_PATH$ FOR OUTPUT AS FILE #1%
+702 S_IN$ = STR$(ACC%) \ GOSUB 500 \ AC_S$ = S_OUT$ \ S_IN$ = STR$(MEM%) \ GOSUB 500 \ MM_S$ = S_OUT$
+704 S_REC$ = "STATE" + PIPE$ + CALC_MODE$ + PIPE$ + BASE_MODE$ + PIPE$ + AC_S$ + PIPE$ + MM_S$
+706 PRINT #1%, S_REC$ \ I% = 1%
+708 IF I% > NUM_TAPE% THEN GOTO 716
+710 S_IN$ = STR$(TAPE_RES%(I%)) \ GOSUB 500 \ TR_S$ = S_OUT$
+712 S_REC$ = "TAPE" + PIPE$ + TAPE_OP$(I%) + PIPE$ + TR_S$
+714 PRINT #1%, S_REC$ \ I% = I% + 1% \ GOTO 708
+716 CLOSE #1% \ RETURN
 990 PRINT "DECwindows Calculator V3.0 session terminated."
 999 END

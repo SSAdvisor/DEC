@@ -29,9 +29,9 @@ all: build
 
 build: $(SHARED_LIB) $(STATIC_LIB) $(BRIDGE_BIN) $(BAS_BIN) $(ALIAS_BIN)
 
-$(BUILD_DIR)/decw_x11.o: $(SRC_DIR)/decw_x11.c $(INC_DIR)/decw_x11.h
+$(BUILD_DIR)/decw_x11.o: $(SRC_DIR)/decw_x11.c $(INC_DIR)/decw_x11.h $(SRC_DIR)/decw_gui_group1.h $(SRC_DIR)/decw_gui_group2.h $(SRC_DIR)/decw_gui_group3.h
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $(SRC_DIR)/decw_x11.c -o $(BUILD_DIR)/decw_x11.o
+	$(CC) $(CFLAGS) -I$(SRC_DIR) -c $(SRC_DIR)/decw_x11.c -o $(BUILD_DIR)/decw_x11.o
 
 $(SHARED_LIB): $(BUILD_DIR)/decw_x11.o
 	@mkdir -p $(LIB_DIR)

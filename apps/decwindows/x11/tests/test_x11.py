@@ -229,3 +229,39 @@ def test_07_all_11_apps_autolaunch_x11_and_cli_override(app_dir, app_bin):
     )
     assert res_repl.returncode == 0
     assert "[DECwindows X11 Engine] Window" in res_repl.stdout
+
+
+def test_08_default_terminal_detach():
+    env = get_x11_env(DECW_FORCE_X11="1", DECW_X11_AUTOCLOSE_MS="150")
+    res = subprocess.run(
+        [str(DECW_X11_BIN), "--app", "clock", "--detach"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=3,
+    )
+    assert res.returncode == 0
+    assert "detached from terminal (PID" in res.stdout
+
+
+@pytest.mark.parametrize("app_dir,app_bin", ALL_DECW_APPS + [("x11", "decwindows")])
+def test_09_all_native_motif_guis_render_and_interact(app_dir, app_bin):
+    env = get_x11_env(DECW_X11_AUTOCLOSE_MS="90")
+    res = subprocess.run(
+        [
+            str(DECW_X11_BIN),
+            "--app",
+            app_bin,
+            "--autoclose",
+            "90",
+            "--test-interact",
+            "--verify",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert res.returncode == 0
+    assert f"({app_bin}) rendered" in res.stdout
+    assert "Motif buttons" in res.stdout
