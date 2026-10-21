@@ -6,7 +6,7 @@ APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_FILE = os.path.join(APP_DIR, "src", "menu11.bas")
 BUILD_DIR = os.path.join(APP_DIR, "build")
 BIN_DIR = os.path.join(APP_DIR, "bin")
-BOBJ_FILE = os.path.join(BUILD_DIR, "menu11.bobj")
+OBJ_FILE = os.path.join(BUILD_DIR, "menu11.obj")
 EXE_FILE = os.path.join(BIN_DIR, "menu11")
 MENU_LINK = os.path.join(BIN_DIR, "menu")
 MCF_LINK = os.path.join(BIN_DIR, "mcf")
@@ -19,7 +19,7 @@ def test_menu11_build():
 
     res_build = subprocess.run(["make", "-C", APP_DIR, "build"], capture_output=True, text=True)
     assert res_build.returncode == 0, f"Build failed:\nSTDOUT:\n{res_build.stdout}\nSTDERR:\n{res_build.stderr}"
-    assert os.path.isfile(BOBJ_FILE), f"Object file {BOBJ_FILE} not found"
+    assert os.path.isfile(OBJ_FILE), f"Object file {OBJ_FILE} not found"
     assert os.path.isfile(EXE_FILE), f"Executable {EXE_FILE} not found"
     assert os.access(EXE_FILE, os.X_OK), f"Executable {EXE_FILE} is not executable"
     assert os.path.islink(MENU_LINK), f"Symlink {MENU_LINK} not found"

@@ -47,7 +47,7 @@ To compile and link the application:
 ```bash
 make build
 ```
-This produces the bytecode object in `build/hamurabi.bobj` and the standalone native binary in `bin/hamurabi`.
+This produces the bytecode object in `build/hamurabi.obj` and the standalone native binary in `bin/hamurabi`.
 
 ### Run
 To play the game interactively:

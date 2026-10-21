@@ -6,7 +6,7 @@ APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_FILE = os.path.join(APP_DIR, "src", "ade.bas")
 BUILD_DIR = os.path.join(APP_DIR, "build")
 BIN_DIR = os.path.join(APP_DIR, "bin")
-BOBJ_FILE = os.path.join(BUILD_DIR, "ade.bobj")
+OBJ_FILE = os.path.join(BUILD_DIR, "ade.obj")
 EXE_FILE = os.path.join(BIN_DIR, "ade")
 
 def test_ade_build():
@@ -16,7 +16,7 @@ def test_ade_build():
 
     res_build = subprocess.run(["make", "-C", APP_DIR, "build"], capture_output=True, text=True)
     assert res_build.returncode == 0, f"Build failed:\nSTDOUT:\n{res_build.stdout}\nSTDERR:\n{res_build.stderr}"
-    assert os.path.isfile(BOBJ_FILE), f"Object file {BOBJ_FILE} not found"
+    assert os.path.isfile(OBJ_FILE), f"Object file {OBJ_FILE} not found"
     assert os.path.isfile(EXE_FILE), f"Executable {EXE_FILE} not found"
     assert os.access(EXE_FILE, os.X_OK), f"Executable {EXE_FILE} is not executable"
 

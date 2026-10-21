@@ -49,7 +49,7 @@ apps/decmail/
 │   ├── mail            # Symlink alias -> decmail
 │   └── decmail11       # Symlink alias -> decmail
 ├── build/
-│   └── decmail.bobj    # Intermediate BASIC-PLUS-2 object
+│   └── decmail.obj    # Intermediate BASIC-PLUS-2 object
 ├── src/
 │   └── decmail.bas     # Native DEC BASIC-PLUS-2 source code (< 470 lines)
 └── tests/

@@ -5,7 +5,7 @@ SRC_DIR := src
 TESTS_DIR := tests
 
 SRC := $(SRC_DIR)/$(APP).bas
-BOBJ := $(BUILD_DIR)/$(APP).bobj
+OBJ := $(BUILD_DIR)/$(APP).obj
 EXE := $(BIN_DIR)/$(APP)
 ALIAS_DTR11 := $(BIN_DIR)/dtr11
 ALIAS_DTR := $(BIN_DIR)/dtr
@@ -18,8 +18,8 @@ build: $(EXE)
 
 $(EXE): $(SRC)
 	@mkdir -p $(BUILD_DIR) $(BIN_DIR)
-	basicc $(SRC) -o $(BOBJ)
-	basiclink $(BOBJ) -o $(EXE)
+	basicc $(SRC) -o $(OBJ)
+	basiclink $(OBJ) -o $(EXE)
 	@ln -sf $(APP) $(ALIAS_DTR11)
 	@ln -sf $(APP) $(ALIAS_DTR)
 

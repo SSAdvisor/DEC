@@ -49,7 +49,7 @@ apps/decword/
 │   ├── decworddp       # Symlink alias -> decword
 │   └── wps             # Symlink alias -> decword
 ├── build/
-│   └── decword.bobj    # Intermediate BASIC-PLUS-2 object
+│   └── decword.obj    # Intermediate BASIC-PLUS-2 object
 ├── src/
 │   └── decword.bas     # Native DEC BASIC-PLUS-2 source code (< 470 lines)
 └── tests/

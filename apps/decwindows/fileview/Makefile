@@ -8,7 +8,7 @@ BIN_DIR := bin
 
 TARGET := $(BIN_DIR)/fileview
 ALIAS := $(BIN_DIR)/dxfileview
-BOBJ := $(BUILD_DIR)/fileview.bobj
+OBJ := $(BUILD_DIR)/fileview.obj
 SRC := $(SRC_DIR)/fileview.bas
 
 .PHONY: all build test clean
@@ -17,13 +17,13 @@ all: build
 
 build: $(TARGET) $(ALIAS)
 
-$(BOBJ): $(SRC)
+$(OBJ): $(SRC)
 	@mkdir -p $(BUILD_DIR)
-	$(BASICC) $(SRC) -o $(BOBJ)
+	$(BASICC) $(SRC) -o $(OBJ)
 
-$(TARGET): $(BOBJ)
+$(TARGET): $(OBJ)
 	@mkdir -p $(BIN_DIR)
-	$(BASICLINK) $(BOBJ) -o $(TARGET)
+	$(BASICLINK) $(OBJ) -o $(TARGET)
 	@chmod +x $(TARGET)
 
 $(ALIAS): $(TARGET)

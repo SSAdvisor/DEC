@@ -52,7 +52,7 @@ apps/decgraph/
 │   ├── graph           # Symlink alias -> decgraph
 │   └── decg            # Symlink alias -> decgraph
 ├── build/
-│   └── decgraph.bobj   # Intermediate BASIC-PLUS-2 object
+│   └── decgraph.obj   # Intermediate BASIC-PLUS-2 object
 ├── src/
 │   └── decgraph.bas    # Native DEC BASIC-PLUS-2 source code (< 470 lines)
 └── tests/

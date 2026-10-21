@@ -48,7 +48,7 @@ apps/rmsutils/
 ├── README.md               # This documentation
 ├── Makefile                # Sub-project build and test automation
 ├── bin/                    # Compiled native executables (8 binaries)
-├── build/                  # Intermediate object files (.bobj)
+├── build/                  # Intermediate object files (.obj)
 ├── src/
 │   ├── rmsdes.bas          # RMSDES file design utility
 │   ├── rmsdef.bas          # RMSDEF file definition utility

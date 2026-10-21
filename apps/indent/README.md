@@ -45,7 +45,7 @@ apps/indent/
 │   ├── bp2fmt          # Symlink alias -> indent
 │   └── pretty          # Symlink alias -> indent
 ├── build/
-│   └── indent.bobj     # Intermediate BASIC-PLUS-2 object
+│   └── indent.obj     # Intermediate BASIC-PLUS-2 object
 ├── src/
 │   └── indent.bas      # Native DEC BASIC-PLUS-2 source code (< 470 lines)
 └── tests/

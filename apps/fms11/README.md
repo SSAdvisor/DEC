@@ -52,7 +52,7 @@ apps/fms11/
 │   ├── fed             # Symlink alias -> fms11
 │   └── fdv             # Symlink alias -> fms11
 ├── build/
-│   └── fms11.bobj      # Intermediate BASIC-PLUS-2 object
+│   └── fms11.obj      # Intermediate BASIC-PLUS-2 object
 ├── src/
 │   └── fms11.bas       # Native DEC BASIC-PLUS-2 source code (< 470 lines)
 └── tests/

@@ -19,7 +19,7 @@ STATIC_LIB = $(LIB_DIR)/libdecw_x11.a
 BRIDGE_BIN = $(BIN_DIR)/decw_x11
 
 BAS_SRC    = $(SRC_DIR)/decwx11.bas
-BOBJ       = $(BUILD_DIR)/decwx11.bobj
+OBJ        = $(BUILD_DIR)/decwx11.obj
 BAS_BIN    = $(BIN_DIR)/decwx11
 ALIAS_BIN  = $(BIN_DIR)/dxsession
 
@@ -45,13 +45,13 @@ $(BRIDGE_BIN): $(SRC_DIR)/decw_x11_main.c $(SHARED_LIB)
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) $(SRC_DIR)/decw_x11_main.c -L$(LIB_DIR) -ldecw_x11 -Wl,-rpath,'$$ORIGIN/../lib' $(LDFLAGS) -o $(BRIDGE_BIN)
 
-$(BOBJ): $(BAS_SRC)
+$(OBJ): $(BAS_SRC)
 	@mkdir -p $(BUILD_DIR)
-	$(BASICC) $(BAS_SRC) -o $(BOBJ)
+	$(BASICC) $(BAS_SRC) -o $(OBJ)
 
-$(BAS_BIN): $(BOBJ)
+$(BAS_BIN): $(OBJ)
 	@mkdir -p $(BIN_DIR)
-	$(BASICLINK) -o $(BAS_BIN) $(BOBJ)
+	$(BASICLINK) -o $(BAS_BIN) $(OBJ)
 
 $(ALIAS_BIN): $(BAS_BIN)
 	ln -sf decwx11 $(ALIAS_BIN)

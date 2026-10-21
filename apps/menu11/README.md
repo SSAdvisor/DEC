@@ -48,7 +48,7 @@ apps/menu11/
 │   ├── menu            # Symlink alias -> menu11
 │   └── mcf             # Symlink alias -> menu11
 ├── build/
-│   └── menu11.bobj     # Intermediate BASIC-PLUS-2 object
+│   └── menu11.obj     # Intermediate BASIC-PLUS-2 object
 ├── src/
 │   └── menu11.bas      # Native DEC BASIC-PLUS-2 source code (< 470 lines)
 └── tests/

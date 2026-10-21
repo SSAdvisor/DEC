@@ -8,7 +8,7 @@ BIN_DIR := bin
 
 TARGET := $(BIN_DIR)/notepad
 ALIAS := $(BIN_DIR)/dxnotepad
-BOBJ := $(BUILD_DIR)/notepad.bobj
+OBJ := $(BUILD_DIR)/notepad.obj
 SRC := $(SRC_DIR)/notepad.bas
 
 .PHONY: all build test clean
@@ -17,13 +17,13 @@ all: build
 
 build: $(TARGET) $(ALIAS)
 
-$(BOBJ): $(SRC)
+$(OBJ): $(SRC)
 	@mkdir -p $(BUILD_DIR)
-	$(BASICC) $(SRC) -o $(BOBJ)
+	$(BASICC) $(SRC) -o $(OBJ)
 
-$(TARGET): $(BOBJ)
+$(TARGET): $(OBJ)
 	@mkdir -p $(BIN_DIR)
-	$(BASICLINK) $(BOBJ) -o $(TARGET)
+	$(BASICLINK) $(OBJ) -o $(TARGET)
 	@chmod +x $(TARGET)
 
 $(ALIAS): $(TARGET)

@@ -50,7 +50,7 @@ apps/dibs/
 │   ├── dibs11          # Symlink alias -> dibs
 │   └── cts500          # Symlink alias -> dibs
 ├── build/
-│   └── dibs.bobj       # Intermediate BASIC-PLUS-2 object
+│   └── dibs.obj       # Intermediate BASIC-PLUS-2 object
 ├── src/
 │   └── dibs.bas        # Native DEC BASIC-PLUS-2 source code (< 470 lines)
 └── tests/

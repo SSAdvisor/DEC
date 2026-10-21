@@ -3,7 +3,7 @@
 A curated repository of classic applications distributed by Digital Equipment Corporation (DEC) or written by third parties for DEC systems (such as PDP-11, VAX, and DECsystem-10/20), reimplemented and preserved using the native **BASIC-PLUS-2** dialect.
 
 All applications in this repository are compiled and linked using the native Linux DEC BASIC-PLUS-2 toolchain:
-- **`basicc`**: Native DEC BASIC-PLUS-2 compiler (generates `.bobj` bytecode modules)
+- **`basicc`**: Native DEC BASIC-PLUS-2 compiler (generates `.obj` bytecode modules)
 - **`basiclink`**: Native DEC BASIC-PLUS-2 linker (links modules into native Linux executables)
 
 ---
@@ -38,7 +38,7 @@ Each sub-project must adhere to the following standards:
 1. **Sub-Project Directory**: Placed inside `apps/<app-name>/`.
 2. **BASIC-PLUS-2 Source**: Placed in `apps/<app-name>/src/`. Line numbers or structured labels conforming to DEC BASIC-PLUS-2 syntax.
 3. **Build Target**: A standard `Makefile` providing:
-   - `make build` (or `make all`): Compiles with `basicc` to `build/<app>.bobj` and links with `basiclink` to `bin/<app>`.
+   - `make build` (or `make all`): Compiles with `basicc` to `build/<app>.obj` and links with `basiclink` to `bin/<app>`.
    - `make test`: Runs the sub-project's dedicated test suite.
    - `make run`: Runs the compiled executable.
    - `make clean`: Removes intermediate and binary artifacts.

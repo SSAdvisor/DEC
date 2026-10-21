@@ -13,8 +13,8 @@ build: $(EXES)
 
 $(BIN_DIR)/%: src/%.bas
 	@mkdir -p $(BUILD_DIR) $(BIN_DIR)
-	basicc $< -o $(BUILD_DIR)/$*.bobj
-	basiclink $(BUILD_DIR)/$*.bobj -o $@
+	basicc $< -o $(BUILD_DIR)/$*.obj
+	basiclink $(BUILD_DIR)/$*.obj -o $@
 
 test: build
 	pytest tests/

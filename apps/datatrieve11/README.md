@@ -46,7 +46,7 @@ apps/datatrieve11/
 │   ├── dtr             # Symlink -> datatrieve11
 │   └── dtr11           # Symlink -> datatrieve11
 ├── build/
-│   └── datatrieve11.bobj # Intermediate BASIC-PLUS-2 object
+│   └── datatrieve11.obj # Intermediate BASIC-PLUS-2 object
 ├── src/
 │   └── datatrieve11.bas  # Native DEC BASIC-PLUS-2 source (< 470 lines)
 └── tests/
