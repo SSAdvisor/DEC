@@ -1,0 +1,53 @@
+1 C=C
+2 N$=N$
+3 A$=A$
+4 T$=T$
+5 B$=B$
+6 U$=U$
+7 C$=C$
+8 V$=V$
+9 P$=P$
+10 W$=W$
+11 Q$=Q$
+12 X$=X$
+13 R$=R$
+14 Y$=Y$
+15 E$=E$
+16 Z$=Z$
+17 F$=F$
+18 S$=S$
+19 G$=G$
+20 D$=D$
+21 I=I
+100 PRINT "--- DATABASE VIEW ---"
+110 PRINT "Name:"
+120 PRINT N$
+130 PRINT "Addr 1:"
+140 PRINT A$
+150 PRINT T$
+160 PRINT "Addr 2:"
+170 PRINT B$
+180 PRINT U$
+190 PRINT "Addr 3:"
+200 PRINT C$
+210 PRINT V$
+220 PRINT "Phone 1:"
+230 PRINT P$
+240 PRINT W$
+250 PRINT "Phone 2:"
+260 PRINT Q$
+270 PRINT X$
+280 PRINT "Phone 3:"
+290 PRINT R$
+300 PRINT Y$
+310 PRINT "Email 1:"
+320 PRINT E$
+330 PRINT Z$
+340 PRINT "Email 2:"
+350 PRINT F$
+360 PRINT S$
+370 PRINT "Email 3:"
+380 PRINT G$
+390 PRINT D$
+400 PRINT "---------------------"
+410 END

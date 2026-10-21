@@ -1,0 +1,4 @@
+10 LET K$ = INKEY$
+20 PRINT "GOT:"; K$; " ASCII:"; ASCII(K$)
+30 IF K$ = "" THEN GOTO 10
+40 END
