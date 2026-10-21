@@ -1,0 +1,32 @@
+# Agent & Editor Metadata
+.agy/
+**/.agy/
+.DS_Store
+
+# Python & Test Caches
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+
+# Compiler & Linker Intermediate Artifacts
+*.obj
+*.OBJ
+*.bin
+*.tmp_hex
+
+# RMS & Runtime Databases
+*.db
+*.IDX
+*.idx
+DATABASE
+chan*.dat
+*.rpt
+*.RPT
+.dcl/
+
+# OS Emulation Staged Runtimes & Disk Volumes
+OS/RSTS-E/system/
+OS/RSTS-E/fs/
+OS/VMS/system/
+OS/VMS/fs/

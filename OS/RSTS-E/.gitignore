@@ -1,0 +1,13 @@
+system/
+fs/
+.dcl/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.obj
+*.OBJ
+*.tsk
+*.TSK
+*.IDX
+*.idx
+DATABASE

@@ -1,0 +1,14 @@
+#!/bin/bash
+# ==============================================================================
+# DEC VAX/VMS V5.5-2 Operating System Emulator Launcher
+# ==============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VMS_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+if [ ! -d "${VMS_ROOT}/system/bin" ] && [ -f "${VMS_ROOT}/scripts/stage_runtime.sh" ]; then
+    bash "${VMS_ROOT}/scripts/stage_runtime.sh" >/dev/null
+fi
+
+export PATH="${VMS_ROOT}/system/bin:${PATH}"
+export LD_LIBRARY_PATH="${VMS_ROOT}/system/lib:${LD_LIBRARY_PATH}"
+exec python3 "${VMS_ROOT}/src/vms_os.py" "$@"

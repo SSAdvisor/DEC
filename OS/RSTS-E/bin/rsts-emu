@@ -1,0 +1,13 @@
+#!/bin/bash
+# ==============================================================================
+# DEC RSTS/E V10.1-L Operating System Emulator Launcher
+# ==============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RSTS_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+if [ ! -d "${RSTS_ROOT}/system/bin" ] && [ -f "${RSTS_ROOT}/scripts/stage_runtime.sh" ]; then
+    bash "${RSTS_ROOT}/scripts/stage_runtime.sh" >/dev/null
+fi
+
+export PATH="${RSTS_ROOT}/system/bin:${PATH}"
+exec python3 "${RSTS_ROOT}/src/rsts_os.py" "$@"

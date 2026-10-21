@@ -1,0 +1,18 @@
+services:
+  vax-vms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dec-vms:latest
+    container_name: dec-vms
+    stdin_open: true
+    tty: true
+    volumes:
+      - vms_dka0_data:/opt/dec-vms/fs
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY=${DISPLAY:-}
+      - TERM=${TERM:-vt220}
+
+volumes:
+  vms_dka0_data:

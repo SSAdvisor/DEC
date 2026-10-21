@@ -1,0 +1,16 @@
+services:
+  rsts-e:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dec-rsts-e:latest
+    container_name: dec-rsts-e
+    stdin_open: true
+    tty: true
+    volumes:
+      - rsts_dk0_data:/opt/dec-rsts/fs
+    environment:
+      - TERM=${TERM:-vt100}
+
+volumes:
+  rsts_dk0_data:
