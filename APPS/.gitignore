@@ -1,0 +1,34 @@
+# Python and test caches
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+
+# Compiler and Linker intermediate and binary artifacts
+*.obj
+*.OBJ
+*.bin
+build/
+bin/
+lib/
+apps/decwindows/include/
+
+# RMS and runtime database files
+*.db
+*.IDX
+*.idx
+*.sch
+*.dat
+DATABASE
+chan*.dat
+*.rpt
+*.RPT
+.dcl/
+
+# Editor & Agent metadata
+.agy/
+.DS_Store
+
+# Distribution Kits
+distrib/kit/
+distrib/*.tar.gz

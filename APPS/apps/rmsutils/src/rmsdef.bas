@@ -1,0 +1,104 @@
+10 ! ================================================================
+20 ! RMSDEF - DEC RMS-11 FILE DEFINITION / CREATION UTILITY
+30 ! AUTHENTIC DIGITAL EQUIPMENT CORPORATION RMS-11 DEFINITION FACILITY
+40 ! REIMPLEMENTED IN BASIC-PLUS-2 FOR DEC-APPS
+50 ! ================================================================
+60 MAP (REC_BUF) STRING MAP_LINE$ = 255%
+70 OUT_FILE$ = ""
+80 DES_FILE$ = ""
+90 ORG$ = "INDEXED"
+100 REC_SIZE% = 255%
+110 KEY_POS% = 1%
+120 KEY_LEN% = 16%
+130 KEY_TYPE$ = "STRING"
+140 CMD$ = COMMAND$
+150 IF CMD$ <> "" THEN GOSUB 300
+160 IF OUT_FILE$ = "" THEN GOSUB 400
+170 IF OUT_FILE$ = "" THEN GOTO 990
+180 ! If design file specified, read and parse it
+190 IF DES_FILE$ <> "" THEN GOSUB 500
+200 ! Auto-detect organization from file extension if not explicitly set
+210 IF INSTR(1%, OUT_FILE$, ".IDX") > 0% OR INSTR(1%, OUT_FILE$, ".idx") > 0% THEN ORG$ = "INDEXED"
+220 ! --- CREATE TARGET RMS FILE ---
+230 ON ERROR GOTO 980
+240 IF ORG$ = "INDEXED" THEN GOTO 260
+250 ! Create Sequential File
+252 OPEN OUT_FILE$ FOR OUTPUT AS FILE #1%
+254 CLOSE #1%
+256 GOTO 280
+260 ! Create RMS Indexed SQLite File
+262 OPEN OUT_FILE$ FOR OUTPUT AS FILE #1%, ORGANIZATION INDEXED FIXED, PRIMARY KEY MAP_LINE$, MAP REC_BUF
+264 CLOSE #1%
+280 ON ERROR GOTO 0
+285 GOTO 600
+300 ! --- PARSE COMMAND LINE ---
+310 EQ_P% = INSTR(1%, CMD$, "=")
+315 IF EQ_P% > 0% THEN GOTO 325
+320 OUT_FILE$ = CMD$
+322 GOTO 330
+325 OUT_FILE$ = LEFT$(CMD$, EQ_P% - 1%)
+327 DES_FILE$ = MID$(CMD$, EQ_P% + 1%, LEN(CMD$) - EQ_P%)
+330 SW_P% = INSTR(1%, OUT_FILE$, "/SEQ")
+332 IF SW_P% = 0% THEN SW_P% = INSTR(1%, OUT_FILE$, "/IDX")
+334 IF SW_P% = 0% THEN SW_P% = INSTR(1%, OUT_FILE$, "/ORG")
+336 IF SW_P% = 0% THEN SW_P% = INSTR(1%, OUT_FILE$, "/SIZ")
+338 IF SW_P% = 0% THEN GOTO 360
+340 SW$ = MID$(OUT_FILE$, SW_P%, LEN(OUT_FILE$) - SW_P% + 1%)
+342 OUT_FILE$ = LEFT$(OUT_FILE$, SW_P% - 1%)
+344 IF INSTR(1%, SW$, "/SEQ") > 0% THEN ORG$ = "SEQUENTIAL"
+346 IF INSTR(1%, SW$, "/IDX") > 0% THEN ORG$ = "INDEXED"
+348 P_SIZ% = INSTR(1%, SW$, "/SIZ:")
+350 IF P_SIZ% > 0% THEN REC_SIZE% = VAL(MID$(SW$, P_SIZ% + 5%, 4%))
+360 RETURN
+400 ! --- INTERACTIVE PROMPTS ---
+405 PRINT "RMSDEF V2.0 - DEC RMS-11 File Definition Utility"
+410 PRINT ""
+415 INPUT "Output RMS file: "; OUT_FILE$
+420 IF OUT_FILE$ = "" THEN GOTO 450
+425 INPUT "Design specification file (.DES) [none]: "; DES_FILE$
+430 IF DES_FILE$ <> "" THEN GOTO 450
+435 PRINT "File organization (1=INDEXED, 2=SEQUENTIAL) [1]: ";
+440 INPUT ORG_IN$
+445 IF ORG_IN$ = "2" THEN ORG$ = "SEQUENTIAL" ELSE ORG$ = "INDEXED"
+450 RETURN
+500 ! --- PARSE .DES SPECIFICATION FILE ---
+505 ON ERROR GOTO 590
+510 OPEN DES_FILE$ FOR INPUT AS FILE #2%
+515 READ_DES_LOOP:
+520 LINE INPUT #2%, L$
+522 IF INSTR(1%, L$, "ORGANIZATION:") = 0% THEN GOTO 530
+524 IF INSTR(1%, L$, "SEQUENTIAL") > 0% THEN ORG$ = "SEQUENTIAL"
+526 IF INSTR(1%, L$, "INDEXED") > 0% THEN ORG$ = "INDEXED"
+530 IF INSTR(1%, L$, "RECORD_SIZE:") = 0% THEN GOTO 540
+532 P% = INSTR(1%, L$, ":") + 1%
+534 REC_SIZE% = VAL(MID$(L$, P%, LEN(L$) - P% + 1%))
+540 IF INSTR(1%, L$, "KEY_POSITION:") = 0% THEN GOTO 550
+542 P% = INSTR(1%, L$, ":") + 1%
+544 KEY_POS% = VAL(MID$(L$, P%, LEN(L$) - P% + 1%))
+550 IF INSTR(1%, L$, "KEY_LENGTH:") = 0% THEN GOTO 560
+552 P% = INSTR(1%, L$, ":") + 1%
+554 KEY_LEN% = VAL(MID$(L$, P%, LEN(L$) - P% + 1%))
+560 IF INSTR(1%, L$, "KEY_TYPE:") = 0% THEN GOTO 570
+562 IF INSTR(1%, L$, "INTEGER") > 0% THEN KEY_TYPE$ = "INTEGER"
+564 IF INSTR(1%, L$, "STRING") > 0% THEN KEY_TYPE$ = "STRING"
+570 GOTO 515
+590 CLOSE #2%
+592 RESUME 595
+595 ON ERROR GOTO 0
+598 RETURN
+600 ! --- REPORT SUCCESS ---
+605 PRINT "RMSDEF V2.0 - DEC RMS-11 File Definition Utility"
+610 PRINT "================================================================"
+615 PRINT "File Created:       "; OUT_FILE$
+620 PRINT "Organization:       "; ORG$
+625 PRINT "Record Size:        "; REC_SIZE%; " bytes"
+630 IF ORG$ = "INDEXED" THEN PRINT "Primary Key Pos:    "; KEY_POS%
+635 IF ORG$ = "INDEXED" THEN PRINT "Primary Key Len:    "; KEY_LEN%; " bytes"
+640 IF ORG$ = "INDEXED" THEN PRINT "Primary Key Type:   "; KEY_TYPE$
+645 PRINT "Status:             SUCCESS"
+650 PRINT "================================================================"
+655 GOTO 999
+980 PRINT "RMSDEF: Error creating file: "; OUT_FILE$
+985 GOTO 999
+990 PRINT "RMSDEF: Missing output file specification."
+999 END

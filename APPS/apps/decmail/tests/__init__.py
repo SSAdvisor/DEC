@@ -1,0 +1,1 @@
+# DECmail tests package

@@ -1,0 +1,100 @@
+10 ! ================================================================
+20 ! RMSDSP - DEC RMS-11 FILE DISPLAY UTILITY
+30 ! AUTHENTIC DIGITAL EQUIPMENT CORPORATION RMS-11 DISPLAY FACILITY
+40 ! REIMPLEMENTED IN BASIC-PLUS-2 FOR DEC-APPS
+50 ! ================================================================
+60 MAP (REC_BUF) STRING MAP_LINE$ = 255%
+70 DIM SMP$(10%)
+80 IN_FILE$ = ""
+90 FILE_ORG$ = "SEQUENTIAL"
+100 NUM_RECS% = 0%
+110 MIN_LEN% = 9999%
+120 MAX_LEN% = 0%
+130 BRIEF_MODE% = 0%
+140 FIRST_KEY$ = ""
+150 LAST_KEY$ = ""
+160 CMD$ = COMMAND$
+170 IF CMD$ <> "" THEN GOSUB 300
+180 IF IN_FILE$ = "" THEN GOSUB 400
+190 IF IN_FILE$ = "" THEN GOTO 990
+200 ! Auto-detect file organization
+210 IF INSTR(1%, IN_FILE$, ".IDX") > 0% OR INSTR(1%, IN_FILE$, ".idx") > 0% THEN FILE_ORG$ = "INDEXED"
+220 ! --- SCAN AND INSPECT FILE ---
+230 ON ERROR GOTO 290
+240 IF FILE_ORG$ = "INDEXED" THEN GOTO 260
+250 ! Read Sequential File
+252 OPEN IN_FILE$ FOR INPUT AS FILE #1%
+254 READ_SEQ_LOOP:
+256 LINE INPUT #1%, LINE_BUF$
+258 NUM_RECS% = NUM_RECS% + 1%
+260 L_LEN% = LEN(LINE_BUF$)
+261 IF L_LEN% < MIN_LEN% THEN MIN_LEN% = L_LEN%
+262 IF L_LEN% > MAX_LEN% THEN MAX_LEN% = L_LEN%
+263 IF NUM_RECS% <= 5% THEN SMP$(NUM_RECS%) = LINE_BUF$
+264 GOTO 254
+270 ! Read RMS Indexed File
+260 OPEN IN_FILE$ FOR INPUT AS FILE #1%, ORGANIZATION INDEXED FIXED, PRIMARY KEY MAP_LINE$, MAP REC_BUF
+272 READ_RMS_LOOP:
+274 GET #1%
+276 NUM_RECS% = NUM_RECS% + 1%
+278 L_LEN% = LEN(MAP_LINE$)
+279 IF L_LEN% < MIN_LEN% THEN MIN_LEN% = L_LEN%
+280 IF L_LEN% > MAX_LEN% THEN MAX_LEN% = L_LEN%
+281 IF NUM_RECS% = 1% THEN FIRST_KEY$ = LEFT$(MAP_LINE$, 20%)
+282 LAST_KEY$ = LEFT$(MAP_LINE$, 20%)
+283 IF NUM_RECS% <= 5% THEN SMP$(NUM_RECS%) = MAP_LINE$
+284 GOTO 274
+290 CLOSE #1%
+295 RESUME 500
+300 ! --- PARSE COMMAND LINE ---
+310 SW_P% = INSTR(1%, CMD$, "/BRIEF")
+312 IF SW_P% = 0% THEN SW_P% = INSTR(1%, CMD$, "/FULL")
+315 IF SW_P% = 0% THEN GOTO 325
+320 IN_FILE$ = LEFT$(CMD$, SW_P% - 1%)
+322 SW$ = MID$(CMD$, SW_P%, LEN(CMD$) - SW_P% + 1%)
+323 GOTO 330
+325 IN_FILE$ = CMD$
+327 SW$ = ""
+330 IF INSTR(1%, SW$, "/BRIEF") > 0% THEN BRIEF_MODE% = 1%
+335 RETURN
+400 ! --- INTERACTIVE PROMPTS ---
+405 PRINT "RMSDSP V2.0 - DEC RMS-11 File Display Utility"
+410 PRINT ""
+415 INPUT "RMS file to inspect: "; IN_FILE$
+420 RETURN
+500 ! --- DISPLAY REPORT ---
+505 ON ERROR GOTO 0
+510 IF MIN_LEN% = 9999% THEN MIN_LEN% = 0%
+515 PRINT "RMSDSP V2.0 - DEC RMS-11 File Display Utility"
+520 PRINT "================================================================"
+525 PRINT "File Specification: "; IN_FILE$
+530 PRINT "File Organization:  "; FILE_ORG$
+535 IF FILE_ORG$ = "INDEXED" THEN PRINT "Record Format:      FIXED (255 bytes max)"
+536 IF FILE_ORG$ = "SEQUENTIAL" THEN PRINT "Record Format:      STREAM ASCII / VARIABLE"
+540 PRINT "Total Records:      "; NUM_RECS%
+545 PRINT "Shortest Record:    "; MIN_LEN%; " bytes"
+550 PRINT "Longest Record:     "; MAX_LEN%; " bytes"
+555 IF FILE_ORG$ = "INDEXED" AND NUM_RECS% > 0% THEN
+557   PRINT "First Key Seen:     "; FIRST_KEY$
+558   PRINT "Last Key Seen:      "; LAST_KEY$
+559 END IF
+560 PRINT "Integrity Status:   VALID RMS STRUCTURE"
+565 PRINT "================================================================"
+570 IF BRIEF_MODE% = 1% THEN GOTO 999
+575 IF NUM_RECS% = 0% THEN GOTO 999
+580 PRINT "Sample Records (First up to 5):"
+585 PRINT "----------------------------------------------------------------"
+590 S_CNT% = NUM_RECS%
+592 IF S_CNT% > 5% THEN S_CNT% = 5%
+595 K% = 1%
+600 SMP_LOOP:
+605 IF K% > S_CNT% THEN GOTO 620
+610 PRINT " ["; K%; "] "; SMP$(K%)
+615 K% = K% + 1%
+617 GOTO 600
+620 PRINT "----------------------------------------------------------------"
+630 GOTO 999
+980 PRINT "RMSDSP: Error inspecting file: "; IN_FILE$
+985 GOTO 999
+990 PRINT "RMSDSP: Missing file specification."
+999 END

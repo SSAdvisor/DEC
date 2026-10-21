@@ -1,0 +1,1 @@
+# DECwindows DECterm test package
