@@ -7,7 +7,7 @@ import shutil
 def main():
     args = sys.argv[1:]
     if len(args) < 2:
-        print("Usage: basiclink.py [-o output] <input1.bobj> [input2.bobj ...]")
+        print("Usage: basiclink.py [-o output] <input1.obj> [input2.obj ...]")
         return
         
     output_file = "a.out"
@@ -17,8 +17,8 @@ def main():
         args.pop(idx)
         args.pop(idx)
         
-    bobj_files = [arg for arg in args if arg.endswith('.bobj')]
-    odl_files = [arg for arg in args if arg.endswith('.odl')]
+    obj_files = [arg for arg in args if arg.lower().endswith('.obj')]
+    odl_files = [arg for arg in args if arg.lower().endswith('.odl')]
     
     # 0. Parse ODL file
     overlay_tree = {}
@@ -39,11 +39,11 @@ def main():
                         overlay_tree[name] = fctr
         print(f"Parsed ODL File: {overlay_tree}")
 
-    # 1. Load all bobj files
+    # 1. Load all obj files
     segments = []
-    for f in bobj_files:
-        with open(f, 'r') as bobj_f:
-            obj = json.load(bobj_f)
+    for f in obj_files:
+        with open(f, 'r') as obj_f:
+            obj = json.load(obj_f)
             segments.append({
                 'module': obj['module'],
                 'bytecode': bytearray(obj['bytecode']),
@@ -101,7 +101,7 @@ def main():
                 seg['vaddr'] = current_vaddr
                 return len(seg['bytecode'])
             else:
-                print(f"Warning: Module {node_str} found in ODL but not in bobj files.")
+                print(f"Warning: Module {node_str} found in ODL but not in obj files.")
                 return 0
 
     if 'ROOT' in overlay_tree:

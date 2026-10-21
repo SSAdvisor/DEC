@@ -4,7 +4,7 @@ An authentic, standalone implementation of the **DEC RSTS/E Linker and Overlay M
 
 ## Overview
 
-The linker links one or more compiled object modules (`.bobj` files) and optional Overlay Description Language (`.odl`) configuration files into native, standalone Linux executables.
+The linker links one or more compiled object modules (`.obj` files) and optional Overlay Description Language (`.odl`) configuration files into native, standalone Linux executables.
 
 ### Key Capabilities
 
@@ -18,10 +18,10 @@ The linker links one or more compiled object modules (`.bobj` files) and optiona
 
 ```bash
 # Link single module into standalone executable:
-./linker/basiclink tests/test_link.bobj -o test_link_app
+./linker/basiclink tests/test_link.obj -o test_link_app
 
 # Link multiple modules with ODL overlay file:
-./linker/basiclink tests/main.bobj tests/func1.bobj tests/func2.bobj tests/test.odl -o overlay_app
+./linker/basiclink tests/main.obj tests/func1.obj tests/func2.obj tests/test.odl -o overlay_app
 ```
 
 ## Building from Source

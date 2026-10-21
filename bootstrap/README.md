@@ -13,12 +13,12 @@ This directory contains the original Python and ANTLR4 reference implementation 
 
 ### Bootstrap Compilation
 ```bash
-python3 bootstrap/basicc.py <input.bas> -o <output.bobj> [--module NAME]
+python3 bootstrap/basicc.py <input.bas> -o <output.obj> [--module NAME]
 ```
 
 ### Bootstrap Linking
 ```bash
-python3 bootstrap/basiclink.py [-o <output_executable>] <module1.bobj> [module2.bobj ...] [file.odl]
+python3 bootstrap/basiclink.py [-o <output_executable>] <module1.obj> [module2.obj ...] [file.odl]
 ```
 
 ## Self-Hosting Workflow

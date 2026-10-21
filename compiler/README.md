@@ -4,7 +4,7 @@ An authentic, standalone implementation of the **DEC RSTS/E BASIC-PLUS-2 Compile
 
 ## Overview
 
-The compiler translates DEC BASIC-PLUS-2 source programs into RSTS/E VM bytecode modules (`.bobj` and `.bin` files) with full support for language constructs, overlay relocations, RMS record I/O, MAP statements, error handling, and structured control flow.
+The compiler translates DEC BASIC-PLUS-2 source programs into RSTS/E VM bytecode modules (`.obj` and `.bin` files) with full support for language constructs, overlay relocations, RMS record I/O, MAP statements, error handling, and structured control flow.
 
 ### Key Capabilities
 
@@ -25,11 +25,11 @@ The compiler translates DEC BASIC-PLUS-2 source programs into RSTS/E VM bytecode
 
 ```bash
 # Compile single-module program:
-./compiler/basicc tests/test_link.bas -o tests/test_link.bobj
+./compiler/basicc tests/test_link.bas -o tests/test_link.obj
 
 # Compile overlay modules:
-./compiler/basicc tests/func1.bas -o tests/func1.bobj --module FUNC1
-./compiler/basicc tests/func2.bas -o tests/func2.bobj --module FUNC2
+./compiler/basicc tests/func1.bas -o tests/func1.obj --module FUNC1
+./compiler/basicc tests/func2.bas -o tests/func2.obj --module FUNC2
 ```
 
 ## Building from Source
@@ -38,7 +38,7 @@ To bootstrap or rebuild `compiler/basicc`:
 ```bash
 ./compiler/build.sh
 ```
-This invokes `bootstrap/basicc.py` to compile `compiler/basicc.bas` into `compiler/basicc.bobj` and links it via `linker/basiclink` into the standalone `compiler/basicc` binary.
+This invokes `bootstrap/basicc.py` to compile `compiler/basicc.bas` into `compiler/basicc.obj` and links it via `linker/basiclink` into the standalone `compiler/basicc` binary.
 
 ## Compatibility Shim
 

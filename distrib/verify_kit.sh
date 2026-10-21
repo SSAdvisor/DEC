@@ -53,17 +53,17 @@ cat << 'EOF' > "${TMP_DIR}/test_prog.bas"
 70 END
 EOF
 
-"${BIN_DIR}/basicc" "${TMP_DIR}/test_prog.bas" -o "${TMP_DIR}/test_prog.bobj" >/dev/null 2>&1
-if [ ! -f "${TMP_DIR}/test_prog.bobj" ]; then
+"${BIN_DIR}/basicc" "${TMP_DIR}/test_prog.bas" -o "${TMP_DIR}/test_prog.obj" >/dev/null 2>&1
+if [ ! -f "${TMP_DIR}/test_prog.obj" ]; then
     echo "FAILED"
-    echo "Error: Compiler failed to produce test_prog.bobj."
+    echo "Error: Compiler failed to produce test_prog.obj."
     exit 1
 fi
 echo "PASSED"
 
 # Check 3: Native Linker test
 echo -n "Testing DEC BASIC-PLUS-2 Linker (basiclink)... "
-"${BIN_DIR}/basiclink" "${TMP_DIR}/test_prog.bobj" -o "${TMP_DIR}/test_prog_exe" >/dev/null 2>&1
+"${BIN_DIR}/basiclink" "${TMP_DIR}/test_prog.obj" -o "${TMP_DIR}/test_prog_exe" >/dev/null 2>&1
 if [ ! -x "${TMP_DIR}/test_prog_exe" ]; then
     echo "FAILED"
     echo "Error: Linker failed to produce executable binary."

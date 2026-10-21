@@ -36,15 +36,15 @@ Create a file named `hello.bas`:
 ```
 
 ### 2.1 Compiling with `basicc`
-Compile the program to a RSTS/E bytecode object module (`hello.bobj`):
+Compile the program to a RSTS/E bytecode object module (`hello.obj`):
 ```bash
-basicc hello.bas -o hello.bobj
+basicc hello.bas -o hello.obj
 ```
 
 ### 2.2 Linking with `basiclink`
 Link the object module into a standalone native Linux executable:
 ```bash
-basiclink hello.bobj -o hello
+basiclink hello.obj -o hello
 ```
 
 ### 2.3 Running Your Program
@@ -71,9 +71,9 @@ For large modular applications, use Overlay Description Language (`.odl`) files:
 1. `main.bas`: Root program segment.
 2. `func1.bas`, `func2.bas`: Subroutines compiled as overlay segments with `--module`:
    ```bash
-   basicc main.bas -o main.bobj
-   basicc func1.bas -o func1.bobj --module FUNC1
-   basicc func2.bas -o func2.bobj --module FUNC2
+   basicc main.bas -o main.obj
+   basicc func1.bas -o func1.obj --module FUNC1
+   basicc func2.bas -o func2.obj --module FUNC2
    ```
 3. `app.odl`:
    ```odl
@@ -83,7 +83,7 @@ For large modular applications, use Overlay Description Language (`.odl`) files:
    ```
 4. Link all segments together:
    ```bash
-   basiclink main.bobj func1.bobj func2.bobj app.odl -o my_app
+   basiclink main.obj func1.obj func2.obj app.odl -o my_app
    ./my_app
    ```
 

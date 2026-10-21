@@ -49,7 +49,7 @@ def test_kit_installation_and_verification():
 
         # 4. Compile and link a test program using the installed binaries
         test_bas = os.path.join(tmpdir, "test.bas")
-        test_bobj = os.path.join(tmpdir, "test.bobj")
+        test_obj = os.path.join(tmpdir, "test.obj")
         test_exe = os.path.join(tmpdir, "test_exe")
 
         with open(test_bas, "w") as f:
@@ -65,10 +65,10 @@ def test_kit_installation_and_verification():
         env["DEC_BASIC_HOME"] = install_prefix
         env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
 
-        r_comp = subprocess.run([basicc, test_bas, "-o", test_bobj], capture_output=True, text=True, env=env)
+        r_comp = subprocess.run([basicc, test_bas, "-o", test_obj], capture_output=True, text=True, env=env)
         assert r_comp.returncode == 0, f"Installed basicc failed: {r_comp.stderr}\n{r_comp.stdout}"
 
-        r_link = subprocess.run([basiclink, test_bobj, "-o", test_exe], capture_output=True, text=True, env=env)
+        r_link = subprocess.run([basiclink, test_obj, "-o", test_exe], capture_output=True, text=True, env=env)
         assert r_link.returncode == 0, f"Installed basiclink failed: {r_link.stderr}\n{r_link.stdout}"
 
         r_run = subprocess.run([test_exe], capture_output=True, text=True)

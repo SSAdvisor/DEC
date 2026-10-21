@@ -103,6 +103,32 @@ class JobController:
                 INSERT OR IGNORE INTO queue_config (queue_name, dest_type, dest_path, banner, form_type)
                 VALUES (?, ?, ?, ?, ?)
                 """, (qn, dtype, dpath, bnr, ftype))
+
+            c.execute("""
+            CREATE TABLE IF NOT EXISTS accounts (
+                ppn TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                password TEXT DEFAULT '',
+                quota INTEGER DEFAULT 10000,
+                privs TEXT DEFAULT 'NOPRIV',
+                flags TEXT DEFAULT 'NODISUSER',
+                directory TEXT DEFAULT '',
+                owner TEXT DEFAULT ''
+            )
+            """)
+
+            default_accounts = [
+                ("[1,1]", "LIBRARY", "LIB", 50000, "PRIV", "NODISUSER", "DK0:[1,1]", "System Library (LB:)"),
+                ("[1,2]", "SYSTEM", "SYSTEM", 100000, "PRIV", "NODISUSER", "DK0:[1,2]", "System Manager (SY:)"),
+                ("[1,3]", "PBS", "PBS", 25000, "PRIV", "NODISUSER", "DK0:[1,3]", "Print/Batch Services"),
+                ("[100,100]", "DIBS", "DIBS", 20000, "NOPRIV", "NODISUSER", "DK0:[100,100]", "Commercial Accounting"),
+                ("[200,200]", "GUEST", "", 10000, "NOPRIV", "NODISUSER", "DK0:[200,200]", "Timesharing Guest")
+            ]
+            for acc_ppn, acc_user, acc_pw, acc_q, acc_pr, acc_fl, acc_dir, acc_own in default_accounts:
+                c.execute("""
+                INSERT OR IGNORE INTO accounts (ppn, username, password, quota, privs, flags, directory, owner)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (acc_ppn, acc_user, acc_pw, acc_q, acc_pr, acc_fl, acc_dir, acc_own))
                 
             conn.commit()
             conn.close()
@@ -479,6 +505,242 @@ class JobController:
             break
         return processed
 
+    # ==========================================================================
+    # DCL Account Management Subsystem ($ACCT.SYS / SYSUAF)
+    # ==========================================================================
+    def normalize_account_id(self, raw):
+        if not raw:
+            return None
+        s = raw.strip().upper().strip('"').strip("'")
+        if s.startswith("[") and s.endswith("]"):
+            inner = s[1:-1]
+            if "," in inner:
+                p1, p2 = [x.strip() for x in inner.split(",", 1)]
+                if p1.isdigit() and p2.isdigit():
+                    return f"[{int(p1)},{int(p2)}]"
+            return s
+        if "," in s:
+            p1, p2 = [x.strip() for x in s.split(",", 1)]
+            if p1.isdigit() and p2.isdigit():
+                return f"[{int(p1)},{int(p2)}]"
+        # Lookup by username
+        with self.lock:
+            conn = self._get_connection()
+            c = conn.cursor()
+            c.execute("SELECT ppn FROM accounts WHERE UPPER(username) = ?", (s,))
+            row = c.fetchone()
+            conn.close()
+            if row:
+                return row["ppn"]
+        return s
+
+    def create_account(self, acct_spec, username=None, password="", quota=10000, privs="NOPRIV", flags="NODISUSER", directory=None, owner=""):
+        s = acct_spec.strip().upper()
+        if "," in s.strip("[]"):
+            inner = s.strip("[]")
+            p1, p2 = [x.strip() for x in inner.split(",", 1)]
+            ppn = f"[{int(p1)},{int(p2)}]"
+            uname = (username or f"U{int(p1)}_{int(p2)}").upper()
+        else:
+            uname = s.strip("[]")
+            ppn = (username if username and "," in username else "[200,201]")
+            if not ppn.startswith("["):
+                ppn = f"[{ppn}]"
+        if not directory:
+            directory = f"DK0:{ppn}"
+        if not owner:
+            owner = f"Account {uname}"
+        with self.lock:
+            conn = self._get_connection()
+            c = conn.cursor()
+            c.execute("""
+            INSERT OR REPLACE INTO accounts (ppn, username, password, quota, privs, flags, directory, owner)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (ppn, uname, password, int(quota), privs.upper(), flags.upper(), directory, owner))
+            conn.commit()
+            conn.close()
+        return ppn, uname
+
+    def modify_account(self, acct_spec, username=None, password=None, quota=None, privs=None, flags=None, owner=None):
+        ppn = self.normalize_account_id(acct_spec)
+        with self.lock:
+            conn = self._get_connection()
+            c = conn.cursor()
+            c.execute("SELECT * FROM accounts WHERE ppn = ? OR UPPER(username) = ?", (ppn, acct_spec.strip().upper()))
+            row = c.fetchone()
+            if not row:
+                conn.close()
+                return False, f"Account {acct_spec} not found"
+            curr = dict(row)
+            new_user = username.upper() if username else curr["username"]
+            new_pw = password if password is not None else curr["password"]
+            new_quota = int(quota) if quota is not None else curr["quota"]
+            new_privs = privs.upper() if privs else curr["privs"]
+            new_flags = flags.upper() if flags else curr["flags"]
+            new_owner = owner if owner is not None else curr["owner"]
+            c.execute("""
+            UPDATE accounts
+            SET username = ?, password = ?, quota = ?, privs = ?, flags = ?, owner = ?
+            WHERE ppn = ?
+            """, (new_user, new_pw, new_quota, new_privs, new_flags, new_owner, curr["ppn"]))
+            conn.commit()
+            conn.close()
+        return True, curr["ppn"]
+
+    def delete_account(self, acct_spec):
+        ppn = self.normalize_account_id(acct_spec)
+        if ppn in ("[1,1]", "[1,2]", "[1,3]"):
+            return False, f"Cannot delete system account {ppn}"
+        with self.lock:
+            conn = self._get_connection()
+            c = conn.cursor()
+            c.execute("DELETE FROM accounts WHERE ppn = ? OR UPPER(username) = ?", (ppn, acct_spec.strip().upper()))
+            deleted = c.rowcount
+            conn.commit()
+            conn.close()
+        if deleted == 0:
+            return False, f"Account {acct_spec} not found"
+        return True, ppn
+
+    def list_accounts(self, acct_spec=None):
+        with self.lock:
+            conn = self._get_connection()
+            c = conn.cursor()
+            if acct_spec and acct_spec.strip() != "*":
+                ppn = self.normalize_account_id(acct_spec)
+                c.execute("SELECT * FROM accounts WHERE ppn = ? OR UPPER(username) = ? ORDER BY ppn", (ppn, acct_spec.strip().upper()))
+            else:
+                c.execute("SELECT * FROM accounts ORDER BY ppn")
+            rows = [dict(r) for r in c.fetchall()]
+            conn.close()
+            return rows
+
+    def handle_dcl_account_cmd(self, action, raw_rest=""):
+        import shlex
+        action = action.upper()
+        tokens = []
+        quals = {}
+        for tok in shlex.split(raw_rest) if raw_rest else []:
+            if tok.startswith("/"):
+                for part in tok.lstrip("/").split("/"):
+                    if "=" in part:
+                        k, v = part.split("=", 1)
+                        quals[k.upper()] = v
+                    elif ":" in part:
+                        k, v = part.split(":", 1)
+                        quals[k.upper()] = v
+                    else:
+                        quals[part.upper()] = True
+            elif "/" in tok and not os.path.exists(tok):
+                subparts = tok.split("/")
+                tokens.append(subparts[0])
+                for part in subparts[1:]:
+                    if "=" in part:
+                        k, v = part.split("=", 1)
+                        quals[k.upper()] = v
+                    else:
+                        quals[part.upper()] = True
+            else:
+                if tok.upper() not in ("ACCOUNT", "ACCOUNTS", "PASSWORD"):
+                    tokens.append(tok)
+
+        if action == "CREATE":
+            if not tokens:
+                print("%DCL-E-PARAM, missing account PPN or username for CREATE/ACCOUNT")
+                return 1
+            spec = tokens[0]
+            uname = quals.get("NAME") or quals.get("USER") or (tokens[1] if len(tokens) > 1 else None)
+            pw = quals.get("PASSWORD", "")
+            quota = int(quals.get("QUOTA", 10000))
+            privs = "PRIV" if ("PRIVILEGES" in quals or "PRIV" in quals) else "NOPRIV"
+            if isinstance(quals.get("PRIVILEGES"), str):
+                privs = quals["PRIVILEGES"]
+            flags = quals.get("FLAGS", "NODISUSER")
+            owner = quals.get("OWNER", "")
+            ppn, final_user = self.create_account(spec, username=uname, password=pw, quota=quota, privs=privs, flags=flags, owner=owner)
+            print(f"%ACC-S-CREATED, account {ppn} ({final_user}) created [Quota={quota}, Priv={privs}]")
+            return 0
+
+        if action in ("MODIFY", "SET_ACCOUNT"):
+            if not tokens:
+                print("%DCL-E-PARAM, missing account PPN or username for MODIFY/ACCOUNT")
+                return 1
+            spec = tokens[0]
+            uname = quals.get("NAME") or quals.get("USER")
+            pw = quals.get("PASSWORD") if "PASSWORD" in quals else None
+            quota = int(quals["QUOTA"]) if "QUOTA" in quals else None
+            privs = None
+            if "PRIVILEGES" in quals or "PRIV" in quals:
+                privs = quals.get("PRIVILEGES") if isinstance(quals.get("PRIVILEGES"), str) else "PRIV"
+            elif "NOPRIVILEGES" in quals or "NOPRIV" in quals:
+                privs = "NOPRIV"
+            flags = quals.get("FLAGS") if isinstance(quals.get("FLAGS"), str) else None
+            if "DISUSER" in quals:
+                flags = "DISUSER"
+            elif "NODISUSER" in quals:
+                flags = "NODISUSER"
+            owner = quals.get("OWNER")
+            ok, msg = self.modify_account(spec, username=uname, password=pw, quota=quota, privs=privs, flags=flags, owner=owner)
+            if not ok:
+                print(f"%ACC-E-NOTFND, {msg}")
+                return 1
+            print(f"%ACC-S-MODIFIED, account {msg} attributes updated")
+            return 0
+
+        if action == "DELETE":
+            if not tokens:
+                print("%DCL-E-PARAM, missing account PPN or username for DELETE/ACCOUNT")
+                return 1
+            ok, msg = self.delete_account(tokens[0])
+            if not ok:
+                print(f"%ACC-E-DELERR, cannot delete protected system account or {msg}")
+                return 1
+            print(f"%ACC-S-DELETED, account {msg} deleted from system account table")
+            return 0
+
+        if action == "SHOW":
+            spec = tokens[0] if tokens else None
+            full = "FULL" in quals
+            rows = self.list_accounts(spec)
+            if not rows:
+                print(f"%ACC-W-NOACCT, account {spec} not found")
+                return 1
+            if full:
+                for r in rows:
+                    print(f"Account PPN:   {r['ppn']} ({r['username']})")
+                    print(f"  Owner:       {r['owner']}")
+                    print(f"  Directory:   {r['directory']}")
+                    print(f"  Disk Quota:  {r['quota']} blocks")
+                    print(f"  Privileges:  {r['privs']}")
+                    print(f"  Login Flags: {r['flags']}")
+                    print(f"  Password:    {'<set>' if r['password'] else '<none>'}")
+                    print("")
+            else:
+                print("PPN        Username    Quota     Privs    Flags       Directory      Owner")
+                print("---------  ----------  --------  -------  ----------  -------------  -------------------------")
+                for r in rows:
+                    print(f"{r['ppn']:<9}  {r['username']:<10}  {r['quota']:>8}  {r['privs']:<7}  {r['flags']:<10}  {r['directory']:<13}  {r['owner']}")
+            return 0
+
+        if action == "SET_PASSWORD":
+            target = quals.get("ACCOUNT") or quals.get("USER") or (tokens[0] if len(tokens) > 1 else "[1,2]")
+            if "GENERATE" in quals:
+                new_pw = "DEC$9472"
+            elif "PASSWORD" in quals and isinstance(quals["PASSWORD"], str):
+                new_pw = quals["PASSWORD"]
+            elif tokens:
+                new_pw = tokens[-1]
+            else:
+                new_pw = "UPDATED"
+            ok, msg = self.modify_account(target, password=new_pw)
+            if not ok:
+                print(f"%SET-E-PASSERR, {msg}")
+                return 1
+            print(f"%SET-S-PASSCHG, password updated for account {msg}")
+            return 0
+
+        return 1
+
 def main():
     import argparse
     import glob
@@ -534,6 +796,11 @@ def main():
     # dir
     p_dir = subparsers.add_parser("dir")
     p_dir.add_argument("pattern", nargs="?", default="*")
+
+    # dcl-account
+    p_acc = subparsers.add_parser("dcl-account")
+    p_acc.add_argument("action")
+    p_acc.add_argument("rest", nargs="?", default="")
     
     args = parser.parse_args()
     if not args.subcommand:
@@ -681,6 +948,10 @@ def main():
             out.append(f"{basename:<24} {size_kb:>6}  {dt}")
         out.append(f"\nTotal of {len(files)} files, {total_blocks} blocks.")
         print("\n".join(out))
+
+    elif args.subcommand == "dcl-account":
+        rc = jc.handle_dcl_account_cmd(args.action, args.rest)
+        sys.exit(rc)
 
 if __name__ == "__main__":
     main()

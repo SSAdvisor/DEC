@@ -9,9 +9,9 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 echo "=== Building DEC EDT Text Editor ==="
 echo "Compiling edt/edt.bas with basicc.py..."
-python3 "${ROOT_DIR}/compiler/basicc.py" "${SCRIPT_DIR}/edt.bas" -o "${SCRIPT_DIR}/edt.bobj"
+python3 "${ROOT_DIR}/compiler/basicc.py" "${SCRIPT_DIR}/edt.bas" -o "${SCRIPT_DIR}/edt.obj"
 
 echo "Linking edt/edt with basiclink.py..."
-python3 "${ROOT_DIR}/compiler/basiclink.py" "${SCRIPT_DIR}/edt.bobj" -o "${SCRIPT_DIR}/edt"
+python3 "${ROOT_DIR}/compiler/basiclink.py" "${SCRIPT_DIR}/edt.obj" -o "${SCRIPT_DIR}/edt"
 
 echo "Build successful: ${SCRIPT_DIR}/edt"

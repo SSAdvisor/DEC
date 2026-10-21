@@ -691,7 +691,7 @@ class CodeGenVisitor(RSTSBasicVisitor):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: basicc.py <input.bas> [-o output.bobj] [--module NAME]")
+        print("Usage: basicc.py <input.bas> [-o output.obj] [--module NAME]")
         sys.exit(1)
         
     module_name = "MAIN"
@@ -709,16 +709,19 @@ def main():
     tree = parser.program()
     
     visitor = CodeGenVisitor(module_name)
-    bobj = visitor.visit(tree)
+    obj = visitor.visit(tree)
     
-    output_file = "out.bobj"
+    output_file = "out.obj"
     if "-o" in sys.argv:
         output_file = sys.argv[sys.argv.index("-o") + 1]
         
     with open(output_file, 'w') as f:
-        json.dump(bobj, f, indent=2)
+        json.dump(obj, f, indent=2)
         
-    bin_file = output_file.replace('.bobj', '.bin')
+    if output_file.lower().endswith('.obj'):
+        bin_file = output_file[:-4] + '.bin'
+    else:
+        bin_file = output_file + '.bin'
     with open(bin_file, 'wb') as f:
         f.write(bytearray(visitor.bytecode))
         

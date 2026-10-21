@@ -32,7 +32,7 @@ DCL was the standard command language across DEC operating systems (RSTS/E, RSX-
 ```
 dcl/
 ├── dcl.bas               # Pure DEC BASIC-PLUS-2 DCL interpreter source
-├── dcl.bobj              # Compiled BASIC object file (bytecode JSON)
+├── dcl.obj               # Compiled BASIC object file (bytecode JSON)
 ├── dcl.bin               # Raw VM bytecode payload
 ├── dcl                   # Standalone native executable binary (VM + bytecode)
 ├── build.sh              # Automated build script
@@ -59,8 +59,8 @@ To compile `dcl.bas` and link the native executable:
 
 Or manually using the compiler tools:
 ```bash
-python3 compiler/basicc.py dcl/dcl.bas -o dcl/dcl.bobj
-python3 compiler/basiclink.py dcl/dcl.bobj -o dcl/dcl
+python3 compiler/basicc.py dcl/dcl.bas -o dcl/dcl.obj
+python3 compiler/basiclink.py dcl/dcl.obj -o dcl/dcl
 ```
 
 ### Running DCL

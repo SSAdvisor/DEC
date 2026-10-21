@@ -39,7 +39,7 @@ LET FOR_SP% = 0%
 LET IF_SP% = 0%
 LET BC_LEN% = 0%
 LET IN_FILE$ = ""
-LET OUT_BOBJ$ = "out.bobj"
+LET OUT_BOBJ$ = "out.obj"
 LET OUT_BIN$ = "out.bin"
 LET MOD_NAME$ = "MAIN"
 LET ERR_VAR_IDX% = 0%
@@ -68,7 +68,7 @@ GOTO PARSE_ARGS
 
 PARSE_ARGS_DONE:
 IF NUM_ARGS% < 1% THEN
-  PRINT "Usage: basicc <input.bas> [-o output.bobj] [--module NAME]"
+  PRINT "Usage: basicc <input.bas> [-o output.obj] [--module NAME]"
   END
 END IF
 
@@ -97,11 +97,16 @@ IF IN_FILE$ = "" THEN
   END
 END IF
 
-IF INSTR(1%, OUT_BOBJ$, ".bobj") > 0% THEN
-  LET P% = INSTR(1%, OUT_BOBJ$, ".bobj")
+IF INSTR(1%, OUT_BOBJ$, ".OBJ") > 0% THEN
+  LET P% = INSTR(1%, OUT_BOBJ$, ".OBJ")
   LET OUT_BIN$ = LEFT$(OUT_BOBJ$, P% - 1%) + ".bin"
 ELSE
-  LET OUT_BIN$ = OUT_BOBJ$ + ".bin"
+  IF INSTR(1%, OUT_BOBJ$, ".obj") > 0% THEN
+    LET P% = INSTR(1%, OUT_BOBJ$, ".obj")
+    LET OUT_BIN$ = LEFT$(OUT_BOBJ$, P% - 1%) + ".bin"
+  ELSE
+    LET OUT_BIN$ = OUT_BOBJ$ + ".bin"
+  END IF
 END IF
 
 ! --- Pass 1: Scan source file for DATA statements ---
@@ -1667,7 +1672,7 @@ FOR R% = 1% TO NUM_RELS%
 NEXT R%
 RETURN
 
-! Output Writer: Emit .bobj (JSON) and .bin (raw bytecode)
+! Output Writer: Emit .obj (JSON) and .bin (raw bytecode)
 WRITE_OUTPUT:
 OPEN OUT_BOBJ$ FOR OUTPUT AS FILE #2%
 PRINT #2%, "{"

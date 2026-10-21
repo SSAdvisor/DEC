@@ -11,7 +11,7 @@
 The DEC BASIC-PLUS-2 project provides a complete, modern reimplementation of the historic Digital Equipment Corporation (DEC) RSTS/E programming and execution environment for modern 64-bit Linux systems.
 
 The subsystem comprises six tightly coupled layers:
-1. **The Native Compiler (`compiler/basicc.bas` -> `compiler/basicc`)**: A multi-pass compiler written entirely in pure DEC BASIC-PLUS-2 that translates source programs into RSTS/E bytecode modules (`.bobj` and `.bin`).
+1. **The Native Compiler (`compiler/basicc.bas` -> `compiler/basicc`)**: A multi-pass compiler written entirely in pure DEC BASIC-PLUS-2 that translates source programs into RSTS/E bytecode modules (`.obj` and `.bin`).
 2. **The Native Linker (`linker/basiclink.bas` -> `linker/basiclink`)**: A link editor and overlay manager written entirely in pure DEC BASIC-PLUS-2 that resolves module symbols, parses Overlay Description Language (`.odl`) trees, and packages standalone ELF executables.
 3. **The Bytecode Virtual Machine (`vm/` -> `vm/build/rsts_vm`)**: A high-performance, stack-based C runtime executing RSTS/E bytecode, supporting overlays, math, string manipulation, and system calls.
 4. **The RMS Indexed File Engine (`vm/src/rms.c`)**: A Record Management Services implementation backed by SQLite, providing authentic DEC indexed file operations (`OPEN`, `GET`, `PUT`, `MAP`, `FIELD`).
@@ -23,8 +23,8 @@ flowchart TD
     subgraph Development ["User Development Environment"]
         SRC["BASIC Source (.BAS)"] --> BC["DEC BASIC-PLUS-2 Compiler (basicc)"]
         ODL["Overlay Description (.ODL)"] --> BL["DEC BASIC-PLUS-2 Linker (basiclink)"]
-        BC --> BOBJ["Bytecode Object (.BOBJ)"]
-        BOBJ --> BL
+        BC --> OBJ["Bytecode Object (.OBJ)"]
+        OBJ --> BL
     end
 
     subgraph Runtime ["Executable & Runtime Engine"]
@@ -56,7 +56,7 @@ flowchart LR
     SRC["Source Text"] --> PASS1["Pass 1: DATA Pre-Scan"]
     PASS1 --> PASS2["Pass 2: Statement & Expression Parsing"]
     PASS2 --> PASS3["Pass 3: Relocation Resolution"]
-    PASS3 --> EMIT["Output Writer (.BOBJ / .BIN)"]
+    PASS3 --> EMIT["Output Writer (.OBJ / .BIN)"]
 ```
 
 1. **Pass 1: DATA Pre-Scan**
@@ -102,8 +102,8 @@ The compiler implements a recursive-descent expression parser with an explicit o
 
 The linker resolves independently compiled object modules and builds standalone native ELF executables.
 
-### 3.1 Object File Format (`.bobj`)
-Each `.bobj` file is a JSON-encoded object module containing:
+### 3.1 Object File Format (`.obj`)
+Each `.obj` file is a JSON-encoded object module containing:
 - `module`: Module name (e.g., `"MAIN"`, `"FUNC1"`).
 - `symbols`: Exported entry points (`name`, `type`, `offset`).
 - `relocations`: External overlay calls (`type: "CALL_OVL"`, `offset`, `target`).

@@ -1,6 +1,7 @@
 .venv/
 __pycache__/
-*.bobj
+*.obj
+*.OBJ
 *.bin
 tests/*_app
 vm/build/
@@ -13,7 +14,7 @@ chan*.dat
 *.RPT
 .dcl/
 tests/office/salesrpt
-out.bobj
+out.obj
 out.bin
 distrib/kit/
 .pytest_cache/

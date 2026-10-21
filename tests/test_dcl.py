@@ -183,6 +183,38 @@ $ EXIT
         self.assertIn("NETPRINT", out)
         self.assertIn("COMPLETED", out)
 
+    def test_account_management_lifecycle(self):
+        code, out = self.interp.execute_line("SHOW ACCOUNT")
+        self.assertEqual(code, 0)
+        self.assertIn("[1,2]", out)
+        self.assertIn("SYSTEM", out)
+
+        code, out = self.interp.execute_line("CREATE/ACCOUNT [150,10] /NAME=ENGR /PASSWORD=VAX11 /QUOTA=8000 /PRIVILEGES")
+        self.assertEqual(code, 0)
+        self.assertIn("created", out)
+
+        code, out = self.interp.execute_line("SHOW ACCOUNT [150,10] /FULL")
+        self.assertEqual(code, 0)
+        self.assertIn("ENGR", out)
+        self.assertIn("8000", out)
+        self.assertIn("PRIV", out)
+
+        code, out = self.interp.execute_line("MODIFY/ACCOUNT [150,10] /QUOTA=12000 /NOPRIVILEGES")
+        self.assertEqual(code, 0)
+        self.assertIn("updated", out)
+
+        code, out = self.interp.execute_line("SET PASSWORD [150,10] /PASSWORD=NEWPASS99")
+        self.assertEqual(code, 0)
+        self.assertIn("password updated", out)
+
+        code, out = self.interp.execute_line("DELETE/ACCOUNT [150,10]")
+        self.assertEqual(code, 0)
+        self.assertIn("deleted", out)
+
+        code, out = self.interp.execute_line("DELETE/ACCOUNT [1,2]")
+        self.assertNotEqual(code, 0)
+        self.assertIn("cannot delete protected system account", out)
+
 class TestCompiledDCL(unittest.TestCase):
     def setUp(self):
         self.dcl_bin = os.path.join(repo_root, "dcl", "dcl")
@@ -211,11 +243,11 @@ class TestCompiledDCL(unittest.TestCase):
 
     def test_command_procedure(self):
         bas_file = os.path.join(repo_root, "tests", "office", "salesrpt.bas")
-        bobj_file = os.path.join(repo_root, "tests", "office", "salesrpt.bobj")
+        obj_file = os.path.join(repo_root, "tests", "office", "salesrpt.obj")
         exe_file = os.path.join(repo_root, "tests", "office", "salesrpt")
         if not os.path.exists(exe_file):
-            subprocess.run([sys.executable, os.path.join(repo_root, "compiler", "basicc.py"), bas_file, "-o", bobj_file], check=True, cwd=repo_root)
-            subprocess.run([sys.executable, os.path.join(repo_root, "compiler", "basiclink.py"), bobj_file, "-o", exe_file], check=True, cwd=repo_root)
+            subprocess.run([sys.executable, os.path.join(repo_root, "compiler", "basicc.py"), bas_file, "-o", obj_file], check=True, cwd=repo_root)
+            subprocess.run([sys.executable, os.path.join(repo_root, "compiler", "basiclink.py"), obj_file, "-o", exe_file], check=True, cwd=repo_root)
 
         proc = os.path.join(repo_root, "tests", "office", "salesrpt.dcl")
         res = subprocess.run([self.dcl_bin, f"@{proc}"], capture_output=True, text=True, cwd=repo_root)
@@ -244,6 +276,26 @@ class TestCompiledDCL(unittest.TestCase):
         res = subprocess.run([sys.executable, py_dcl, "SHOW", "SYSTEM"], capture_output=True, text=True, cwd=repo_root)
         self.assertEqual(res.returncode, 0)
         self.assertIn("RSTS/E", res.stdout)
+
+    def test_compiled_dcl_account_commands(self):
+        res = subprocess.run(
+            [self.dcl_bin],
+            input=(
+                "CREATE/ACCOUNT [160,5] /NAME=FINANCE /QUOTA=6000 /PASSWORD=LEDGER1\n"
+                "SHOW ACCOUNT [160,5] /FULL\n"
+                "SET ACCOUNT [160,5] /QUOTA=9000\n"
+                "DELETE/ACCOUNT [160,5]\n"
+                "EXIT\n"
+            ),
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+        )
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("FINANCE", res.stdout)
+        self.assertIn("created", res.stdout)
+        self.assertIn("updated", res.stdout)
+        self.assertIn("deleted", res.stdout)
 
 if __name__ == "__main__":
     unittest.main()

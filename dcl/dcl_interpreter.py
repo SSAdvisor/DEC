@@ -224,6 +224,9 @@ class DCLInterpreter:
             "ASSIGN": self.cmd_assign,
             "DEFINE": self.cmd_assign,
             "DEASSIGN": self.cmd_deassign,
+            "CREATE": self.cmd_create,
+            "MODIFY": self.cmd_modify,
+            "AUTHORIZE": self.cmd_authorize,
             "EXIT": self.cmd_exit,
             "LOGOUT": self.cmd_exit,
             "BYE": self.cmd_exit
@@ -250,7 +253,7 @@ Available Commands:
   START/QUEUE  - Open or resume a queue
   STOP/QUEUE   - Pause a queue
   BASIC        - Compile a BASIC-PLUS-2 source file (.BAS)
-  LINK         - Link compiled BASIC object files (.BOBJ) into executable
+  LINK         - Link compiled BASIC object files (.OBJ) into executable
   RUN          - Execute a compiled program
   DIRECTORY    - List files in current or specified directory
   TYPE         - Display contents of a file
@@ -266,8 +269,8 @@ Type HELP <command> for additional information."""
             "SUBMIT": "SUBMIT <file.com> [/QUEUE=queue] [/NAME=job_name] [/LOG=log_file]\nSubmits a command procedure to the batch queue (default: SYS$BATCH).",
             "PRINT": "PRINT <file> [/QUEUE=queue] [/COPIES=n] [/NAME=job_name] [/DELETE]\nSubmits a file to the print queue (default: SYS$PRINT).",
             "SHOW": "SHOW QUEUE [name] [/ALL] [/FULL]\nSHOW JOBS\nSHOW SYSTEM\nSHOW TIME\nSHOW SYMBOL <name>",
-            "BASIC": "BASIC <file.bas> [/MODULE=name]\nCompiles DEC BASIC-PLUS-2 source file into bytecode object (.BOBJ).",
-            "LINK": "LINK <file.bobj> [/OUTPUT=target]\nLinks .BOBJ modules into a runnable binary.",
+            "BASIC": "BASIC <file.bas> [/MODULE=name]\nCompiles DEC BASIC-PLUS-2 source file into bytecode object (.OBJ).",
+            "LINK": "LINK <file.obj> [/OUTPUT=target]\nLinks .OBJ modules into a runnable binary.",
             "RUN": "RUN <file>\nExecutes a compiled BASIC-PLUS-2 executable."
         }
         return 0, help_topics.get(topic, f"No specific help topic available for {topic}")
@@ -440,7 +443,32 @@ Default Dir:   {self.current_dir}"""
                 out.append(f"  \"{k}\" = \"{v}\"")
             return 0, "\n".join(out)
 
+        elif sub in ["ACCOUNT", "ACCOUNTS"]:
+            return self._exec_account_action("SHOW", cmd)
+
         return 1, f"%DCL-E-IVKEYW, unrecognized SHOW keyword '{sub}'"
+
+    def _exec_account_action(self, action, cmd):
+        import io
+        from contextlib import redirect_stdout
+        raw = cmd.raw_line.strip().lstrip("$").strip()
+        parts = raw.split(None, 1)
+        rest = parts[1] if len(parts) > 1 else ""
+        if "/" in parts[0]:
+            rest = "/" + parts[0].split("/", 1)[1] + " " + rest
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = self.job_controller.handle_dcl_account_cmd(action, rest.strip())
+        return rc, buf.getvalue().rstrip()
+
+    def cmd_create(self, cmd):
+        return self._exec_account_action("CREATE", cmd)
+
+    def cmd_modify(self, cmd):
+        return self._exec_account_action("MODIFY", cmd)
+
+    def cmd_authorize(self, cmd):
+        return self._exec_account_action("SHOW", cmd)
 
     def cmd_delete(self, cmd):
         if "ENTRY" in cmd.qualifiers:
@@ -449,6 +477,9 @@ Default Dir:   {self.current_dir}"""
             if success:
                 return 0, f"Entry {entry_id} deleted from queue"
             return 1, f"%DCL-E-DELERR, error deleting entry {entry_id}: {msg}"
+
+        if "ACCOUNT" in cmd.qualifiers or (cmd.args and cmd.args[0].upper() == "ACCOUNT"):
+            return self._exec_account_action("DELETE", cmd)
             
         if not cmd.args:
             return 1, "%DCL-E-PARAM, missing file or qualifier for DELETE"
@@ -499,9 +530,10 @@ Default Dir:   {self.current_dir}"""
             src_file = self.resolve_path(raw_src)
 
         basicc_py = os.path.join(self.repo_root, "compiler", "basicc.py")
-        out_bobj = cmd.qualifiers.get("OBJECT", src_file.replace('.bas', '.bobj'))
+        default_obj = os.path.splitext(src_file)[0] + ".OBJ"
+        out_obj = cmd.qualifiers.get("OBJECT", default_obj)
         
-        c_args = [sys.executable, basicc_py, src_file, "-o", out_bobj]
+        c_args = [sys.executable, basicc_py, src_file, "-o", out_obj]
         if "MODULE" in cmd.qualifiers:
             c_args.extend(["--module", cmd.qualifiers["MODULE"]])
 
@@ -512,20 +544,20 @@ Default Dir:   {self.current_dir}"""
     def cmd_link(self, cmd):
         if not cmd.args:
             return 1, "%DCL-E-NOFILE, missing object filename to link"
-        raw_bobj = cmd.args[0]
-        if not raw_bobj.lower().endswith(".bobj"):
-            cand = self.resolve_path(raw_bobj + ".bobj")
-            if os.path.exists(cand):
-                bobj_file = cand
-            else:
-                bobj_file = self.resolve_path(raw_bobj)
-        else:
-            bobj_file = self.resolve_path(raw_bobj)
+        raw_obj = cmd.args[0]
+        obj_file = self.resolve_path(raw_obj)
+        if not os.path.exists(obj_file) or (os.path.isfile(obj_file) and os.access(obj_file, os.X_OK)):
+            stem_q, _ = os.path.splitext(raw_obj)
+            for ext_cand in (".OBJ", ".obj"):
+                cand = self.resolve_path(stem_q + ext_cand)
+                if os.path.exists(cand):
+                    obj_file = cand
+                    break
 
-        output_file = cmd.qualifiers.get("OUTPUT", os.path.splitext(bobj_file)[0])
+        output_file = cmd.qualifiers.get("OUTPUT", os.path.splitext(obj_file)[0])
         basiclink_py = os.path.join(self.repo_root, "compiler", "basiclink.py")
         
-        link_args = [sys.executable, basiclink_py, "-o", output_file, bobj_file]
+        link_args = [sys.executable, basiclink_py, "-o", output_file, obj_file]
         for extra in cmd.args[1:]:
             link_args.append(extra)
 
@@ -621,6 +653,10 @@ Default Dir:   {self.current_dir}"""
         elif sub == "NOVERIFY":
             self.verify = False
             return 0, ""
+        elif sub == "ACCOUNT":
+            return self._exec_account_action("SET_ACCOUNT", cmd)
+        elif sub == "PASSWORD":
+            return self._exec_account_action("SET_PASSWORD", cmd)
         return 1, f"%DCL-W-IVKEYW, unrecognized SET option '{sub}'"
 
     def cmd_write(self, cmd):

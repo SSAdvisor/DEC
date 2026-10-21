@@ -291,6 +291,7 @@
 3400 LET Q_MOD$ = ""
 3410 LET Q_OUT$ = ""
 3420 LET Q_LOG$ = ""
+3425 LET Q_ACCT% = 0%
 3430 LET NUM_TOK% = 0%
 3450 ! Extract first word as candidate verb
 3460 LET P% = INSTR(CMD_LINE$, " ")
@@ -305,6 +306,7 @@
 3505 LET T1$ = RIGHT$(VERB$, P%)
 3510 LET VERB$ = LEFT$(VERB$, P% - 1%)
 3515 LET REST$ = T1$ + " " + REST$
+3518 LET RAW_REST$ = REST$
 3530 ! Uppercase VERB$
 3540 FOR K% = 1% TO LEN(VERB$)
 3550   LET P% = ASCII(MID$(VERB$, K%, 1%))
@@ -359,6 +361,7 @@
 3834   IF LEFT$(T2$, 8%) = "/MODULE=" THEN LET Q_MOD$ = RIGHT$(T1$, 9%)
 3836   IF LEFT$(T2$, 8%) = "/OUTPUT=" THEN LET Q_OUT$ = RIGHT$(T1$, 9%)
 3838   IF LEFT$(T2$, 5%) = "/LOG=" THEN LET Q_LOG$ = RIGHT$(T1$, 6%)
+3839   IF T2$ = "/ACCOUNT" OR T2$ = "/ACCOUNTS" THEN LET Q_ACCT% = 1%
 3840 NEXT J%
 3850 ! Dispatch by VERB$
 3855 IF VERB$ = "HELP" THEN GOTO 4000
@@ -380,6 +383,9 @@
 3935 IF VERB$ = "WAIT" THEN GOTO 5920
 3940 IF VERB$ = "ASSIGN" OR VERB$ = "DEFINE" THEN GOTO 6000
 3945 IF VERB$ = "DEASSIGN" THEN GOTO 6100
+3946 IF VERB$ = "CREATE" THEN GOTO 6200
+3947 IF VERB$ = "MODIFY" THEN GOTO 6220
+3948 IF VERB$ = "AUTHORIZE" THEN GOTO 6240
 3950 IF VERB$ = "EXIT" THEN GOTO 3958
 3952 IF VERB$ = "LOGOUT" THEN GOTO 3958
 3954 IF VERB$ = "BYE" THEN GOTO 3958
@@ -407,7 +413,7 @@
 4064 PRINT "  START/QUEUE  - Open or resume a queue"
 4066 PRINT "  STOP/QUEUE   - Pause a queue"
 4068 PRINT "  BASIC        - Compile a BASIC-PLUS-2 source file (.BAS)"
-4070 PRINT "  LINK         - Link compiled BASIC object files (.BOBJ) into executable"
+4070 PRINT "  LINK         - Link compiled BASIC object files (.OBJ) into executable"
 4072 PRINT "  RUN          - Execute a compiled program"
 4074 PRINT "  DIRECTORY    - List files in current or specified directory"
 4076 PRINT "  TYPE         - Display contents of a file"
@@ -431,7 +437,7 @@
 4109 IF T1$ = "SHOW" THEN GOTO 3990
 4110 IF T1$ = "BASIC" THEN PRINT "BASIC <file.bas> [/MODULE=name]"
 4111 IF T1$ = "BASIC" THEN GOTO 3990
-4112 IF T1$ = "LINK" THEN PRINT "LINK <file.bobj> [/OUTPUT=target]"
+4112 IF T1$ = "LINK" THEN PRINT "LINK <file.obj> [/OUTPUT=target]"
 4113 IF T1$ = "LINK" THEN GOTO 3990
 4114 IF T1$ = "RUN" THEN PRINT "RUN <file>"
 4115 IF T1$ = "RUN" THEN GOTO 3990
@@ -485,11 +491,13 @@
 4412 IF Q_ALL% = 1% THEN LET T2$ = "--all"
 4414 LET RC% = SYS("python3 dcl/job_controller.py show-jobs " + T2$)
 4416 GOTO 3990
-4420 IF T1$ <> "ENTRY" AND T1$ <> "ENTRIES" THEN GOTO 4440
+4420 IF T1$ <> "ENTRY" AND T1$ <> "ENTRIES" THEN GOTO 4438
 4430 LET T2$ = ""
 4432 IF NUM_TOK% > 1% THEN LET T2$ = TOK$(2%)
 4434 LET RC% = SYS("python3 dcl/job_controller.py show-entry " + T2$)
 4436 GOTO 3990
+4438 IF T1$ = "ACCOUNT" OR T1$ = "ACCOUNTS" THEN LET RC% = SYS("python3 dcl/job_controller.py dcl-account SHOW " + CHR$(34%) + RAW_REST$ + CHR$(34%))
+4439 IF T1$ = "ACCOUNT" OR T1$ = "ACCOUNTS" THEN GOTO 3990
 4440 PRINT "%DCL-E-IVKEYW, unrecognized SHOW keyword '"; T1$; "'"
 4450 GOTO 3990
 4500 ! ------------------------------------------------------------------------------
@@ -551,10 +559,14 @@
 4725 IF Q_ENTRY$ = "" THEN GOTO 4730
 4727 LET RC% = SYS("python3 dcl/job_controller.py delete-entry " + Q_ENTRY$)
 4729 GOTO 3990
-4730 IF NUM_TOK% > 0% THEN GOTO 4735
-4732 PRINT "%DCL-E-PARAM, missing file or qualifier for DELETE"
+4730 IF Q_ACCT% = 1% THEN LET RC% = SYS("python3 dcl/job_controller.py dcl-account DELETE " + CHR$(34%) + RAW_REST$ + CHR$(34%))
+4731 IF Q_ACCT% = 1% THEN GOTO 3990
+4732 IF NUM_TOK% > 0% THEN GOTO 4735
+4733 PRINT "%DCL-E-PARAM, missing file or qualifier for DELETE"
 4734 GOTO 3990
 4735 LET T1$ = TOK$(1%)
+4736 IF T1$ = "ACCOUNT" OR T1$ = "account" THEN LET RC% = SYS("python3 dcl/job_controller.py dcl-account DELETE " + CHR$(34%) + RAW_REST$ + CHR$(34%))
+4737 IF T1$ = "ACCOUNT" OR T1$ = "account" THEN GOTO 3990
 4740 LET RC% = SYS("rm -f " + T1$)
 4745 PRINT "%DCL-I-DELETED, file "; T1$; " deleted"
 4750 GOTO 3990
@@ -584,9 +596,9 @@
 5032 LET T2$ = T1$
 5034 IF Q_OBJ$ <> "" THEN GOTO 5040
 5035 LET L% = LEN(T1$)
-5036 IF L% > 4% THEN IF RIGHT$(T1$, L% - 3%) = ".bas" THEN LET Q_OBJ$ = LEFT$(T1$, L% - 4%) + ".bobj"
-5037 IF L% > 4% THEN IF RIGHT$(T1$, L% - 3%) = ".BAS" THEN LET Q_OBJ$ = LEFT$(T1$, L% - 4%) + ".bobj"
-5038 IF Q_OBJ$ = "" THEN LET Q_OBJ$ = T1$ + ".bobj"
+5036 IF L% > 4% THEN IF RIGHT$(T1$, L% - 3%) = ".bas" THEN LET Q_OBJ$ = LEFT$(T1$, L% - 4%) + ".OBJ"
+5037 IF L% > 4% THEN IF RIGHT$(T1$, L% - 3%) = ".BAS" THEN LET Q_OBJ$ = LEFT$(T1$, L% - 4%) + ".OBJ"
+5038 IF Q_OBJ$ = "" THEN LET Q_OBJ$ = T1$ + ".OBJ"
 5040 IF Q_OBJ$ <> "" THEN LET T2$ = T2$ + " -o " + Q_OBJ$
 5045 IF Q_MOD$ <> "" THEN LET T2$ = T2$ + " --module " + Q_MOD$
 5050 LET RC% = SYS("python3 compiler/basicc.py " + T2$)
@@ -600,9 +612,11 @@
 5130 LET T1$ = TOK$(1%)
 5132 LET T3$ = T1$
 5135 LET L% = LEN(T1$)
-5140 IF L% < 5% THEN LET T1$ = T1$ + ".bobj"
-5142 IF L% >= 5% THEN IF RIGHT$(T1$, L% - 4%) <> ".bobj" THEN LET T1$ = T1$ + ".bobj"
-5144 IF L% >= 5% THEN IF RIGHT$(T3$, L% - 4%) = ".bobj" THEN LET T3$ = LEFT$(T3$, L% - 5%)
+5136 IF L% >= 4% THEN IF RIGHT$(T3$, L% - 3%) = ".OBJ" OR RIGHT$(T3$, L% - 3%) = ".obj" THEN LET T3$ = LEFT$(T3$, L% - 4%)
+5138 IF SYS("test -f " + T1$ + " && test ! -x " + T1$) = 0% THEN GOTO 5146
+5139 IF SYS("test -f " + T3$ + ".OBJ") = 0% THEN LET T1$ = T3$ + ".OBJ"
+5140 IF SYS("test -f " + T3$ + ".OBJ") = 0% THEN GOTO 5146
+5141 IF SYS("test -f " + T3$ + ".obj") = 0% THEN LET T1$ = T3$ + ".obj"
 5146 IF Q_OUT$ = "" THEN LET Q_OUT$ = T3$
 5150 LET T2$ = "-o " + Q_OUT$ + " " + T1$
 5160 FOR I% = 2% TO NUM_TOK%
@@ -709,7 +723,11 @@
 5777 IF T1$ = "VERIFY" THEN GOTO 3990
 5780 IF T1$ = "NOVERIFY" THEN LET VERIFY% = 0%
 5782 IF T1$ = "NOVERIFY" THEN GOTO 3990
-5785 PRINT "%DCL-W-IVKEYW, unrecognized SET option '"; T1$; "'"
+5783 IF T1$ = "ACCOUNT" THEN LET RC% = SYS("python3 dcl/job_controller.py dcl-account SET_ACCOUNT " + CHR$(34%) + RAW_REST$ + CHR$(34%))
+5784 IF T1$ = "ACCOUNT" THEN GOTO 3990
+5785 IF T1$ = "PASSWORD" THEN LET RC% = SYS("python3 dcl/job_controller.py dcl-account SET_PASSWORD " + CHR$(34%) + RAW_REST$ + CHR$(34%))
+5786 IF T1$ = "PASSWORD" THEN GOTO 3990
+5788 PRINT "%DCL-W-IVKEYW, unrecognized SET option '"; T1$; "'"
 5790 GOTO 3990
 5800 ! ------------------------------------------------------------------------------
 5810 ! WRITE Command Handler (WRITE SYS$OUTPUT "text")
@@ -778,6 +796,15 @@
 6162   IF LOG_N$(I%) = T1$ THEN LET LOG_V$(I%) = ""
 6165 NEXT I%
 6170 GOTO 3990
+6200 ! ------------------------------------------------------------------------------
+6205 ! CREATE/ACCOUNT, MODIFY/ACCOUNT, AUTHORIZE Handlers
+6210 ! ------------------------------------------------------------------------------
+6212 LET RC% = SYS("python3 dcl/job_controller.py dcl-account CREATE " + CHR$(34%) + RAW_REST$ + CHR$(34%))
+6215 GOTO 3990
+6220 LET RC% = SYS("python3 dcl/job_controller.py dcl-account MODIFY " + CHR$(34%) + RAW_REST$ + CHR$(34%))
+6225 GOTO 3990
+6240 LET RC% = SYS("python3 dcl/job_controller.py dcl-account SHOW " + CHR$(34%) + RAW_REST$ + CHR$(34%))
+6245 GOTO 3990
 7000 ! ------------------------------------------------------------------------------
 7010 ! IF Condition Evaluator in Procedure: IF <LHS> = <RHS> THEN <stmt>
 7020 ! ------------------------------------------------------------------------------

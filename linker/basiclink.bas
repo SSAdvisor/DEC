@@ -52,7 +52,7 @@
 470 GOTO 410
 500 ! Check arguments
 510 IF NUM_ARGS% < 1% THEN
-520   PRINT "Usage: basiclink [-o output] <input1.bobj> [input2.bobj ...] [file.odl]"
+520   PRINT "Usage: basiclink [-o output] <input1.obj> [input2.obj ...] [file.odl]"
 530   END
 540 END IF
 550 LET I% = 1%
@@ -62,19 +62,19 @@
 590   LET I% = I% + 2%
 600   GOTO 560
 610 END IF
-620 IF INSTR(1%, ARG$(I%), ".odl") > 0% THEN
+620 IF INSTR(1%, ARG$(I%), ".odl") > 0% OR INSTR(1%, ARG$(I%), ".ODL") > 0% THEN
 622   LET ODL_FILE$ = ARG$(I%)
 624   LET I% = I% + 1%
 626   GOTO 560
 628 END IF
-630 IF INSTR(1%, ARG$(I%), ".bobj") > 0% THEN
+630 IF INSTR(1%, ARG$(I%), ".obj") > 0% OR INSTR(1%, ARG$(I%), ".OBJ") > 0% THEN
 632   LET NUM_BOBJ% = NUM_BOBJ% + 1%
 634   LET BOBJ_FILES$(NUM_BOBJ%) = ARG$(I%)
 636 END IF
 640 LET I% = I% + 1%
 645 GOTO 560
 650 IF NUM_BOBJ% < 1% THEN
-660   PRINT "Error: No input .bobj files specified"
+660   PRINT "Error: No input .obj files specified"
 670   END
 680 END IF
 700 ! Parse ODL file if present
@@ -99,7 +99,7 @@
 785 GOTO 740
 790 CLOSE #1%
 795 ON ERROR GOTO 0
-800 ! Read and parse each .bobj file
+800 ! Read and parse each .obj file
 805 LET S% = 1%
 810 IF S% > NUM_BOBJ% THEN GOTO 1200
 820 LET SEG_START%(S%) = TOTAL_BC%

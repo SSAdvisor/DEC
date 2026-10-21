@@ -1,9 +1,10 @@
 import os
+import sys
 import subprocess
 import pytest
 
-COMPILER_CMD = "source .venv/bin/activate && python compiler/basicc.py {input} -o {output} {extra}"
-LINKER_CMD = "source .venv/bin/activate && python compiler/basiclink.py {inputs} {odl} -o {output}"
+COMPILER_CMD = f"{sys.executable} compiler/basicc.py {{input}} -o {{output}} {{extra}}"
+LINKER_CMD = f"{sys.executable} compiler/basiclink.py {{inputs}} {{odl}} -o {{output}}"
 
 PREAMBLE = """1 C=C
 2 N$=N$
@@ -206,13 +207,13 @@ OTHER_REG: .FCTR EDITNAME,EDITADDR,EDITPHON,EDITEMAIL
         f.write(odl_content)
 
     bas_files = [
-        ("tests/address_book/main.bas", "tests/address_book/main.bobj", ""),
-        ("tests/address_book/tui.bas", "tests/address_book/tui.bobj", "--module TUIDRAW"),
-        ("tests/address_book/db.bas", "tests/address_book/db.bobj", "--module DBVIEW"),
-        ("tests/address_book/edit_name.bas", "tests/address_book/edit_name.bobj", "--module EDITNAME"),
-        ("tests/address_book/edit_addr.bas", "tests/address_book/edit_addr.bobj", "--module EDITADDR"),
-        ("tests/address_book/edit_phon.bas", "tests/address_book/edit_phon.bobj", "--module EDITPHON"),
-        ("tests/address_book/edit_email.bas", "tests/address_book/edit_email.bobj", "--module EDITEMAIL")
+        ("tests/address_book/main.bas", "tests/address_book/main.obj", ""),
+        ("tests/address_book/tui.bas", "tests/address_book/tui.obj", "--module TUIDRAW"),
+        ("tests/address_book/db.bas", "tests/address_book/db.obj", "--module DBVIEW"),
+        ("tests/address_book/edit_name.bas", "tests/address_book/edit_name.obj", "--module EDITNAME"),
+        ("tests/address_book/edit_addr.bas", "tests/address_book/edit_addr.obj", "--module EDITADDR"),
+        ("tests/address_book/edit_phon.bas", "tests/address_book/edit_phon.obj", "--module EDITPHON"),
+        ("tests/address_book/edit_email.bas", "tests/address_book/edit_email.obj", "--module EDITEMAIL")
     ]
     
     for src, obj, extra in bas_files:

@@ -1,17 +1,18 @@
 import os
+import sys
 import json
 import subprocess
 
-COMPILER_CMD = "source .venv/bin/activate && python compiler/basicc.py {input} -o {output}"
+COMPILER_CMD = f"{sys.executable} compiler/basicc.py {{input}} -o {{output}}"
 
 def compile_and_load(bas_content, test_name):
     bas_file = f"tests/{test_name}.bas"
-    bobj_file = f"tests/{test_name}.bobj"
+    obj_file = f"tests/{test_name}.obj"
     
     with open(bas_file, "w") as f:
         f.write(bas_content)
         
-    cmd = COMPILER_CMD.format(input=bas_file, output=bobj_file)
+    cmd = COMPILER_CMD.format(input=bas_file, output=obj_file)
     result = subprocess.run(cmd, shell=True, capture_output=True, executable='/bin/bash')
     
     if result.returncode != 0:
@@ -19,7 +20,7 @@ def compile_and_load(bas_content, test_name):
         print(result.stderr.decode())
         raise Exception(f"Compiler failed for {test_name}")
         
-    with open(bobj_file, "r") as f:
+    with open(obj_file, "r") as f:
         obj = json.load(f)
         
     return obj

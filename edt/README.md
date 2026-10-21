@@ -22,7 +22,7 @@ EDT was the primary text editor for DEC operating systems, including **RSTS/E**,
 ```
 edt/
 ├── edt.bas           # Source code written in DEC BASIC-PLUS-2
-├── edt.bobj          # Compiled BASIC object file (JSON bytecode format)
+├── edt.obj           # Compiled BASIC object file (JSON bytecode format)
 ├── edt.bin           # Raw binary bytecode
 ├── edt               # Standalone executable binary (VM + bytecode payload)
 ├── build.sh          # Automated build script
@@ -42,8 +42,8 @@ To compile `edt.bas` and link the executable:
 
 Or manually using the compiler tools:
 ```bash
-python3 compiler/basicc.py edt/edt.bas -o edt/edt.bobj
-python3 compiler/basiclink.py edt/edt.bobj -o edt/edt
+python3 compiler/basicc.py edt/edt.bas -o edt/edt.obj
+python3 compiler/basiclink.py edt/edt.obj -o edt/edt
 ```
 
 ### Running EDT
