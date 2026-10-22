@@ -16,9 +16,17 @@ ENV PATH="/opt/dec-rsts/bin:/opt/dec-rsts/system/bin:${PATH}"
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     libsqlite3-0 \
+    openssh-server \
+    openssl \
     xxd \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /run/sshd \
+    && (useradd -o -u 0 -g 0 -M -d /root -s /bin/bash dec || true) \
+    && (useradd -o -u 0 -g 0 -M -d /root -s /bin/bash rsts || true) \
+    && passwd -d dec \
+    && passwd -d rsts \
+    && passwd -d root
 
 WORKDIR /opt/dec-rsts
 
@@ -28,8 +36,10 @@ COPY system/ /opt/dec-rsts/system/
 COPY docs/ /opt/dec-rsts/docs/
 COPY README.md /opt/dec-rsts/README.md
 
-RUN chmod -R 755 /opt/dec-rsts/bin /opt/dec-rsts/system/bin /opt/dec-rsts/src/rsts_os.py \
+RUN chmod -R 755 /opt/dec-rsts/bin /opt/dec-rsts/system/bin /opt/dec-rsts/src/rsts_os.py /opt/dec-rsts/src/multiuser_service.py \
     && ln -sf /opt/dec-rsts/bin/rsts-emu /usr/local/bin/rsts-emu \
     && python3 /opt/dec-rsts/src/rsts_os.py -c "SHOW SYSTEM" >/dev/null
+
+EXPOSE 22 2211 8411
 
 ENTRYPOINT ["/opt/dec-rsts/bin/rsts-emu"]

@@ -7,10 +7,15 @@ services:
     container_name: dec-rsts-e
     stdin_open: true
     tty: true
+    ports:
+      - "${RSTS_SSH_PORT:-2211}:${RSTS_SSH_PORT:-2211}"
+      - "${RSTS_HTTPS_PORT:-8411}:${RSTS_HTTPS_PORT:-8411}"
     volumes:
       - rsts_dk0_data:/opt/dec-rsts/fs
     environment:
       - TERM=${TERM:-vt100}
+      - RSTS_SSH_PORT=${RSTS_SSH_PORT:-2211}
+      - RSTS_HTTPS_PORT=${RSTS_HTTPS_PORT:-8411}
 
 volumes:
   rsts_dk0_data:

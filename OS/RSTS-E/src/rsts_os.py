@@ -179,7 +179,16 @@ class RSTSEmulator:
         self.monitor_mode = "DCL"  # 'DCL', 'BASIC', or 'RSX'
         self.verify = False
         self.exit_requested = False
+        self.logout_requested = False
+        self._in_interactive_loop = False
         self.boot_time = datetime.now()
+        self.pid = os.getpid()
+        self.session_source = os.environ.get("DEC_SESSION_SOURCE", "SSH" if os.environ.get("SSH_CONNECTION") else "CONSOLE")
+        self.ssh_port = int(os.environ.get("RSTS_SSH_PORT", "2211"))
+        self.https_port = int(os.environ.get("RSTS_HTTPS_PORT", "8411"))
+        self.sessions_path = os.path.join(self.fs_root, ".rsts_sessions.json")
+        self.job_id = 1
+        self.kb_line = "KB0:"
 
         # BASIC-PLUS Keyboard Monitor in-memory program buffer
         self.basic_prog_name = "NONAME"
@@ -187,6 +196,7 @@ class RSTSEmulator:
 
         # Initialize filesystem and logicals
         self._init_filesystem()
+        self._allocate_terminal_line()
         self.symbols = {
             "$STATUS": "1",
             "$SEVERITY": "1",
@@ -199,12 +209,12 @@ class RSTSEmulator:
             "LB:": self.get_ppn_dir("1,1"),
             "DK0:": self.dk0_root,
             "KB:": "/dev/tty",
-            "KB0:": "/dev/tty",
+            self.kb_line: "/dev/tty",
             "TT:": "/dev/tty",
             "LP0:": "SYS$PRINT",
-            "SYS$OUTPUT": "KB0:",
-            "SYS$INPUT": "KB0:",
-            "SYS$ERROR": "KB0:",
+            "SYS$OUTPUT": self.kb_line,
+            "SYS$INPUT": self.kb_line,
+            "SYS$ERROR": self.kb_line,
             "SYS$SYSTEM": self.get_ppn_dir("1,1"),
         }
         self.ccl_table = dict(self.SUPPORTED_CCL_APPS)
@@ -257,6 +267,97 @@ class RSTSEmulator:
         path = os.path.join(self.dk0_root, dname)
         os.makedirs(path, exist_ok=True)
         return path
+
+    def _reload_accounts(self):
+        lib_dir = self.get_ppn_dir("1,1")
+        acct_json = os.path.join(lib_dir, "ACCT.JSON")
+        if os.path.exists(acct_json):
+            try:
+                with open(acct_json, "r") as f:
+                    loaded = json.load(f)
+                if isinstance(loaded, dict):
+                    self.accounts.update(loaded)
+            except Exception:
+                pass
+
+    def _load_live_sessions(self):
+        sessions = {}
+        if os.path.exists(self.sessions_path):
+            try:
+                with open(self.sessions_path, "r") as f:
+                    raw = json.load(f)
+                if isinstance(raw, dict):
+                    for pid_str, info in raw.items():
+                        try:
+                            pid_val = int(pid_str)
+                            if pid_val == self.pid:
+                                sessions[pid_str] = info
+                            else:
+                                os.kill(pid_val, 0)
+                                sessions[pid_str] = info
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+        return sessions
+
+    def _save_sessions(self, sessions):
+        try:
+            tmp_p = self.sessions_path + f".{self.pid}.tmp"
+            with open(tmp_p, "w") as f:
+                json.dump(sessions, f, indent=2)
+            os.replace(tmp_p, self.sessions_path)
+        except Exception:
+            pass
+
+    def _allocate_terminal_line(self):
+        sessions = self._load_live_sessions()
+        pid_key = str(self.pid)
+        if pid_key in sessions:
+            self.job_id = sessions[pid_key].get("job_id", 1)
+            self.kb_line = sessions[pid_key].get("kb_line", "KB0:")
+            return
+        used_jobs = {int(s.get("job_id", 0)) for s in sessions.values()}
+        used_lines = {s.get("kb_line", "") for s in sessions.values()}
+
+        if self.pid == 1 and "KB0:" not in used_lines:
+            self.kb_line = "KB0:"
+        else:
+            for idx in range(0, 32):
+                cand = f"KB{idx}:"
+                if cand not in used_lines:
+                    self.kb_line = cand
+                    break
+
+        j = 1
+        while j in used_jobs:
+            j += 1
+        self.job_id = j
+
+    def _register_session(self, logged_in=True, what=None):
+        sessions = self._load_live_sessions()
+        acct = self.accounts.get(self.current_ppn, self.DEFAULT_ACCOUNTS["1,2"])
+        sessions[str(self.pid)] = {
+            "pid": self.pid,
+            "job_id": self.job_id,
+            "kb_line": self.kb_line,
+            "ppn_key": self.current_ppn,
+            "ppn": acct["ppn"],
+            "user": acct["name"],
+            "priv": bool(acct.get("priv", False)),
+            "monitor": self.monitor_mode,
+            "what": what or self.monitor_mode,
+            "logged_in": bool(logged_in),
+            "source": self.session_source,
+            "login_time": datetime.now().strftime("%d-%b-%Y %I:%M %p"),
+        }
+        self._save_sessions(sessions)
+
+    def _unregister_session(self):
+        sessions = self._load_live_sessions()
+        if str(self.pid) in sessions:
+            sessions.pop(str(self.pid), None)
+            self._save_sessions(sessions)
 
     def _save_accounts(self):
         lib_dir = self.get_ppn_dir("1,1")
@@ -427,17 +528,32 @@ class RSTSEmulator:
 
     def interactive_login(self, in_stream=None):
         stream = in_stream or sys.stdin
+        self._register_session(logged_in=False, what="LOGIN")
         now_str = datetime.now().strftime("%d-%b-%Y  %I:%M %p")
         print(f"\nRSTS {self.VERSION}  {now_str}\n")
         while True:
             sys.stdout.write("User: ")
             sys.stdout.flush()
-            user_in = stream.readline()
+            try:
+                user_in = stream.readline()
+            except KeyboardInterrupt:
+                print("^C")
+                continue
             if not user_in:
+                self._unregister_session()
                 return False
+            if "\x03" in user_in:
+                print("^C")
+                continue
             user_in = user_in.strip()
             if not user_in:
+                now_str = datetime.now().strftime("%d-%b-%Y  %I:%M %p")
+                print(f"\nRSTS {self.VERSION}  {now_str}\n")
                 continue
+            if user_in.upper() in ("EXIT", "QUIT", "BYE", "LOGOUT", "\x04", "\x1a") and self.pid != 1:
+                self._unregister_session()
+                return False
+            self._reload_accounts()
             ppn = self.normalize_ppn(user_in)
             if not ppn or ppn not in self.accounts:
                 print("?Invalid user account - use PPN (e.g. 1,2 or 200,200) or account name (SYSTEM, GUEST)")
@@ -446,17 +562,29 @@ class RSTSEmulator:
             if acct["password"]:
                 sys.stdout.write("Password: ")
                 sys.stdout.flush()
-                pw_in = stream.readline()
+                try:
+                    pw_in = stream.readline()
+                except KeyboardInterrupt:
+                    print("^C")
+                    continue
                 if not pw_in:
+                    self._unregister_session()
                     return False
+                if "\x03" in pw_in:
+                    print("^C")
+                    continue
                 pw_in = pw_in.strip()
                 # Accept blank or matching password for ease of emulation
                 if pw_in and pw_in.upper() != acct["password"].upper():
                     print("?Invalid login attempt")
                     continue
+            self.monitor_mode = "DCL"
+            self.basic_prog_name = "NONAME"
+            self.basic_lines.clear()
             self._switch_account(ppn)
-            print(f"Last interactive login on {datetime.now().strftime('%A, %d-%b-%Y %I:%M %p')} at KB0:")
-            print(f"Job 1  User {acct['name']} {acct['ppn']} on KB0: ({self.monitor_mode} Monitor)\n")
+            self._register_session(logged_in=True, what=self.monitor_mode)
+            print(f"Last interactive login on {datetime.now().strftime('%A, %d-%b-%Y %I:%M %p')} at {self.kb_line}")
+            print(f"Job {self.job_id}  User {acct['name']} {acct['ppn']} on {self.kb_line} ({self.monitor_mode} Monitor)\n")
             return True
 
     def _switch_account(self, ppn_key):
@@ -466,6 +594,8 @@ class RSTSEmulator:
         self.logicals["SY:"] = self.default_dir
         self.symbols["$PPN"] = acct["ppn"]
         self.symbols["$USER"] = acct["name"]
+        if self._in_interactive_loop:
+            self._register_session(logged_in=True, what=self.monitor_mode)
 
     def get_prompt(self):
         if self.monitor_mode == "BASIC":
@@ -474,29 +604,53 @@ class RSTSEmulator:
             return "> "
         return "$ "
 
-    def run_interactive(self, require_login=False, show_boot=False):
+    def run_interactive(self, require_login=True, show_boot=False):
         if show_boot:
             self.print_boot_sequence()
-        if require_login:
-            if not self.interactive_login():
-                return 0
-        else:
-            now_str = datetime.now().strftime("%d-%b-%Y  %I:%M %p")
-            acct = self.accounts[self.current_ppn]
-            print(f"RSTS {self.VERSION}  {now_str}")
-            print(f"Job 1  User {acct['name']} {acct['ppn']} on KB0:  ({self.monitor_mode} Monitor)")
-            print("Print/Batch Services (PBS) Active. Type HELP or SHOW APPS for commands.\n")
 
-        while not self.exit_requested:
-            sys.stdout.write(self.get_prompt())
-            sys.stdout.flush()
-            line = sys.stdin.readline()
-            if not line:
-                break
-            line = line.rstrip("\r\n")
-            if line == "\x1a":  # Ctrl-Z
-                break
-            self.execute_line(line)
+        self._in_interactive_loop = True
+        need_login = require_login
+        try:
+            while not self.exit_requested:
+                if need_login:
+                    if not self.interactive_login():
+                        break
+                else:
+                    self._register_session(logged_in=True, what=self.monitor_mode)
+                    now_str = datetime.now().strftime("%d-%b-%Y  %I:%M %p")
+                    acct = self.accounts[self.current_ppn]
+                    print(f"RSTS {self.VERSION}  {now_str}")
+                    print(f"Job {self.job_id}  User {acct['name']} {acct['ppn']} on {self.kb_line}  ({self.monitor_mode} Monitor)")
+                    print("Print/Batch Services (PBS) Active. Type HELP or SHOW APPS for commands.\n")
+
+                self.logout_requested = False
+                while not self.exit_requested and not self.logout_requested:
+                    sys.stdout.write(self.get_prompt())
+                    sys.stdout.flush()
+                    try:
+                        line = sys.stdin.readline()
+                    except KeyboardInterrupt:
+                        print("^C")
+                        continue
+                    if not line:
+                        self.exit_requested = True
+                        break
+                    if "\x03" in line:
+                        print("^C")
+                        continue
+                    line = line.rstrip("\r\n")
+                    if line == "\x1a":  # Ctrl-Z
+                        break
+                    try:
+                        self.execute_line(line)
+                    except KeyboardInterrupt:
+                        print("\n^C")
+
+                # After BYE / LOGOUT, return terminal line to the RSTS/E User: login prompt
+                need_login = True
+        finally:
+            self._unregister_session()
+            self._in_interactive_loop = False
         return 0
 
     def execute_script(self, script_path):
@@ -526,7 +680,7 @@ class RSTSEmulator:
                     labels[lbl_cand.upper()] = idx
 
         pc = 0
-        while pc < len(lines) and not self.exit_requested:
+        while pc < len(lines) and not self.exit_requested and not self.logout_requested:
             raw = lines[pc].strip()
             pc += 1
             if not raw:
@@ -543,6 +697,8 @@ class RSTSEmulator:
                     raw = rest.strip()
             if not raw or raw.startswith("!"):
                 continue
+            if raw.upper() == "EXIT" or raw.upper().startswith("EXIT "):
+                break
             if raw.upper().startswith("GOTO "):
                 target = raw[5:].strip().upper()
                 if target in labels:
@@ -650,8 +806,18 @@ class RSTSEmulator:
                 for k in sorted(self.basic_lines.keys()):
                     f.write(self.basic_lines[k] + "\n")
             return self._compile_and_run_bas(tmp_bas, show_header=(verb == "RUN"))
-        if verb in ("BYE", "LOGOUT", "EXIT"):
-            self.exit_requested = True
+        if verb in ("BYE", "LOGOUT", "LOGOFF"):
+            print(f"Job {self.job_id}  User {self.accounts[self.current_ppn]['name']} {self.accounts[self.current_ppn]['ppn']} logged off {self.kb_line} at {datetime.now().strftime('%I:%M %p')}")
+            self.monitor_mode = "DCL"
+            self.basic_prog_name = "NONAME"
+            self.basic_lines.clear()
+            if "/DISCONNECT" in rest.upper() and self.pid != 1:
+                self.exit_requested = True
+            elif self._in_interactive_loop:
+                self._register_session(logged_in=False, what="LOGIN")
+                self.logout_requested = True
+            else:
+                self.exit_requested = True
             return 0
         if verb == "SYSTAT":
             return self._cmd_systat()
@@ -732,9 +898,36 @@ class RSTSEmulator:
             return self._cmd_systat()
         if verb in ("HELLO", "LOGIN"):
             return self._cmd_hello(rest)
-        if verb in ("BYE", "LOGOUT", "EXIT", "QUIT"):
-            print(f"Job 1  User {self.accounts[self.current_ppn]['name']} {self.accounts[self.current_ppn]['ppn']} logged off KB0: at {datetime.now().strftime('%I:%M %p')}")
+        if verb in ("BYE", "LOGOUT", "LOGOFF"):
+            print(f"Job {self.job_id}  User {self.accounts[self.current_ppn]['name']} {self.accounts[self.current_ppn]['ppn']} logged off {self.kb_line} at {datetime.now().strftime('%I:%M %p')}")
+            self.monitor_mode = "DCL"
+            self.basic_prog_name = "NONAME"
+            self.basic_lines.clear()
+            if "/DISCONNECT" in rest.upper() and self.pid != 1:
+                self.exit_requested = True
+            elif self._in_interactive_loop:
+                self._register_session(logged_in=False, what="LOGIN")
+                self.logout_requested = True
+            else:
+                self.exit_requested = True
+            return 0
+        if verb in ("SHUTDOWN", "SHUTUP", "HALT"):
+            if not self.accounts[self.current_ppn].get("priv", False):
+                print("?Protection violation - SHUTDOWN requires privileged account [1,2]")
+                self.symbols["$STATUS"] = "2"
+                return 1
+            now_str = datetime.now().strftime("%I:%M %p")
+            print(f"SHUTUP {self.VERSION}  RSTS/E System Shutdown")
+            print(f"%SHUTUP-I-SHUT, RSTS/E {self.VERSION} shutting down on DK0:")
+            print("%SHUTUP-I-KILL, terminating active jobs and PBS queues...")
+            print("%SHUTUP-I-DISM, dismounting system disk DK0: (RA81)")
+            print(f"System halted at {now_str}")
             self.exit_requested = True
+            return 0
+        if verb == "EXIT":
+            return 0
+        if verb == "QUIT":
+            print("%DCL-I-LOGOUT, use BYE or LOGOUT to log off terminal session, or SHUTDOWN to halt system")
             return 0
         if verb == "SWITCH":
             target = (rest.strip().upper() or "DCL").split()[0]
@@ -834,7 +1027,8 @@ class RSTSEmulator:
                 "==============================================================================\n"
                 "  System & Session Commands:\n"
                 "    HELLO <ppn>        Switch PPN account (e.g. HELLO 1,2 or HELLO 200,200)\n"
-                "    BYE / LOGOUT       End terminal session\n"
+                "    BYE / LOGOUT       Log off current user session and return to KB0: User: prompt\n"
+                "    SHUTDOWN / HALT    Privileged RSTS/E SHUTUP system shutdown (halts OS/container)\n"
                 "    SYSTAT             Display RSTS/E system jobs, PPNs, RTS, and disk status\n"
                 "    SWITCH <monitor>   Switch Keyboard Monitor (DCL, BASIC, RSX)\n"
                 "    SHOW SYSTEM        Display RSTS/E monitor, CPU, memory, and PBS status\n"
@@ -891,27 +1085,62 @@ class RSTSEmulator:
             print(f"RSTS {self.VERSION} ({self.NODE_NAME}) — {self.CPU_MODEL}")
             print(f"System Time:   {now_str}")
             print(f"Current User:  {acct['name']} {acct['ppn']} ({'Privileged' if acct['priv'] else 'Non-Privileged'})")
+            print(f"Terminal Line: {self.kb_line} (Job {self.job_id}, Source: {self.session_source})")
             print(f"KB Monitor:    {self.monitor_mode} (Auxiliary RTS: BASIC2, RMS11, EDT)")
             print(f"System Disk:   DK0: (RA81 Structured Disk, Mounted)")
             print(f"Job Subsystem: Print/Batch Services (PBS) Active")
+            print(f"Multi-User:    SSH (port {self.ssh_port}) & HTTPS Web VT100 (port {self.https_port})")
             print(f"Default Dir:   {self.default_dir}")
             return 0
+        if sub in ("NETWORK", "NET", "MULTIUSER"):
+            print(f"RSTS/E {self.VERSION} Multi-User Terminal Concentrator (DHV11 / DECserver):")
+            print(f"  Console Line:  KB0: (Operator Console)")
+            print(f"  SSH Lines:     KB1:-KB31: via OpenSSH on port {self.ssh_port} (user: dec)")
+            print(f"  HTTPS Lines:   KB1:-KB31: via HTTPS/WSS Web VT100 on port {self.https_port}")
+            return 0
         if sub in ("DEVICES", "DEV", "DEVICE"):
+            sessions = self._load_live_sessions()
+            line_owners = {s["kb_line"]: s["ppn"] for s in sessions.values() if s.get("logged_in")}
+            line_owners[self.kb_line] = acct["ppn"]
             print("Device  Type    Status          Owner   Description")
             print("------  ------  --------------  ------  ------------------------------------")
             print("DK0:    RA81    Mounted/Public  [1,1]   Primary RSTS/E System Disk (SY:/LB:)")
-            print("KB0:    DHV11   Allocated       " + f"{acct['ppn']:<6}  Console Interactive Terminal")
-            print("KB1:    DHV11   Available       None    Timesharing Terminal Line 1")
+            for idx in range(0, 4):
+                kbl = f"KB{idx}:"
+                desc = "Console Interactive Terminal" if idx == 0 else f"Timesharing Terminal Line {idx} (SSH/HTTPS)"
+                if kbl in line_owners:
+                    print(f"{kbl:<6}  DHV11   Allocated       {line_owners[kbl]:<6}  {desc}")
+                else:
+                    print(f"{kbl:<6}  DHV11   Available       None    {desc}")
             print("LP0:    LP11    Spooling (PBS)  [1,3]   System Line Printer (SYS$PRINT)")
             print("MT0:    TU16    Online/Free     None    9-Track Magnetic Tape Transport")
-            print("XH0:    DEQNA   Online          [1,2]   Q-bus Ethernet Interface")
+            print("XH0:    DEQNA   Online          [1,2]   Q-bus Ethernet Interface (SSH/HTTPS)")
             return 0
         if sub in ("USERS", "USER"):
+            sessions = self._load_live_sessions()
+            active = [s for s in sessions.values() if s.get("logged_in")]
+            if not any(s.get("pid") == self.pid for s in active):
+                active.append({
+                    "job_id": self.job_id,
+                    "user": acct["name"],
+                    "ppn": acct["ppn"],
+                    "kb_line": self.kb_line,
+                    "monitor": self.monitor_mode,
+                    "priv": acct["priv"],
+                })
+            active.sort(key=lambda x: x.get("job_id", 1))
             print("Job  User      PPN        Line   RTS      State   Priv")
             print("---  --------  ---------  -----  -------  ------  ----")
-            print(f"  1  {acct['name']:<8}  {acct['ppn']:<9}  KB0:   {self.monitor_mode:<7}  RN      {'Yes' if acct['priv'] else 'No'}")
-            print("  2  PBS       [1,3]      Det    PBS...   SL      Yes")
-            print("  3  ERRCPY    [1,2]      Det    RTS...   SL      Yes")
+            max_j = 1
+            for s in active:
+                jid = s.get("job_id", 1)
+                if jid > max_j:
+                    max_j = jid
+                print(
+                    f"{jid:>3}  {s['user']:<8}  {s['ppn']:<9}  {s['kb_line']:<5}  {s.get('monitor', 'DCL'):<7}  RN      {'Yes' if s.get('priv') else 'No'}"
+                )
+            print(f"{max_j + 1:>3}  PBS       [1,3]      Det    PBS...   SL      Yes")
+            print(f"{max_j + 2:>3}  ERRCPY    [1,2]      Det    RTS...   SL      Yes")
             return 0
         if sub in ("MEMORY", "MEM"):
             print("PDP-11/70 Physical Memory Allocation (Total: 2048 KW / 4096 KB)")
@@ -950,6 +1179,7 @@ class RSTSEmulator:
             print("Note: VAX/VMS 32-bit DECwindows X11 applications are excluded on PDP-11 RSTS/E.")
             return 0
         if sub in ("ACCOUNTS", "ACCOUNT", "PPN"):
+            self._reload_accounts()
             target_spec = tokens[1] if len(tokens) > 1 else None
             full = ("/FULL" in quals) or ("/ALL" in quals)
             items = list(self.accounts.items())
@@ -995,7 +1225,7 @@ class RSTSEmulator:
                 cmd.append(tokens[1])
             return subprocess.call(cmd)
         if sub in ("TERMINAL", "TERM"):
-            print("Terminal KB0: Type=VT100, Width=80, Page=24, Baud=9600, Scope, Eightbit")
+            print(f"Terminal {self.kb_line} Type=VT100, Width=80, Page=24, Baud=9600, Scope, Eightbit ({self.session_source})")
             return 0
 
         print(f"%DCL-E-IVKEYW, unrecognized SHOW keyword '{sub}'")
@@ -1004,24 +1234,43 @@ class RSTSEmulator:
     def _cmd_systat(self):
         acct = self.accounts[self.current_ppn]
         now_str = datetime.now().strftime("%d-%b-%Y %I:%M %p")
+        sessions = self._load_live_sessions()
+        active = [s for s in sessions.values() if s.get("logged_in")]
+        if not any(s.get("pid") == self.pid for s in active):
+            active.append({
+                "job_id": self.job_id,
+                "ppn": acct["ppn"],
+                "kb_line": self.kb_line,
+                "what": "SYSTAT",
+                "monitor": self.monitor_mode,
+            })
+        active.sort(key=lambda x: x.get("job_id", 1))
         print(f"RSTS {self.VERSION} ({self.NODE_NAME}) Status at {now_str}   Up: 00:42:15")
         print("Job    Who    Where    What     Size    State     Run-Time   Pri/RB   RTS")
         print("---  -------  -----  --------  ------  -------  -----------  ------  ------")
-        print(f" 1   {acct['ppn']:<7}  KB0:   SYSTAT     16/32K  RN           00:01.2   -8/6   {self.monitor_mode}")
-        print(" 2   [1,3]    Det    PBS        12/32K  SL           00:00.4    0/6   DCL")
-        print(" 3   [1,2]    Det    ERRCPY      8/32K  SL           00:00.1    0/6   RTS")
+        max_j = 1
+        for s in active:
+            jid = s.get("job_id", 1)
+            if jid > max_j:
+                max_j = jid
+            what_str = "SYSTAT" if s.get("pid") == self.pid else s.get("what", s.get("monitor", "DCL"))
+            print(f"{jid:>2}   {s['ppn']:<7}  {s['kb_line']:<5}  {what_str:<8}  16/32K  RN           00:01.2   -8/6   {s.get('monitor', 'DCL')}")
+        print(f"{max_j + 1:>2}   [1,3]    Det    PBS        12/32K  SL           00:00.4    0/6   DCL")
+        print(f"{max_j + 2:>2}   [1,2]    Det    ERRCPY      8/32K  SL           00:00.1    0/6   RTS")
+        total_jobs = len(active) + 2
         print("\nBusy Devices: None")
         print("Disk Structure:")
         print("Dsk  Open     Free     Clu   Err   Name      Level    Comments")
-        print("DK0    3     84210      4     0    RSTS10    1.2      Pub, DLU, Mounted")
+        print(f"DK0  {total_jobs:>3}     84210      4     0    RSTS10    1.2      Pub, DLU, Mounted")
         print("Small   Large   Jobs    Hung TTY's   Errors")
-        print(" 412     1664K   3/63       0           0")
+        print(f" 412     1664K  {total_jobs:>2}/63       0           0")
         return 0
 
     def _cmd_hello(self, rest):
         if not rest:
-            print(f"Currently logged in as {self.accounts[self.current_ppn]['name']} {self.accounts[self.current_ppn]['ppn']}")
+            print(f"Currently logged in as {self.accounts[self.current_ppn]['name']} {self.accounts[self.current_ppn]['ppn']} on {self.kb_line}")
             return 0
+        self._reload_accounts()
         token = rest.split()[0]
         ppn = self.normalize_ppn(token)
         if not ppn or ppn not in self.accounts:
@@ -1029,7 +1278,7 @@ class RSTSEmulator:
             return 1
         self._switch_account(ppn)
         acct = self.accounts[ppn]
-        print(f"Switched session to User {acct['name']} {acct['ppn']} on KB0:")
+        print(f"Switched session to User {acct['name']} {acct['ppn']} on {self.kb_line}")
         return 0
 
     def _cmd_dir(self, rest):
@@ -1637,9 +1886,11 @@ def main():
         description="DEC RSTS/E V10.1-L Operating System Emulation Monitor"
     )
     parser.add_argument("-c", "--command", help="Execute RSTS/E command(s) (semicolon-separated) and exit")
-    parser.add_argument("-u", "--user", default="1,2", help="Initial PPN or username (default: 1,2 / SYSTEM)")
-    parser.add_argument("--login", action="store_true", help="Prompt for interactive PPN User/Password login")
+    parser.add_argument("-u", "--user", default="1,2", help="Initial PPN or username for -c / --no-login (default: 1,2 / SYSTEM)")
+    parser.add_argument("--login", action="store_true", default=True, help="Prompt for interactive PPN User/Password login (default)")
+    parser.add_argument("--no-login", action="store_true", help="Skip login prompt and start directly in --user account")
     parser.add_argument("--boot", action="store_true", help="Display PDP-11/70 INIT.SYS bootstrap sequence")
+    parser.add_argument("--multiuser", action="store_true", help="Start multi-user SSH and HTTPS VT100 terminal daemons")
     parser.add_argument("--root", default=None, help="Virtual disk root directory (DK0:)")
     parser.add_argument("script", nargs="?", default=None, help="Optional DCL command procedure (.COM) to execute")
 
@@ -1663,7 +1914,21 @@ def main():
         script_arg = args.script[1:] if args.script.startswith("@") else args.script
         sys.exit(emu.execute_script(script_arg))
 
-    sys.exit(emu.run_interactive(require_login=args.login, show_boot=args.boot))
+    if os.getpid() == 1 or args.multiuser or os.environ.get("RSTS_MULTIUSER") == "1":
+        try:
+            import multiuser_service
+            emu_bin = os.path.join(emu.os_dir, "bin", "rsts-emu")
+            multiuser_service.start_background_daemons(
+                emu_bin_path=emu_bin,
+                os_title="DEC RSTS/E V10.1-L — VT100 Web Terminal",
+                header_title="DEC PDP-11/70 — RSTS/E V10.1-L Timesharing (KB1:-KB31:)",
+                ssh_port=emu.ssh_port,
+                https_port=emu.https_port,
+            )
+        except Exception:
+            pass
+
+    sys.exit(emu.run_interactive(require_login=not args.no_login, show_boot=args.boot))
 
 
 if __name__ == "__main__":

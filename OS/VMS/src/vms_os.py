@@ -188,9 +188,19 @@ class VMSEmulator:
         self.prompt = "$ "
         self.verify = False
         self.exit_requested = False
+        self.logout_requested = False
+        self._in_interactive_loop = False
         self.display_node = os.environ.get("DISPLAY", "LOCAL:0.0")
+        self.pid = os.getpid()
+        self.session_source = os.environ.get("DEC_SESSION_SOURCE", "SSH" if os.environ.get("SSH_CONNECTION") else "CONSOLE")
+        self.ssh_port = int(os.environ.get("VMS_SSH_PORT", "2255"))
+        self.https_port = int(os.environ.get("VMS_HTTPS_PORT", "8455"))
+        self.sessions_path = os.path.join(self.fs_root, ".vms_sessions.json")
+        self.vms_pid = "00000214"
+        self.term_device = "OPA0:"
 
         self._init_filesystem()
+        self._allocate_terminal_device()
         user_info = self.users[self.current_user]
         self.default_dir = self.get_user_dir(self.current_user)
         self.default_vms_spec = user_info["dir_spec"]
@@ -215,9 +225,9 @@ class VMSEmulator:
             "SYS$LOGIN": self.default_dir,
             "SYS$SCRATCH": self.default_dir,
             "SYS$DISK": "DKA0:",
-            "SYS$INPUT": "OPA0:",
-            "SYS$OUTPUT": "OPA0:",
-            "SYS$ERROR": "OPA0:",
+            "SYS$INPUT": self.term_device,
+            "SYS$OUTPUT": self.term_device,
+            "SYS$ERROR": self.term_device,
             "DECW$DISPLAY": self.display_node,
         }
 
@@ -270,6 +280,93 @@ class VMSEmulator:
         p = os.path.join(self.dka0_root, u["dir_rel"])
         os.makedirs(p, exist_ok=True)
         return p
+
+    def _reload_sysuaf(self):
+        sysexe_dir = os.path.join(self.dka0_root, "sys0", "syscommon", "sysexe")
+        uaf_json = os.path.join(sysexe_dir, "SYSUAF.JSON")
+        if os.path.exists(uaf_json):
+            try:
+                with open(uaf_json, "r") as f:
+                    loaded = json.load(f)
+                if isinstance(loaded, dict):
+                    self.users.update(loaded)
+            except Exception:
+                pass
+
+    def _load_live_sessions(self):
+        sessions = {}
+        if os.path.exists(self.sessions_path):
+            try:
+                with open(self.sessions_path, "r") as f:
+                    raw = json.load(f)
+                if isinstance(raw, dict):
+                    for pid_str, info in raw.items():
+                        try:
+                            pid_val = int(pid_str)
+                            if pid_val == self.pid:
+                                sessions[pid_str] = info
+                            else:
+                                os.kill(pid_val, 0)
+                                sessions[pid_str] = info
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+        return sessions
+
+    def _save_sessions(self, sessions):
+        try:
+            tmp_p = self.sessions_path + f".{self.pid}.tmp"
+            with open(tmp_p, "w") as f:
+                json.dump(sessions, f, indent=2)
+            os.replace(tmp_p, self.sessions_path)
+        except Exception:
+            pass
+
+    def _allocate_terminal_device(self):
+        sessions = self._load_live_sessions()
+        pid_key = str(self.pid)
+        if pid_key in sessions:
+            self.vms_pid = sessions[pid_key].get("vms_pid", "00000214")
+            self.term_device = sessions[pid_key].get("term_device", "OPA0:")
+            return
+        used_pids = {s.get("vms_pid", "") for s in sessions.values()}
+        used_terms = {s.get("term_device", "") for s in sessions.values()}
+
+        if "OPA0:" not in used_terms:
+            self.term_device = "OPA0:"
+        else:
+            for idx in range(1, 65):
+                cand = f"FTA{idx}:"
+                if cand not in used_terms:
+                    self.term_device = cand
+                    break
+
+        num = 0x214
+        while f"{num:08X}" in used_pids:
+            num += 1
+        self.vms_pid = f"{num:08X}"
+
+    def _register_session(self, logged_in=True):
+        sessions = self._load_live_sessions()
+        uinfo = self.users.get(self.current_user, self.DEFAULT_USERS["SYSTEM"])
+        sessions[str(self.pid)] = {
+            "pid": self.pid,
+            "vms_pid": self.vms_pid,
+            "term_device": self.term_device,
+            "username": self.current_user,
+            "uic": uinfo["uic"],
+            "logged_in": bool(logged_in),
+            "source": self.session_source,
+            "login_time": datetime.now().strftime("%d-%b-%Y %H:%M:%S.00"),
+        }
+        self._save_sessions(sessions)
+
+    def _unregister_session(self):
+        sessions = self._load_live_sessions()
+        if str(self.pid) in sessions:
+            sessions.pop(str(self.pid), None)
+            self._save_sessions(sessions)
 
     def _save_sysuaf(self):
         sysexe_dir = os.path.join(self.dka0_root, "sys0", "syscommon", "sysexe")
@@ -337,6 +434,14 @@ class VMSEmulator:
                     "10 ! VAX/VMS V5.5-2 VAX BASIC / BASIC-PLUS-2 Sample Program\n"
                     "20 PRINT \"HELLO FROM DEC VAX/VMS V5.5-2 ON VAXSTATION 4000!\"\n"
                     "30 END\n"
+                )
+
+        shutdown_com = os.path.join(sysexe_dir, "SHUTDOWN.COM")
+        if not os.path.exists(shutdown_com):
+            with open(shutdown_com, "w") as f:
+                f.write(
+                    "$ ! VAX/VMS V5.5-2 System Shutdown Procedure SYS$SYSTEM:SHUTDOWN.COM;1\n"
+                    "$ SHUTDOWN\n"
                 )
 
     def resolve_path(self, vms_spec):
@@ -437,34 +542,61 @@ class VMSEmulator:
 
     def interactive_login(self, in_stream=None):
         stream = in_stream or sys.stdin
+        self._register_session(logged_in=False)
         print(f"\n    Welcome to VAX/VMS {self.VERSION} on node {self.NODE_NAME}\n")
         while True:
             sys.stdout.write("Username: ")
             sys.stdout.flush()
-            u_in = stream.readline()
+            try:
+                u_in = stream.readline()
+            except KeyboardInterrupt:
+                print("^C")
+                continue
             if not u_in:
+                self._unregister_session()
                 return False
+            if "\x03" in u_in:
+                print("^C")
+                continue
             u_in = u_in.strip()
             if not u_in:
+                print(f"\n    Welcome to VAX/VMS {self.VERSION} on node {self.NODE_NAME}\n")
                 continue
+            if u_in.upper() in ("EXIT", "QUIT", "BYE", "LOGOUT", "\x04", "\x1a") and self.pid != 1:
+                self._unregister_session()
+                return False
+            self._reload_sysuaf()
             uname = self.normalize_user(u_in)
             if not uname:
                 print("%LOGIN-F-NOSUCHUSER, no such user")
                 continue
             uinfo = self.users[uname]
+            flags_list = [fl.strip().upper() for fl in uinfo.get("flags", "").split(",") if fl.strip()]
+            if "DISUSER" in flags_list and "NODISUSER" not in flags_list:
+                print("%LOGIN-F-DISUSER, account is disabled")
+                continue
             if uinfo["password"]:
                 sys.stdout.write("Password: ")
                 sys.stdout.flush()
-                p_in = stream.readline()
+                try:
+                    p_in = stream.readline()
+                except KeyboardInterrupt:
+                    print("^C")
+                    continue
                 if not p_in:
+                    self._unregister_session()
                     return False
+                if "\x03" in p_in:
+                    print("^C")
+                    continue
                 p_in = p_in.strip()
                 if p_in and p_in.upper() != uinfo["password"].upper():
                     print("%LOGIN-F-NOTVALID, user authorization failure")
                     continue
             self._switch_user(uname)
+            self._register_session(logged_in=True)
             print(f"\n    Welcome to VAX/VMS {self.VERSION} on node {self.NODE_NAME}")
-            print(f"    Last interactive login on {datetime.now().strftime('%A, %d-%b-%Y %H:%M')}")
+            print(f"    Last interactive login on {datetime.now().strftime('%A, %d-%b-%Y %H:%M')} at {self.term_device}")
             return True
 
     def _switch_user(self, uname):
@@ -474,29 +606,53 @@ class VMSEmulator:
         self.default_vms_spec = uinfo["dir_spec"]
         self.logicals["SYS$LOGIN"] = self.default_dir
         self.logicals["SYS$SCRATCH"] = self.default_dir
+        if self._in_interactive_loop:
+            self._register_session(logged_in=True)
 
-    def run_interactive(self, require_login=False, show_boot=False):
+    def run_interactive(self, require_login=True, show_boot=False):
         if show_boot:
             self.print_boot_sequence()
-        if require_login:
-            if not self.interactive_login():
-                return 0
-        else:
-            print(f"    Welcome to VAX/VMS {self.VERSION} on node {self.NODE_NAME}")
-            print(f"    Interactive session for {self.current_user} {self.users[self.current_user]['uic']} ({self.default_vms_spec})\n")
 
         self._in_interactive_loop = True
-        while not self.exit_requested:
-            sys.stdout.write(self.prompt)
-            sys.stdout.flush()
-            line = sys.stdin.readline()
-            if not line:
-                break
-            line = line.rstrip("\r\n")
-            if line == "\x1a":
-                break
-            self.execute_line(line)
-        self._in_interactive_loop = False
+        need_login = require_login
+        try:
+            while not self.exit_requested:
+                if need_login:
+                    if not self.interactive_login():
+                        break
+                else:
+                    self._register_session(logged_in=True)
+                    print(f"    Welcome to VAX/VMS {self.VERSION} on node {self.NODE_NAME}")
+                    print(f"    Interactive session for {self.current_user} {self.users[self.current_user]['uic']} on {self.term_device} ({self.default_vms_spec})\n")
+
+                self.logout_requested = False
+                while not self.exit_requested and not self.logout_requested:
+                    sys.stdout.write(self.prompt)
+                    sys.stdout.flush()
+                    try:
+                        line = sys.stdin.readline()
+                    except KeyboardInterrupt:
+                        print("^C")
+                        continue
+                    if not line:
+                        self.exit_requested = True
+                        break
+                    if "\x03" in line:
+                        print("^C")
+                        continue
+                    line = line.rstrip("\r\n")
+                    if line == "\x1a":
+                        break
+                    try:
+                        self.execute_line(line)
+                    except KeyboardInterrupt:
+                        print("\n^C")
+
+                # After LOGOUT / BYE, return terminal to the VAX/VMS Username: login prompt
+                need_login = True
+        finally:
+            self._unregister_session()
+            self._in_interactive_loop = False
         return 0
 
     def execute_script(self, script_path):
@@ -526,7 +682,7 @@ class VMSEmulator:
                     labels[lbl_cand.upper()] = idx
 
         pc = 0
-        while pc < len(lines) and not self.exit_requested:
+        while pc < len(lines) and not self.exit_requested and not self.logout_requested:
             raw = lines[pc].strip()
             pc += 1
             if not raw:
@@ -543,6 +699,8 @@ class VMSEmulator:
                     raw = rest.strip()
             if not raw or raw.startswith("!"):
                 continue
+            if raw.upper() == "EXIT" or raw.upper().startswith("EXIT "):
+                break
             if raw.upper().startswith("GOTO "):
                 target = raw[5:].strip().upper()
                 if target in labels:
@@ -648,9 +806,34 @@ class VMSEmulator:
             return self._cmd_set(rest)
         if verb in ("LOGIN", "HELLO"):
             return self._cmd_login(rest)
-        if verb in ("LOGOUT", "EXIT", "QUIT", "BYE"):
+        if verb in ("LOGOUT", "BYE", "LOGOFF"):
             print(f"  {self.current_user:<12} logged out at {datetime.now().strftime('%d-%b-%Y %H:%M:%S.00')}")
+            if "/DISCONNECT" in rest.upper() and self.pid != 1:
+                self.exit_requested = True
+            elif self._in_interactive_loop:
+                self._register_session(logged_in=False)
+                self.logout_requested = True
+            else:
+                self.exit_requested = True
+            return 0
+        if verb in ("SHUTDOWN", "HALT", "OPCCRASH"):
+            u_privs = self.users[self.current_user].get("privs", "").upper()
+            if not any(p in u_privs for p in ("SYSPRV", "OPER", "SETPRV", "CMKRNL")) and self.current_user != "SYSTEM":
+                print("%SYSTEM-F-NOPRIV, insufficient privilege or object protection violation")
+                self.symbols["$STATUS"] = "%X00000024"
+                return 1
+            print("%SHUTDOWN-I-BOOTCHECK, performing reboot consistency check...")
+            print("%SHUTDOWN-I-OPERATOR, this terminal is now an operator's console")
+            print(f"%SHUTDOWN-I-DISMOUNT, dismounting {self.NODE_NAME}$DKA0:")
+            print(f"%OPCOM-S-SYSHUT, VAX/VMS {self.VERSION} shutdown completed on node {self.NODE_NAME}")
+            print("SYSTEM SHUTDOWN COMPLETE - USE CONSOLE TO HALT SYSTEM")
+            print(">>> HALT")
             self.exit_requested = True
+            return 0
+        if verb == "EXIT":
+            return 0
+        if verb == "QUIT":
+            print("%DCL-I-LOGOUT, use LOGOUT or BYE to end terminal session, or SHUTDOWN to halt system")
             return 0
         if verb in ("DIR", "DIRECTORY"):
             return self._cmd_dir(rest)
@@ -760,6 +943,9 @@ class VMSEmulator:
                 f"  DEC VAX/VMS {self.VERSION} DIGITAL Command Language (DCL) Help Library\n"
                 "==============================================================================\n"
                 "  System Management & Information:\n"
+                "    LOGIN / HELLO      Switch interactive SYSUAF user session\n"
+                "    LOGOUT / BYE       Log off current user session and return to OPA0: Username: prompt\n"
+                "    SHUTDOWN / HALT    Privileged VAX/VMS system shutdown (halts OS/container)\n"
                 "    SHOW SYSTEM        Display active VMS processes, PIDs, states, and pages\n"
                 "    SHOW DEVICES       Display DKA0:, MKA0:, OPA0:, FTA0:, WSA0: device table\n"
                 "    SHOW MEMORY        Display VAX physical memory, pagefile, and swapfile\n"
@@ -810,21 +996,32 @@ class VMSEmulator:
         uinfo = self.users[self.current_user]
 
         if sub in ("SYSTEM", "SYS"):
+            sessions = self._load_live_sessions()
+            active = [s for s in sessions.values() if s.get("logged_in")]
+            if not any(s.get("pid") == self.pid for s in active):
+                active.append({
+                    "vms_pid": self.vms_pid,
+                    "username": self.current_user,
+                    "term_device": self.term_device,
+                })
+            active.sort(key=lambda x: x.get("vms_pid", "00000214"))
             print(f"VAX/VMS {self.VERSION} on node {self.NODE_NAME}   {now_str}   Uptime  0 02:15:40")
             print("  Pid    Process Name    State  Pri      I/O       CPU       Page flts Ph.Mem")
             print("00000201 SWAPPER         HIB     16        0   0 00:00:00.12         0      0")
             print("00000204JOB_CONTROL     HIB     10      142   0 00:00:00.45       180    320")
             print("00000206SYMBIONT_0001   HIB      6       88   0 00:00:00.21       110    240")
             print("00000208 DECW$SERVER_0   LEF      8     1420   0 00:00:03.80       950   2480")
-            print(f"00000214 {self.current_user:<15} CUR      4      310   0 00:00:01.05       412    640")
+            for s in active:
+                st = "CUR" if s.get("pid") == self.pid else "LEF"
+                print(f"{s['vms_pid']} {s['username']:<15} {st}      4      310   0 00:00:01.05       412    640")
             return 0
         if sub in ("DEVICES", "DEV", "DEVICE"):
             print(f"Device                  Device           Error    Volume         Free  Trans Mnt")
             print(f" Name                   Status           Count     Label        Blocks Count Cnt")
             print(f"VAX01$DKA0:             Mounted              0  VMS55_SYS       418920    14   1")
             print(f"VAX01$MKA500:           Online               0")
-            print(f"VAX01$OPA0:             Online               0")
-            print(f"VAX01$FTA1:             Online               0")
+            print(f"VAX01$OPA0:             Online               0  (Operator Console)")
+            print(f"VAX01$FTA1:             Online               0  (Multi-User SSH/HTTPS Pseudo-Terminal)")
             print(f"VAX01$WSA0:             Online               0  (DECwindows X11 Display {self.display_node})")
             return 0
         if sub in ("MEMORY", "MEM"):
@@ -845,15 +1042,26 @@ class VMSEmulator:
             print("Configured CPUs:  00")
             return 0
         if sub in ("USERS", "USER"):
+            sessions = self._load_live_sessions()
+            active = [s for s in sessions.values() if s.get("logged_in")]
+            if not any(s.get("pid") == self.pid for s in active):
+                active.append({
+                    "vms_pid": self.vms_pid,
+                    "username": self.current_user,
+                    "term_device": self.term_device,
+                    "source": self.session_source,
+                })
+            active.sort(key=lambda x: x.get("vms_pid", "00000214"))
             print(f"      VAX/VMS Interactive Users on {now_str}")
-            print("    Total number of interactive users = 1")
+            print(f"    Total number of interactive users = {len(active)}")
             print(" Username     Process Name      PID     Terminal")
-            print(f" {self.current_user:<12} {self.current_user:<17} 00000214  OPA0: (WSA0:)")
+            for s in active:
+                print(f" {s['username']:<12} {s['username']:<17} {s['vms_pid']}  {s['term_device']} ({s.get('source', 'WSA0:')})")
             return 0
         if sub in ("PROCESS", "PROC"):
-            print(f"{now_str}   User: {self.current_user:<12}   Process ID:   00000214")
+            print(f"{now_str}   User: {self.current_user:<12}   Process ID:   {self.vms_pid}")
             print(f"                          Node: {self.NODE_NAME:<12}   Process name: \"{self.current_user}\"")
-            print(f"Terminal:           OPA0: (DECwindows WSA0:)")
+            print(f"Terminal:           {self.term_device} ({self.session_source} / DECwindows WSA0:)")
             print(f"User Identifier:    {uinfo['uic']}")
             print(f"Base priority:      4")
             print(f"Default file spec:  {self.default_vms_spec} ({self.default_dir})")
@@ -900,8 +1108,9 @@ class VMSEmulator:
             print("----------------------------------------------------------------------------")
             print("Note: PDP-11 RSTS/E-only DIBS-11 (CTS-500) is excluded under 32-bit VAX/VMS.")
             return 0
-        if sub in ("NETWORK", "NET", "CLUSTER"):
+        if sub in ("NETWORK", "NET", "CLUSTER", "MULTIUSER"):
             print(f"DECnet Phase IV Status for Node {self.NODE_NAME} (1.10): State = ON, Routing = Area")
+            print(f"Multi-User Terminal Server: SSH on port {self.ssh_port} (FTA1:-FTA64:), HTTPS Web VT220 on port {self.https_port}")
             return 0
         if sub in ("QUEUE", "QUEUES"):
             q_arg = tokens[1] if len(tokens) > 1 else None
@@ -1503,9 +1712,16 @@ class VMSEmulator:
             while True:
                 sys.stdout.write("UAF> ")
                 sys.stdout.flush()
-                ln = sys.stdin.readline()
+                try:
+                    ln = sys.stdin.readline()
+                except KeyboardInterrupt:
+                    print("^C")
+                    continue
                 if not ln:
                     break
+                if "\x03" in ln:
+                    print("^C")
+                    continue
                 ln_s = ln.strip()
                 if ln_s.upper() in ("EXIT", "QUIT", "\x1a"):
                     break
@@ -1777,9 +1993,11 @@ def main():
         description="DEC VAX/VMS V5.5-2 Operating System Emulation Executive & DCL"
     )
     parser.add_argument("-c", "--command", help="Execute VAX/VMS DCL command(s) (semicolon-separated) and exit")
-    parser.add_argument("-u", "--user", default="SYSTEM", help="Initial SYSUAF username or UIC (default: SYSTEM)")
-    parser.add_argument("--login", action="store_true", help="Prompt for interactive VMS Username/Password login")
+    parser.add_argument("-u", "--user", default="SYSTEM", help="Initial SYSUAF username or UIC for -c / --no-login (default: SYSTEM)")
+    parser.add_argument("--login", action="store_true", default=True, help="Prompt for interactive VMS Username/Password login (default)")
+    parser.add_argument("--no-login", action="store_true", help="Skip login prompt and start directly in --user account")
     parser.add_argument("--boot", action="store_true", help="Display VAXstation 4000 VMB.EXE / SYSBOOT.EXE bootstrap")
+    parser.add_argument("--multiuser", action="store_true", help="Start multi-user SSH and HTTPS VT220 terminal daemons")
     parser.add_argument("--root", default=None, help="Virtual ODS-2 disk root directory (DKA0:)")
     parser.add_argument("script", nargs="?", default=None, help="Optional DCL command procedure (.COM) to execute")
 
@@ -1803,7 +2021,21 @@ def main():
         script_arg = args.script[1:] if args.script.startswith("@") else args.script
         sys.exit(emu.execute_script(script_arg))
 
-    sys.exit(emu.run_interactive(require_login=args.login, show_boot=args.boot))
+    if os.getpid() == 1 or args.multiuser or os.environ.get("VMS_MULTIUSER") == "1":
+        try:
+            import multiuser_service
+            emu_bin = os.path.join(emu.os_dir, "bin", "vms-emu")
+            multiuser_service.start_background_daemons(
+                emu_bin_path=emu_bin,
+                os_title="DEC VAX/VMS V5.5-2 — VT220 Web Terminal",
+                header_title="DEC VAXstation 4000 — VAX/VMS V5.5-2 Timesharing (Node VAX01)",
+                ssh_port=emu.ssh_port,
+                https_port=emu.https_port,
+            )
+        except Exception:
+            pass
+
+    sys.exit(emu.run_interactive(require_login=not args.no_login, show_boot=args.boot))
 
 
 if __name__ == "__main__":

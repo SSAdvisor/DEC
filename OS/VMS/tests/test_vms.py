@@ -53,24 +53,34 @@ class TestVMSEmulationHost:
         assert "SWAPPER" in res.stdout
 
     def test_02_interactive_login_and_authorize(self, tmp_path):
+        # Verify default interactive mode prompts for Username:, LOGOUT/BYE returns to Username:
+        # without terminating the OS, and privileged SHUTDOWN halts the system.
         stdin_data = (
             "SYSTEM\n"
             "MANAGER\n"
             "SHOW PROCESS\n"
             "AUTHORIZE ADD OPERATOR\n"
             "AUTHORIZE\n"
-            "LOGIN DECW\n"
-            "SHOW DEFAULT\n"
             "LOGOUT\n"
+            "DECW\n"
+            "MOTIF\n"
+            "SHOW DEFAULT\n"
+            "SHUTDOWN\n"
+            "BYE\n"
+            "SYSTEM\n"
+            "MANAGER\n"
+            "SHUTDOWN\n"
         )
-        res = run_vms(["--login"], stdin_text=stdin_data, tmp_root=tmp_path)
+        res = run_vms([], stdin_text=stdin_data, tmp_root=tmp_path)
         assert res.returncode == 0
-        assert "Username: " in res.stdout
+        assert res.stdout.count("Username: ") >= 3
         assert "Welcome to VAX/VMS V5.5-2 on node VAX01" in res.stdout
         assert "User Identifier:    [1,4]" in res.stdout
         assert "OPERATOR [200,201] added to SYSUAF.DAT" in res.stdout
         assert "DKA0:[DECW]" in res.stdout
+        assert "%SYSTEM-F-NOPRIV" in res.stdout
         assert "logged out at" in res.stdout
+        assert "%OPCOM-S-SYSHUT, VAX/VMS V5.5-2 shutdown completed on node VAX01" in res.stdout
 
     def test_03_system_management_and_monitoring(self, tmp_path):
         cmds = (
@@ -211,6 +221,8 @@ class TestVMSEmulationHost:
 
         # 2. Verify persistence in SYSUAF.JSON and interactive UAF> prompt via RUN SYS$SYSTEM:AUTHORIZE
         uaf_stdin = (
+            "SYSTEM\n"
+            "MANAGER\n"
             "RUN SYS$SYSTEM:AUTHORIZE\n"
             "ADD MILLER /UIC=[210,20] /PASSWORD=ALPHA1 /ACCOUNT=ENGR /QUOTA=95000\n"
             "GRANT/IDENTIFIER=DECW$USERS MILLER\n"
@@ -268,3 +280,33 @@ class TestVMSDockerContainer:
         res_unsup = run_vms_docker("DIBS")
         assert res_unsup.returncode != 0
         assert "%DCL-W-UNSUPOS" in res_unsup.stdout
+
+    def test_13_multiuser_concurrent_sessions_and_network(self, tmp_path):
+        # Launch Session 1 (OPA0: / PID 00000214) and run Session 2 concurrently (FTA1: / PID 00000215)
+        p1 = subprocess.Popen(
+            [VMS_EMU, "--root", str(tmp_path)],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            p1.stdin.write("SYSTEM\nMANAGER\nSHOW SYSTEM\n")
+            p1.stdin.flush()
+            import time
+            time.sleep(0.4)
+
+            r2 = run_vms(
+                [],
+                stdin_text="DECW\nMOTIF\nSHOW USERS\nSHOW SYSTEM\nSHOW PROCESS\nSHOW NETWORK\nLOGOUT/DISCONNECT\n",
+                tmp_root=tmp_path,
+            )
+            assert r2.returncode == 0
+            assert "Total number of interactive users = 2" in r2.stdout
+            assert "00000214" in r2.stdout and "OPA0:" in r2.stdout
+            assert "00000215" in r2.stdout and "FTA1:" in r2.stdout
+            assert "Multi-User Terminal Server: SSH on port" in r2.stdout
+        finally:
+            p1.stdin.write("SHUTDOWN\n")
+            p1.stdin.flush()
+            p1.communicate(timeout=5)

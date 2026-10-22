@@ -7,12 +7,17 @@ services:
     container_name: dec-vms
     stdin_open: true
     tty: true
+    ports:
+      - "${VMS_SSH_PORT:-2255}:${VMS_SSH_PORT:-2255}"
+      - "${VMS_HTTPS_PORT:-8455}:${VMS_HTTPS_PORT:-8455}"
     volumes:
       - vms_dka0_data:/opt/dec-vms/fs
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
     environment:
       - DISPLAY=${DISPLAY:-}
       - TERM=${TERM:-vt220}
+      - VMS_SSH_PORT=${VMS_SSH_PORT:-2255}
+      - VMS_HTTPS_PORT=${VMS_HTTPS_PORT:-8455}
 
 volumes:
   vms_dka0_data:

@@ -49,13 +49,30 @@ class TestRSTSEmulationHost:
         assert "SYSTEM [1,2]" in res.stdout
 
     def test_02_interactive_ppn_login(self, tmp_path):
-        stdin_data = "1,2\nSYSTEM\nSHOW SYSTEM\nHELLO 200,200\nSHOW DEFAULT\nBYE\n"
-        res = run_rsts(["--login"], stdin_text=stdin_data, tmp_root=tmp_path)
+        # Verify default interactive mode prompts for User: login, BYE returns to User: prompt
+        # without terminating the OS, and privileged SHUTDOWN halts the system.
+        stdin_data = (
+            "1,2\n"
+            "SYSTEM\n"
+            "SHOW SYSTEM\n"
+            "BYE\n"
+            "200,200\n"
+            "SHOW DEFAULT\n"
+            "SHUTDOWN\n"
+            "BYE\n"
+            "1,2\n"
+            "SYSTEM\n"
+            "SHUTDOWN\n"
+        )
+        res = run_rsts([], stdin_text=stdin_data, tmp_root=tmp_path)
         assert res.returncode == 0
-        assert "User: " in res.stdout
+        assert res.stdout.count("User: ") >= 3
         assert "Job 1  User SYSTEM [1,2] on KB0:" in res.stdout
-        assert "Switched session to User GUEST [200,200]" in res.stdout
-        assert "logged off KB0:" in res.stdout
+        assert "User SYSTEM [1,2] logged off KB0:" in res.stdout
+        assert "Job 1  User GUEST [200,200] on KB0:" in res.stdout
+        assert "?Protection violation - SHUTDOWN requires privileged account" in res.stdout
+        assert "SHUTUP V10.1-L  RSTS/E System Shutdown" in res.stdout
+        assert "System halted at" in res.stdout
 
     def test_03_systat_devices_memory_users_accounts(self, tmp_path):
         res = run_rsts(
@@ -110,6 +127,8 @@ class TestRSTSEmulationHost:
 
     def test_06_keyboard_monitors_basic_and_rsx(self, tmp_path):
         stdin_data = (
+            "1,2\n"
+            "SYSTEM\n"
             "SWITCH BASIC\n"
             "NEW TESTP\n"
             "10 PRINT \"BASIC MONITOR COMPUTE:\"; 20% + 22%\n"
@@ -234,3 +253,33 @@ class TestRSTSDockerContainer:
         res_unsup = run_rsts_docker("DECWINDOWS")
         assert res_unsup.returncode != 0
         assert "Unsupported OS facility" in res_unsup.stdout
+
+    def test_13_multiuser_concurrent_sessions_and_network(self, tmp_path):
+        # Launch Session 1 (holding KB0: / Job 1) and run Session 2 concurrently (KB1: / Job 2)
+        p1 = subprocess.Popen(
+            [RSTS_EMU, "--root", str(tmp_path)],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            p1.stdin.write("1,2\nSYSTEM\nSHOW SYSTEM\n")
+            p1.stdin.flush()
+            import time
+            time.sleep(0.4)
+
+            r2 = run_rsts(
+                [],
+                stdin_text="100,100\nDIBS\nSYSTAT\nSHOW USERS\nSHOW DEVICES\nSHOW NETWORK\nBYE/DISCONNECT\n",
+                tmp_root=tmp_path,
+            )
+            assert r2.returncode == 0
+            assert "Job 2  User DIBS [100,100] on KB1:" in r2.stdout
+            assert "[1,2]" in r2.stdout and "KB0:" in r2.stdout
+            assert "[100,100]" in r2.stdout and "KB1:" in r2.stdout
+            assert "SSH Lines:" in r2.stdout and "HTTPS Lines:" in r2.stdout
+        finally:
+            p1.stdin.write("SHUTDOWN\n")
+            p1.stdin.flush()
+            p1.communicate(timeout=5)
