@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     libsqlite3-0 \
     libx11-6 \
+    libxtst6 \
+    xvfb \
+    xfonts-base \
     openssh-server \
     openssl \
     xxd \

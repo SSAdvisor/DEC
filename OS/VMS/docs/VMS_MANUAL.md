@@ -75,3 +75,9 @@ Invoke directly by verb or via `RUN SYS$SYSTEM:<IMAGE>`:
 - `DXMAIL` / `RUN SYS$SYSTEM:DECW$MAIL`
 - `FILEVIEW` / `RUN SYS$SYSTEM:VUE$MASTER`
 - `NOTEPAD` / `RUN SYS$SYSTEM:DECW$NOTEPAD`
+
+### Browser-Based DECwindows X11 Emulation (HTTPS / WSS `/ws-x11`)
+When connected via the HTTPS Web Terminal (`https://localhost:8455/` or Tailscale Funnel `:8443`):
+- An internal X11 framebuffer (`Xvfb :99` at `1024x720x24`) and `libX11`/`libXtst` WebSocket bridge (`/ws-x11`) stream live PNG frames of the `:99` display to an interactive HTML5 `<canvas>`.
+- Running any DECwindows application at the `$` prompt (e.g., `$ DECWINDOWS`, `$ CLOCK`, `$ CALCULATOR`) automatically opens the **SPLIT (VT220 + X11)** workstation view.
+- You can also switch between **VT220**, **SPLIT (VT220 + X11)**, and **DECWINDOWS X11 (WSA0:)** modes or launch applications directly from the X11 toolbar.

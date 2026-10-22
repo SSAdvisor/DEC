@@ -134,7 +134,7 @@ class VMSEmulator:
         "PRETTY": ("indent", "VAX BASIC / BASIC-PLUS-2 Pretty-Printer"),
         "EDT": ("edt", "VAX/VMS EDT Interactive Text Editor V3.0"),
         # DECwindows Workstation Suite (Native to VAX/VMS)
-        "DECWINDOWS": ("decwindows", "VAX/VMS DECwindows Motif Workstation Suite"),
+        "DECWINDOWS": ("decwx11", "VAX/VMS DECwindows Motif Workstation Suite"),
         "DECWX11": ("decwx11", "DECwindows XUI / OSF/Motif 1.1 Session Manager"),
         "DXSESSION": ("dxsession", "DECwindows XUI / OSF/Motif 1.1 Session Manager"),
         "DECW_X11": ("decw_x11", "DECwindows Native X11 Protocol Engine"),
@@ -190,9 +190,13 @@ class VMSEmulator:
         self.exit_requested = False
         self.logout_requested = False
         self._in_interactive_loop = False
-        self.display_node = os.environ.get("DISPLAY", "LOCAL:0.0")
         self.pid = os.getpid()
         self.session_source = os.environ.get("DEC_SESSION_SOURCE", "SSH" if os.environ.get("SSH_CONNECTION") else "CONSOLE")
+        if not os.environ.get("DISPLAY") and self.session_source == "HTTPS" and os.path.exists("/tmp/.X11-unix/X99"):
+            os.environ["DISPLAY"] = ":99"
+            os.environ.setdefault("DECW_FORCE_X11", "1")
+            os.environ.setdefault("DECW_FONT_SIZE", "1")
+        self.display_node = os.environ.get("DISPLAY", "LOCAL:0.0")
         self.ssh_port = int(os.environ.get("VMS_SSH_PORT", "2255"))
         self.https_port = int(os.environ.get("VMS_HTTPS_PORT", "8455"))
         self.sessions_path = os.path.join(self.fs_root, ".vms_sessions.json")
@@ -590,7 +594,7 @@ class VMSEmulator:
                     print("^C")
                     continue
                 p_in = p_in.strip()
-                if p_in and p_in.upper() != uinfo["password"].upper():
+                if p_in.upper() != uinfo["password"].upper():
                     print("%LOGIN-F-NOTVALID, user authorization failure")
                     continue
             self._switch_user(uname)
@@ -1928,6 +1932,15 @@ class VMSEmulator:
         env = os.environ.copy()
         env["PATH"] = f"{self.sys_bin}:{env.get('PATH', '')}"
         env["LD_LIBRARY_PATH"] = f"{self.sys_lib}:{env.get('LD_LIBRARY_PATH', '')}"
+        decw_gui_bins = {
+            "decwx11", "dxsession", "decwindows", "decterm", "dxterm",
+            "bookreader", "dxbook", "calendar", "dxcalendar", "cardfiler", "dxcardfiler",
+            "cdaviewer", "dxvdoc", "calculator", "dxcalc", "clock", "dxclock",
+            "decsound", "dxsound", "dxmail", "decwinmail", "fileview", "dxfileview",
+            "notepad", "dxnotepad",
+        }
+        if not args_str.strip() and bin_name.lower() in decw_gui_bins and (self.session_source == "HTTPS" or env.get("DECW_FORCE_X11") == "1"):
+            args_str = "--x11"
         cmd = [exe]
         if args_str:
             for tok in shlex.split(args_str):
@@ -2027,10 +2040,11 @@ def main():
             emu_bin = os.path.join(emu.os_dir, "bin", "vms-emu")
             multiuser_service.start_background_daemons(
                 emu_bin_path=emu_bin,
-                os_title="DEC VAX/VMS V5.5-2 — VT220 Web Terminal",
-                header_title="DEC VAXstation 4000 — VAX/VMS V5.5-2 Timesharing (Node VAX01)",
+                os_title="DEC VAX/VMS V5.5-2 — VT220 & DECwindows X11 Workstation",
+                header_title="DEC VAXstation 4000 — VAX/VMS V5.5-2 & DECwindows Motif X11 (Node VAX01)",
                 ssh_port=emu.ssh_port,
                 https_port=emu.https_port,
+                enable_x11=True,
             )
         except Exception:
             pass

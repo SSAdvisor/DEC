@@ -310,3 +310,35 @@ class TestVMSDockerContainer:
             p1.stdin.write("SHUTDOWN\n")
             p1.stdin.flush()
             p1.communicate(timeout=5)
+
+    def test_14_x11_web_workstation_png_and_bridge(self):
+        import sys
+        sys.path.insert(0, os.path.join(VMS_ROOT, "src"))
+        import multiuser_service
+
+        # Verify pure-Python BGRA -> RGBA PNG encoder used by /ws-x11
+        raw_bgra = bytes([0x68, 0x53, 0x3B, 0x00] * (64 * 48))
+        png = multiuser_service.encode_bgra_to_png(raw_bgra, 64, 48)
+        assert png.startswith(b"\x89PNG\r\n\x1a\n")
+        assert b"IHDR" in png and b"IDAT" in png and b"IEND" in png
+
+        # Verify HTML template includes X11 canvas and /ws-x11 WebSocket support when enable_x11=True
+        srv = multiuser_service.MultiUserTerminalServer(
+            emu_cmd=[VMS_EMU],
+            os_title="DEC VAX/VMS X11 Test",
+            header_title="DEC VAXstation 4000 X11",
+            https_port=18455,
+            enable_x11=False,
+        )
+        assert b"x11-canvas" in srv.html_bytes
+        assert b"/ws-x11" in srv.html_bytes
+        assert b"DECW$STARTLOGIN" in srv.html_bytes
+
+        # Verify unauthenticated sessions are blocked and wrong/blank passwords fail
+        assert srv.get_session_auth_user("unauth_sid") is None
+        ok_bad, _, err_bad = srv.verify_sysuaf_credentials("SYSTEM", "WRONGPASS")
+        assert not ok_bad and "NOTVALID" in err_bad
+        ok_blank, _, err_blank = srv.verify_sysuaf_credentials("SYSTEM", "")
+        assert not ok_blank and "NOTVALID" in err_blank
+        ok_nouser, _, err_nouser = srv.verify_sysuaf_credentials("NO_SUCH_USER_99", "PASS")
+        assert not ok_nouser and "NOSUCHUSER" in err_nouser

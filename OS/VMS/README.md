@@ -57,8 +57,15 @@ Or run one-shot VMS DCL commands inside Docker:
 
 ### 3. Run the Test Suite (Host + Docker)
 ```bash
+# Run all 15 host + Docker + multi-user + X11 Web Workstation tests
 make test
 ```
+
+### Multi-User SSH, HTTPS VT220 Web Terminal & JavaScript DECwindows X11 Workstation
+- **SSH Timesharing (`FTA1:`–`FTA64:`)**: `ssh -p 2255 dec@localhost` (configurable via `VMS_SSH_PORT` in `docker-compose.yml`).
+- **HTTPS VT220 + DECwindows X11 Browser Workstation (`WSA0: :99.0`)**: `https://localhost:8455` (configurable via `VMS_HTTPS_PORT` in `docker-compose.yml`).
+  - Supports **VT220**, **SPLIT (VT220 + X11)**, and **DECWINDOWS X11 (`WSA0:`)** display modes.
+  - Typing any DECwindows command at the DCL `$` prompt (`DECWINDOWS`, `DXSESSION`, `CLOCK`, `CALCULATOR`, `CALENDAR`, `CARDFILER`, `BOOKREADER`, `CDAVIEWER`, `DECSOUND`, `DXMAIL`, `FILEVIEW`, `NOTEPAD`, `DECTERM`) or clicking **LAUNCH DECWINDOWS** / **OPEN APP** renders the live X11 OSF/Motif 1.1 GUI directly onto the HTML5 `<canvas>` over WebSocket (`/ws-x11`) with full mouse (Left/Right click + window title-bar drag) and keyboard interaction.
 
 ---
 

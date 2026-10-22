@@ -574,8 +574,7 @@ class RSTSEmulator:
                     print("^C")
                     continue
                 pw_in = pw_in.strip()
-                # Accept blank or matching password for ease of emulation
-                if pw_in and pw_in.upper() != acct["password"].upper():
+                if pw_in.upper() != acct["password"].upper():
                     print("?Invalid login attempt")
                     continue
             self.monitor_mode = "DCL"
