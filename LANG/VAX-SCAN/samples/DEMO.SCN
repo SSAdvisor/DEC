@@ -1,0 +1,40 @@
+/* ==============================================================================
+ * DEC VAX SCAN V1.2 — OpenVMS Security Audit Log Scanner Demo (DEMO.SCN)
+ * Digital Equipment Corporation VAX/VMS V5.5-2
+ * ============================================================================== */
+
+MODULE AUDIT_SCANNER IDENT 'V01-02';
+
+    SET LETTER := 'A' .. 'Z' | 'a' .. 'z' | '_' | '$';
+    SET DIGIT  := '0' .. '9';
+
+    MACRO IDENT_PAT := LETTER & [ LETTER | DIGIT ]...;
+    MACRO NUM_PAT   := { DIGIT }...;
+
+    TOKEN NODE_COLON := '::';
+
+    DECLARE NODE_COUNT   : INTEGER := 0;
+    DECLARE EVENT_COUNT  : INTEGER := 0;
+    DECLARE TOTAL_ERRS   : INTEGER := 0;
+    DECLARE LOG_STREAM   : DYNAMIC STRING;
+
+    TRIGGER ON_DEC_NODE (MATCH_STR : DYNAMIC STRING) := IDENT_PAT -> NODE_NAME & NODE_COLON;
+        NODE_COUNT := NODE_COUNT + 1;
+        WRITE 'NODE DETECTED: ', NODE_NAME, ' (RAW=', MATCH_STR, ')';
+    END TRIGGER ON_DEC_NODE;
+
+    TRIGGER ON_ERROR_TAG (MATCH_STR : DYNAMIC STRING) := 'ERR=' & NUM_PAT -> ERR_CODE;
+        EVENT_COUNT := EVENT_COUNT + 1;
+        TOTAL_ERRS := TOTAL_ERRS + INTEGER(ERR_CODE);
+        WRITE 'SECURITY EVENT #', EVENT_COUNT, ' CODE=', ERR_CODE;
+    END TRIGGER ON_ERROR_TAG;
+
+    PROCEDURE SCAN_MAIN MAIN;
+        WRITE 'DEC VAX SCAN V1.2-00 — OPENVMS AUDIT LOG SCANNER';
+        LOG_STREAM := 'VAX780:: LOGIN SYSTEM ERR=12; VAX8600:: MOUNT DUA0 ERR=30;';
+        START SCAN INPUT STRING LOG_STREAM;
+        END SCAN;
+        WRITE 'SUMMARY: NODES=', NODE_COUNT, ' EVENTS=', EVENT_COUNT, ' ERR_SUM=', TOTAL_ERRS;
+    END PROCEDURE SCAN_MAIN;
+
+END MODULE AUDIT_SCANNER;

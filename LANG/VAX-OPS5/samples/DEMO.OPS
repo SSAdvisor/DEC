@@ -1,0 +1,44 @@
+; ==============================================================================
+; DEC VAX OPS5 V2.2 — XCON / R1 VAX System Configuration Expert System (DEMO.OPS)
+; Digital Equipment Corporation VAX/VMS V5.5-2
+; ==============================================================================
+
+(strategy mea)
+
+(literalize goal ^step ^status)
+(literalize order ^cpu ^memory_mb ^unibus_slots ^uba_configured)
+(literalize module ^type ^name ^bus ^power_load)
+
+(p announce-xcon
+   (goal ^step verify-order ^status active)
+   (order ^cpu <c> ^memory_mb <m>)
+   -->
+   (write |DEC VAX OPS5 V2.2 — XCON VAX-11/780 CONFIGURATOR| (crlf))
+   (write |ORDER: CPU=| <c> | MEMORY=| <m> |MB| (crlf))
+   (modify 1 ^step allocate-uba))
+
+(p configure-unibus-adapter
+   (goal ^step allocate-uba ^status active)
+   (order ^cpu <c> ^unibus_slots > 0 ^uba_configured no)
+   -->
+   (make module ^type adapter ^name DW780-UBA ^bus SBI ^power_load 120)
+   (modify 2 ^uba_configured yes)
+   (write |CONFIGURED: DW780-UBA ON SBI BUS| (crlf))
+   (modify 1 ^step finalize))
+
+(p finalize-configuration
+   (goal ^step finalize ^status active)
+   (order ^cpu <c> ^memory_mb <m> ^uba_configured yes)
+   (module ^name <mod> ^power_load <pwr>)
+   - (module ^type unverified)
+   -->
+   (bind <total_pwr> (compute <pwr> + 380))
+   (write |VERIFIED MODULE:| <mod> | TOTAL SBI POWER=| <total_pwr> |WATTS| (crlf))
+   (modify 1 ^status complete)
+   (halt))
+
+(startup
+   (make goal ^step verify-order ^status active)
+   (make order ^cpu VAX-11/780 ^memory_mb 16 ^unibus_slots 4 ^uba_configured no))
+
+(run)

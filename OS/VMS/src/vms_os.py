@@ -99,12 +99,109 @@ class VMSEmulator:
         "VAXBASIC": "vaxbasic",
         "LINK": "vmslink",
         "VMSLINK": "vmslink",
+        "MACRO": "vaxmacro",
+        "VAXMACRO": "vaxmacro",
+        "FORTRAN": "vaxfor",
+        "VAXFOR": "vaxfor",
+        "COBOL": "vaxcobol",
+        "VAXCOBOL": "vaxcobol",
+        "CC": "vaxc",
+        "VAXC": "vaxc",
+        "PASCAL": "vaxpas",
+        "VAXPAS": "vaxpas",
+        "PLI": "vaxpli",
+        "VAXPLI": "vaxpli",
+        "ADA": "vaxada",
+        "VAXADA": "vaxada",
+        "DIBOL": "vaxdibol",
+        "VAXDIBOL": "vaxdibol",
+        "BLISS": "bliss32",
+        "BLISS32": "bliss32",
+        "BLISS16": "bliss16",
+        "RPG": "vaxrpg",
+        "VAXRPG": "vaxrpg",
+        "APL": "vaxapl",
+        "VAXAPL": "vaxapl",
+        "LISP": "vaxlisp",
+        "VAXLISP": "vaxlisp",
+        "OPS5": "vaxops5",
+        "VAXOPS5": "vaxops5",
+        "DSM": "vaxdsm",
+        "VAXDSM": "vaxdsm",
+        "SCAN": "vaxscan",
+        "VAXSCAN": "vaxscan",
+        "CORAL": "vaxcoral",
+        "VAXCORAL": "vaxcoral",
     }
 
-    # Supported VAX/VMS DCL & Foreign Commands (12 DEC-APPS + Toolchain)
+    # VAX/VMS DCL Compiler Verbs -> (binary, default_extensions, facility_name, supports_repl)
+    VAX_LANG_VERBS = {
+        "MACRO": ("vaxmacro", (".MAR", ".mar"), "MACRO", False),
+        "VAXMACRO": ("vaxmacro", (".MAR", ".mar"), "MACRO", False),
+        "FORTRAN": ("vaxfor", (".FOR", ".for", ".F77", ".f77"), "FORT", False),
+        "FOR": ("vaxfor", (".FOR", ".for", ".F77", ".f77"), "FORT", False),
+        "VAXFOR": ("vaxfor", (".FOR", ".for", ".F77", ".f77"), "FORT", False),
+        "COBOL": ("vaxcobol", (".COB", ".cob", ".CBL", ".cbl"), "COBOL", False),
+        "COB": ("vaxcobol", (".COB", ".cob", ".CBL", ".cbl"), "COBOL", False),
+        "VAXCOBOL": ("vaxcobol", (".COB", ".cob", ".CBL", ".cbl"), "COBOL", False),
+        "CC": ("vaxc", (".C", ".c"), "CC", False),
+        "VAXC": ("vaxc", (".C", ".c"), "CC", False),
+        "PASCAL": ("vaxpas", (".PAS", ".pas"), "PASCAL", False),
+        "PAS": ("vaxpas", (".PAS", ".pas"), "PASCAL", False),
+        "VAXPAS": ("vaxpas", (".PAS", ".pas"), "PASCAL", False),
+        "PLI": ("vaxpli", (".PLI", ".pli", ".PL1", ".pl1"), "PLI", False),
+        "PL1": ("vaxpli", (".PLI", ".pli", ".PL1", ".pl1"), "PLI", False),
+        "VAXPLI": ("vaxpli", (".PLI", ".pli", ".PL1", ".pl1"), "PLI", False),
+        "ADA": ("vaxada", (".ADA", ".ada", ".ADB", ".adb"), "ADA", False),
+        "VAXADA": ("vaxada", (".ADA", ".ada", ".ADB", ".adb"), "ADA", False),
+        "DIBOL": ("vaxdibol", (".DBL", ".dbl", ".DIB", ".dib"), "DIBOL", False),
+        "DBL": ("vaxdibol", (".DBL", ".dbl", ".DIB", ".dib"), "DIBOL", False),
+        "VAXDIBOL": ("vaxdibol", (".DBL", ".dbl", ".DIB", ".dib"), "DIBOL", False),
+        "BLISS": ("bliss32", (".B32", ".b32", ".BLI", ".bli"), "BLS32", False),
+        "BLISS32": ("bliss32", (".B32", ".b32", ".BLI", ".bli"), "BLS32", False),
+        "B32": ("bliss32", (".B32", ".b32", ".BLI", ".bli"), "BLS32", False),
+        "BLISS16": ("bliss16", (".B16", ".b16", ".BLI", ".bli"), "BLS16", False),
+        "B16": ("bliss16", (".B16", ".b16", ".BLI", ".bli"), "BLS16", False),
+        "RPG": ("vaxrpg", (".RPG", ".rpg"), "RPG", False),
+        "RPGII": ("vaxrpg", (".RPG", ".rpg"), "RPG", False),
+        "VAXRPG": ("vaxrpg", (".RPG", ".rpg"), "RPG", False),
+        "APL": ("vaxapl", (".APL", ".apl"), "APL", True),
+        "VAXAPL": ("vaxapl", (".APL", ".apl"), "APL", True),
+        "LISP": ("vaxlisp", (".LSP", ".lsp", ".LISP", ".lisp"), "LISP", True),
+        "VAXLISP": ("vaxlisp", (".LSP", ".lsp", ".LISP", ".lisp"), "LISP", True),
+        "OPS5": ("vaxops5", (".OPS", ".ops", ".OPS5", ".ops5"), "OPS5", True),
+        "VAXOPS5": ("vaxops5", (".OPS", ".ops", ".OPS5", ".ops5"), "OPS5", True),
+        "DSM": ("vaxdsm", (".DSM", ".dsm", ".MPS", ".mps"), "DSM", True),
+        "MUMPS": ("vaxdsm", (".DSM", ".dsm", ".MPS", ".mps"), "DSM", True),
+        "VAXDSM": ("vaxdsm", (".DSM", ".dsm", ".MPS", ".mps"), "DSM", True),
+        "SCAN": ("vaxscan", (".SCN", ".scn", ".SCAN", ".scan"), "SCAN", False),
+        "VAXSCAN": ("vaxscan", (".SCN", ".scn", ".SCAN", ".scan"), "SCAN", False),
+        "CORAL": ("vaxcoral", (".COR", ".cor"), "CORAL", False),
+        "CORAL66": ("vaxcoral", (".COR", ".cor"), "CORAL", False),
+        "VAXCORAL": ("vaxcoral", (".COR", ".cor"), "CORAL", False),
+    }
+
+    # Supported VAX/VMS DCL & Foreign Commands (12 DEC-APPS + 18 VAX Compilers + Linker)
     SUPPORTED_VMS_APPS = {
         "VAXBASIC": ("vaxbasic", "DEC VAX BASIC V3.5 Compiler & Interactive Environment"),
         "VMSLINK": ("vmslink", "DEC OpenVMS VAX Linker Utility V05-05"),
+        "VAXMACRO": ("vaxmacro", "DEC VAX MACRO V05-00 Macro Assembler"),
+        "VAXFOR": ("vaxfor", "DEC VAX FORTRAN V5.5 Optimizing Fortran-77 Compiler"),
+        "VAXCOBOL": ("vaxcobol", "DEC VAX COBOL V4.3 ANSI-85 Enterprise Compiler"),
+        "VAXC": ("vaxc", "DEC VAX C V3.2 Systems Programming Compiler"),
+        "VAXPAS": ("vaxpas", "DEC VAX Pascal V4.3 ISO/Extended Pascal Compiler"),
+        "VAXPLI": ("vaxpli", "DEC VAX PL/I V3.5 General-Purpose Subset G Compiler"),
+        "VAXADA": ("vaxada", "DEC VAX Ada V2.2 MIL-STD-1815A Validated Compiler"),
+        "VAXDIBOL": ("vaxdibol", "DEC VAX DIBOL V4.1 Digital Business Oriented Language"),
+        "BLISS32": ("bliss32", "DEC VAX BLISS-32 V4.7 32-Bit Systems Implementation Language"),
+        "BLISS16": ("bliss16", "DEC VAX BLISS-16 V4.2 16-Bit PDP-11 Cross-Compiler"),
+        "VAXRPG": ("vaxrpg", "DEC VAX RPG II V2.2 Report Program Generator"),
+        "VAXAPL": ("vaxapl", "DEC VAX APL V3.1 Array Processing Language & Workspace"),
+        "VAXLISP": ("vaxlisp", "DEC VAX LISP V3.1 Common Lisp Compiler & Interpreter"),
+        "VAXOPS5": ("vaxops5", "DEC VAX OPS5 V2.2 Rule-Based Expert System Language"),
+        "VAXDSM": ("vaxdsm", "DEC VAX DSM V6.0 Digital Standard MUMPS Environment"),
+        "VAXSCAN": ("vaxscan", "DEC VAX SCAN V1.2 String Pattern-Matching Language"),
+        "VAXCORAL": ("vaxcoral", "DEC VAX CORAL 66 V2.1 Real-Time Defense Language"),
         "HAMURABI": ("hamurabi", "Ancient Sumeria Economic Simulation (DECUS VAX BASIC)"),
         "SORT": ("sort11", "VAX/VMS SORT/MERGE Utility"),
         "SORT11": ("sort11", "DEC RMS File Sort & Index Utility"),
@@ -510,6 +607,38 @@ class VMSEmulator:
                     "SYS$LIBRARY:BASRTL.EXE/SHARE\n"
                 )
 
+        # Seed the 17 VAX language sample programs (DEMO.<EXT>) into DKA0:[SYSMGR]
+        sample_specs = (
+            ("VAX-MACRO", "DEMO.MAR"),
+            ("VAX-FORTRAN", "DEMO.FOR"),
+            ("VAX-COBOL", "DEMO.COB"),
+            ("VAX-C", "DEMO.C"),
+            ("VAX-PASCAL", "DEMO.PAS"),
+            ("VAX-PLI", "DEMO.PLI"),
+            ("VAX-ADA", "DEMO.ADA"),
+            ("VAX-DIBOL", "DEMO.DBL"),
+            ("VAX-BLISS-32", "DEMO.B32"),
+            ("VAX-BLISS-16", "DEMO.B16"),
+            ("VAX-RPG-II", "DEMO.RPG"),
+            ("VAX-APL", "DEMO.APL"),
+            ("VAX-LISP", "DEMO.LSP"),
+            ("VAX-OPS5", "DEMO.OPS"),
+            ("VAX-DSM", "DEMO.DSM"),
+            ("VAX-SCAN", "DEMO.SCN"),
+            ("VAX-CORAL-66", "DEMO.COR"),
+        )
+        for lang_dir, demo_name in sample_specs:
+            dst_demo = os.path.join(sysmgr_dir, demo_name)
+            if not os.path.exists(dst_demo):
+                for src_cand in (
+                    os.path.join(self.os_dir, "system", "data", "samples", demo_name),
+                    os.path.join("/opt/dec-vms/system/data/samples", demo_name),
+                    os.path.join(self.dec_root, "LANG", lang_dir, "samples", demo_name),
+                ):
+                    if os.path.isfile(src_cand):
+                        shutil.copy2(src_cand, dst_demo)
+                        break
+
         shutdown_com = os.path.join(sysexe_dir, "SHUTDOWN.COM")
         if not os.path.exists(shutdown_com):
             with open(shutdown_com, "w") as f:
@@ -600,6 +729,23 @@ class VMSEmulator:
             os.path.join(self.dec_root, "LANG", "VAX-BASIC", "compiler", clean),
             os.path.join(self.dec_root, "LANG", "VAX-BASIC", "linker", clean),
             os.path.join(self.dec_root, "LANG", "VAX-BASIC", "vm", "build", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-MACRO", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-FORTRAN", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-COBOL", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-C", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-PASCAL", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-PLI", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-ADA", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-DIBOL", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-BLISS-32", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-BLISS-16", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-RPG-II", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-APL", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-LISP", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-OPS5", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-DSM", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-SCAN", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-CORAL-66", "compiler", clean),
         ):
             if os.path.isfile(sub) and os.access(sub, os.X_OK):
                 return sub
@@ -959,6 +1105,9 @@ class VMSEmulator:
             return self._cmd_write(rest)
         if verb in ("BASIC", "COMPILE"):
             return self._cmd_basic(rest)
+        if verb in self.VAX_LANG_VERBS:
+            bin_name, exts, fac_name, supports_repl = self.VAX_LANG_VERBS[verb]
+            return self._cmd_vax_lang(bin_name, exts, fac_name, supports_repl, rest)
         if verb == "LINK":
             return self._cmd_link(rest)
         if verb == "RUN":
@@ -1051,7 +1200,9 @@ class VMSEmulator:
                 "    DEFINE <log> <val> Define logical name\n"
                 "\n"
                 "  Compilers, Layered Products & DECwindows Workstation Suite:\n"
-                "    BASIC / LINK / RUN / EDIT (EDT) / SUBMIT / PRINT / ANALYZE/RMS_FILE\n"
+                "    BASIC / MACRO / FORTRAN / COBOL / CC / PASCAL / PLI / ADA / DIBOL\n"
+                "    BLISS (BLISS32) / BLISS16 / RPG / APL / LISP / OPS5 / DSM / SCAN / CORAL\n"
+                "    LINK / RUN / EDIT (EDT) / SUBMIT / PRINT / ANALYZE/RMS_FILE\n"
                 "    SORT, RMSUTILS, ADE, DATATRIEVE (DTR), DECGRAPH, MAIL (DECMAIL),\n"
                 "    DECWORD (WPS), FMS, MENU, INDENT, HAMURABI\n"
                 "    DECWINDOWS, DXSESSION, DECTERM, BOOKREADER, CALENDAR, CARDFILER,\n"
@@ -1924,6 +2075,85 @@ class VMSEmulator:
             cmd.extend(["-l", lst_out])
         return subprocess.call(cmd, cwd=self.default_dir)
 
+    def _cmd_vax_lang(self, bin_name, exts, fac_name, supports_repl, rest):
+        comp_bin = self.find_executable(bin_name)
+        if not comp_bin:
+            print(f"%{fac_name}-F-NOCOMP, {bin_name} compiler not found")
+            return 1
+
+        if not rest.strip():
+            if supports_repl:
+                return subprocess.call([comp_bin, "--interactive"], cwd=self.default_dir)
+            print(f"%DCL-E-NOFILE, missing {fac_name} source file specification")
+            return 1
+
+        expanded = []
+        for raw_tok in rest.split():
+            if raw_tok.startswith("/") and raw_tok.count("/") > 1 and not os.path.exists(raw_tok):
+                for p in raw_tok.lstrip("/").split("/"):
+                    if p:
+                        expanded.append("/" + p)
+            else:
+                expanded.append(raw_tok)
+
+        tokens = []
+        obj_out = None
+        lst_out = None
+        want_lst = False
+        want_repl = False
+        for t in expanded:
+            up = t.upper()
+            if up.startswith(("/OBJECT=", "/OBJ=")):
+                obj_out = self.resolve_path(t.split("=", 1)[1])
+            elif up.startswith(("/LIST=", "/LST=")):
+                lst_out = self.resolve_path(t.split("=", 1)[1])
+            elif up in ("/LIST", "/LST"):
+                want_lst = True
+            elif up in ("/INTERACTIVE", "--INTERACTIVE", "-I"):
+                want_repl = True
+            elif not self._is_dcl_qualifier(t):
+                tokens.append(t)
+
+        if want_repl or (not tokens and supports_repl):
+            return subprocess.call([comp_bin, "--interactive"], cwd=self.default_dir)
+
+        if not tokens:
+            print(f"%DCL-E-NOFILE, missing {fac_name} source file specification")
+            return 1
+
+        src_tok = tokens[0]
+        if "/" in src_tok and not os.path.exists(src_tok) and not src_tok.startswith("/"):
+            subparts = src_tok.split("/")
+            src_tok = subparts[0]
+            for sp in subparts[1:]:
+                sp_u = sp.upper()
+                if sp_u.startswith(("OBJECT=", "OBJ=")):
+                    obj_out = self.resolve_path(sp.split("=", 1)[1])
+                elif sp_u.startswith(("LIST=", "LST=")):
+                    lst_out = self.resolve_path(sp.split("=", 1)[1])
+                elif sp_u in ("LIST", "LST"):
+                    want_lst = True
+
+        src = self.resolve_path(src_tok)
+        if not os.path.isfile(src):
+            for ext in exts:
+                if os.path.isfile(src + ext):
+                    src = src + ext
+                    break
+        if not os.path.isfile(src):
+            print(f"%{fac_name}-E-OPENIN, error opening {src_tok} as input")
+            return 1
+        stem, _ = os.path.splitext(src)
+        if not obj_out:
+            obj_out = stem + ".OBJ"
+        if want_lst and not lst_out:
+            lst_out = stem + ".LST"
+
+        cmd = [comp_bin, src, "-o", obj_out]
+        if lst_out:
+            cmd.extend(["-l", lst_out])
+        return subprocess.call(cmd, cwd=self.default_dir)
+
     def _cmd_link(self, rest):
         vmslink_bin = self.find_executable("vmslink") or self.find_executable("basiclink")
         if not vmslink_bin:
@@ -2057,6 +2287,19 @@ class VMSEmulator:
                 f"not supported under 32-bit VAX/VMS {self.VERSION}"
             )
             return 2
+
+        is_sys_image = any(prog.upper().startswith(p) for p in ("SYS$SYSTEM:", "SYS$LIBRARY:", "DKA0:[SYSEXE]", "$"))
+        if not is_sys_image:
+            target = self.resolve_path(prog)
+            if not os.path.isfile(target):
+                for ext_cand in (".EXE", ".exe", ".TSK", ".tsk"):
+                    cand = self.resolve_path(prog + ext_cand)
+                    if os.path.isfile(cand):
+                        target = cand
+                        break
+            if os.path.isfile(target) and os.access(target, os.X_OK):
+                cmd = [target] + (shlex.split(args_str) if args_str else [])
+                return subprocess.call(cmd, cwd=self.default_dir)
 
         if clean_upper == "AUTHORIZE":
             return self._cmd_authorize(args_str, interactive_uaf=not bool(args_str.strip()))

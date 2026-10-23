@@ -1,0 +1,56 @@
+! ==============================================================================
+! DEC VAX BLISS-16 V4.2 16-Bit Compatibility Systems Benchmark (DEMO.B16)
+! Digital Equipment Corporation VAX/VMS V5.5-2 (RSX / PDP-11 Compatibility)
+! ==============================================================================
+MODULE B16DEMO (IDENT = 'V04-02', MAIN = B16_MAIN) =
+BEGIN
+
+LITERAL
+    RING_SIZE = 4,
+    CSR_READY = 128;
+
+OWN
+    CSR_STATE : INITIAL(128),
+    RX_RING   : VECTOR[4] INITIAL(64, 128, 192, 256);
+
+ROUTINE CALC_CRC16 (TOTAL, MASK) =
+BEGIN
+    LOCAL RES;
+    RES = (.TOTAL * 2) + .MASK;
+    RETURN .RES
+END;
+
+GLOBAL ROUTINE B16_MAIN : NOVALUE =
+BEGIN
+    LOCAL
+        IDX,
+        BYTES_RX,
+        CRC_VAL,
+        STATUS_STR;
+
+    LIB$PUT_OUTPUT('========================================================');
+    LIB$PUT_OUTPUT('  DEC VAX BLISS-16 V4.2 ON VAX/VMS V5.5-2 (16-BIT)      ');
+    LIB$PUT_OUTPUT('========================================================');
+
+    BYTES_RX = 0;
+    INCR IDX FROM 0 TO (RING_SIZE - 1) DO
+        BYTES_RX = .BYTES_RX + .RX_RING[.IDX];
+
+    TTY_PUT_MSG('  UNIBUS RX_RING TOTAL BYTES = ', .BYTES_RX);
+
+    CRC_VAL = CALC_CRC16(.BYTES_RX, CSR_READY);
+    TTY_PUT_MSG('  16-BIT PACKET CRC          = ', .CRC_VAL);
+
+    SELECTONE .CSR_STATE OF
+    SET
+        [0]:         STATUS_STR = 'OFFLINE';
+        [CSR_READY]: STATUS_STR = 'CSR_READY (ONLINE)';
+        [OTHERWISE]: STATUS_STR = 'BUSY';
+    TES;
+
+    TTY_PUT_MSG('  DEVICE CSR STATUS          = ', .STATUS_STR);
+    LIB$PUT_OUTPUT('========================================================');
+END;
+
+END
+ELUDOM

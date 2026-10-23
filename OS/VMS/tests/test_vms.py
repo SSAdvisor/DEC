@@ -185,6 +185,50 @@ class TestVMSEmulationHost:
         assert "VAX BASIC V3.5-00" in repl_res.stdout
         assert "VMS BASIC REPL READY" in repl_res.stdout
 
+    def test_06c_vax_17_language_compilers_and_interactive_repls(self, tmp_path):
+        # Verify all 17 VAX language compilers compile DEMO.<EXT> -> .OBJ, link via LINK, and run via RUN
+        lang_cases = [
+            ("MACRO", "DEMO.MAR", "M_DEMO", "VAX MACRO V05-00"),
+            ("FORTRAN", "DEMO.FOR", "F_DEMO", "VAX FORTRAN V5.5"),
+            ("COBOL", "DEMO.COB", "COB_DEMO", "VAX COBOL V4.3"),
+            ("CC", "DEMO.C", "C_DEMO", "VAX C V3.2"),
+            ("PASCAL", "DEMO.PAS", "PAS_DEMO", "VAX PASCAL V4.3"),
+            ("PLI", "DEMO.PLI", "PLI_DEMO", "VAX PL/I V3.5"),
+            ("ADA", "DEMO.ADA", "ADA_DEMO", "VAX ADA V2.2"),
+            ("DIBOL", "DEMO.DBL", "DBL_DEMO", "VAX DIBOL V4.1"),
+            ("BLISS32", "DEMO.B32", "B32_DEMO", "VAX BLISS-32 V4.7"),
+            ("BLISS16", "DEMO.B16", "B16_DEMO", "VAX BLISS-16 V4.2"),
+            ("RPG", "DEMO.RPG", "RPG_DEMO", "VAX RPG II V2.2"),
+            ("APL", "DEMO.APL", "APL_DEMO", "VAX APL V3.1"),
+            ("LISP", "DEMO.LSP", "LSP_DEMO", "VAX LISP V3.1"),
+            ("OPS5", "DEMO.OPS", "OPS_DEMO", "VAX OPS5 V2.2"),
+            ("DSM", "DEMO.DSM", "DSM_DEMO", "VAX DSM V6.0"),
+            ("SCAN", "DEMO.SCN", "SCN_DEMO", "VAX SCAN V1.2"),
+            ("CORAL", "DEMO.COR", "COR_DEMO", "VAX CORAL 66 V2.1"),
+        ]
+        for verb, demo_src, out_stem, expected in lang_cases:
+            cmds = (
+                f"{verb}/LIST={out_stem}.LST/OBJECT={out_stem}.OBJ SYS$LOGIN:{demo_src}; "
+                f"LINK/EXECUTABLE={out_stem}.EXE {out_stem}.OBJ; "
+                f"RUN {out_stem}.EXE"
+            )
+            res = run_vms(cmds, tmp_root=tmp_path)
+            assert res.returncode == 0, f"{verb} failed: {res.stdout} {res.stderr}"
+            assert expected.upper() in res.stdout.upper(), f"Missing '{expected}' in {verb}: {res.stdout}"
+
+        # Verify interactive REPL modes for APL, LISP, OPS5, and DSM from DCL
+        apl_res = run_vms("APL", stdin_text="+/ \u2373 10\n)OFF\n", tmp_root=tmp_path)
+        assert apl_res.returncode == 0
+        assert "55" in apl_res.stdout
+
+        lisp_res = run_vms("LISP", stdin_text="(+ 20 22)\n(EXIT)\n", tmp_root=tmp_path)
+        assert lisp_res.returncode == 0
+        assert "42" in lisp_res.stdout
+
+        dsm_res = run_vms("DSM", stdin_text="SET X=7*8 WRITE \"DSM=\",X,!\nHALT\n", tmp_root=tmp_path)
+        assert dsm_res.returncode == 0
+        assert "DSM=56" in dsm_res.stdout
+
     def test_07_vms_layered_applications(self, tmp_path):
         app_tests = [
             ("HAMURABI", "0\n0\n0\n0\n", "HAMURABI"),
@@ -297,6 +341,49 @@ class TestVMSDockerContainer:
         assert "VAX BASIC V3.5-00: Compiled VAXDEMO.BAS -> VAXDEMO.OBJ (0 errors)" in res.stdout
         assert "EMPLOYEE:   DR. GORDON BELL" in res.stdout
         assert "TOTAL COMP: 97750" in res.stdout
+
+    def test_11b_docker_compile_link_and_run_17_vax_languages(self):
+        cmds = (
+            "MACRO/OBJECT=M.OBJ SYS$LOGIN:DEMO.MAR; LINK/EXE=M.EXE M.OBJ; RUN M.EXE; "
+            "FORTRAN/OBJECT=F.OBJ SYS$LOGIN:DEMO.FOR; LINK/EXE=F.EXE F.OBJ; RUN F.EXE; "
+            "COBOL/OBJECT=COB.OBJ SYS$LOGIN:DEMO.COB; LINK/EXE=COB.EXE COB.OBJ; RUN COB.EXE; "
+            "CC/OBJECT=C.OBJ SYS$LOGIN:DEMO.C; LINK/EXE=C.EXE C.OBJ; RUN C.EXE; "
+            "PASCAL/OBJECT=PAS.OBJ SYS$LOGIN:DEMO.PAS; LINK/EXE=PAS.EXE PAS.OBJ; RUN PAS.EXE; "
+            "PLI/OBJECT=PLI.OBJ SYS$LOGIN:DEMO.PLI; LINK/EXE=PLI.EXE PLI.OBJ; RUN PLI.EXE; "
+            "ADA/OBJECT=ADA.OBJ SYS$LOGIN:DEMO.ADA; LINK/EXE=ADA.EXE ADA.OBJ; RUN ADA.EXE; "
+            "DIBOL/OBJECT=DBL.OBJ SYS$LOGIN:DEMO.DBL; LINK/EXE=DBL.EXE DBL.OBJ; RUN DBL.EXE; "
+            "BLISS32/OBJECT=B32.OBJ SYS$LOGIN:DEMO.B32; LINK/EXE=B32.EXE B32.OBJ; RUN B32.EXE; "
+            "BLISS16/OBJECT=B16.OBJ SYS$LOGIN:DEMO.B16; LINK/EXE=B16.EXE B16.OBJ; RUN B16.EXE; "
+            "RPG/OBJECT=RPG.OBJ SYS$LOGIN:DEMO.RPG; LINK/EXE=RPG.EXE RPG.OBJ; RUN RPG.EXE; "
+            "APL/OBJECT=APL.OBJ SYS$LOGIN:DEMO.APL; LINK/EXE=APL.EXE APL.OBJ; RUN APL.EXE; "
+            "LISP/OBJECT=LSP.OBJ SYS$LOGIN:DEMO.LSP; LINK/EXE=LSP.EXE LSP.OBJ; RUN LSP.EXE; "
+            "OPS5/OBJECT=OPS.OBJ SYS$LOGIN:DEMO.OPS; LINK/EXE=OPS.EXE OPS.OBJ; RUN OPS.EXE; "
+            "DSM/OBJECT=DSM.OBJ SYS$LOGIN:DEMO.DSM; LINK/EXE=DSM.EXE DSM.OBJ; RUN DSM.EXE; "
+            "SCAN/OBJECT=SCN.OBJ SYS$LOGIN:DEMO.SCN; LINK/EXE=SCN.EXE SCN.OBJ; RUN SCN.EXE; "
+            "CORAL/OBJECT=COR.OBJ SYS$LOGIN:DEMO.COR; LINK/EXE=COR.EXE COR.OBJ; RUN COR.EXE"
+        )
+        res = run_vms_docker(cmds)
+        assert res.returncode == 0, f"Docker 17-lang test failed: {res.stdout} {res.stderr}"
+        for marker in (
+            "VAX MACRO V05-00",
+            "VAX FORTRAN V5.5",
+            "VAX COBOL V4.3",
+            "VAX C V3.2",
+            "VAX PASCAL V4.3",
+            "VAX PL/I V3.5",
+            "VAX ADA V2.2",
+            "VAX DIBOL V4.1",
+            "VAX BLISS-32 V4.7",
+            "VAX BLISS-16 V4.2",
+            "VAX RPG II V2.2",
+            "VAX APL V3.1",
+            "VAX LISP V3.1",
+            "VAX OPS5 V2.2",
+            "VAX DSM V6.0",
+            "VAX SCAN V1.2",
+            "VAX CORAL 66 V2.1",
+        ):
+            assert marker in res.stdout.upper(), f"Missing '{marker}' in Docker output"
 
     def test_12_docker_execute_decwindows_and_vms_apps_and_reject_dibs(self):
         res_clock = run_vms_docker("RUN SYS$SYSTEM:DECW$CLOCK --cli", stdin_text="SAMPLE\nSHOW\nEXIT\n")

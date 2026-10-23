@@ -1,0 +1,9 @@
+*.obj
+*.OBJ
+*.LST
+*.MAP
+*.EXE
+*.VWS
+.pytest_cache/
+__pycache__/
+.vms_*_args.tmp

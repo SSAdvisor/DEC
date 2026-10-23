@@ -1,0 +1,47 @@
+; ======================================================================
+; DEC VAX DIBOL V4.1 COMMERCIAL ORDER & INVENTORY MODULE (DEMO.DBL)
+; Digital Equipment Corporation VAX/VMS V5.5-2
+; ======================================================================
+.TITLE 'VAXDBLDEMO - DEC VAX DIBOL V4.1'
+
+RECORD ORDER_REC
+    CUST_NAME,   A24, 'DIGITAL EQUIPMENT CORP'
+    ORDER_CODE,  I4,  780
+    ITEM_QTY,    D4,  10
+    UNIT_PRICE,  D6,  250
+    DISCOUNT,    D6,  0
+    NET_TOTAL,   D8,  0
+    TIER_DESC,   A16, 'STANDARD'
+
+PROC
+    XCALL FLAGS(7000000, 1)
+    OPEN(1, O, 'TT:')
+    WRITES(1, 'DEC VAX DIBOL V4.1 ON VAX/VMS V5.5-2')
+
+    USING ORDER_CODE SELECT
+        (780, 785), TIER_DESC = 'VAX-CLUSTER'
+        (),         TIER_DESC = 'REGIONAL'
+    ENDUSING
+
+    XCALL CALC_DISCOUNT(ITEM_QTY, DISCOUNT)
+    NET_TOTAL = (ITEM_QTY * UNIT_PRICE) - DISCOUNT
+
+    DISPLAY(1, 'CUSTOMER: ', CUST_NAME, ' TIER: ', TIER_DESC)
+    DISPLAY(1, 'QTY=', ITEM_QTY, ' DISC=', DISCOUNT, ' NET=', NET_TOTAL)
+    CLOSE 1
+    STOP
+END
+
+SUBROUTINE CALC_DISCOUNT (QTY_IN, DISC_OUT)
+RECORD
+    QTY_IN,   D4
+    DISC_OUT, D6
+    STEP_I,   I4
+PROC
+    CLEAR DISC_OUT
+    FOR STEP_I FROM 1 THRU 4 DO
+    BEGIN
+        DISC_OUT = DISC_OUT + (STEP_I * 25)
+    END
+    RETURN
+END

@@ -1,0 +1,60 @@
+/* ========================================================================== */
+/* DEC VAX PL/I V3.5 Demonstration Program (DEMO.PLI)                         */
+/* Digital Equipment Corporation VAX/VMS V5.5-2                               */
+/* ========================================================================== */
+VAXPLIDEMO: PROCEDURE OPTIONS(MAIN);
+
+    DCL 1 EMP,
+          2 ID     FIXED BINARY(31),
+          2 NAME   CHAR(40) VARYING,
+          2 DEPT   CHAR(40) VARYING,
+          2 SALARY FIXED BINARY(31);
+
+    DCL BONUS      FIXED BINARY(31) INITIAL(0);
+    DCL TOTAL_COMP FIXED BINARY(31) INITIAL(0);
+    DCL I          FIXED BINARY(15);
+    DCL QTR_SUM    FIXED BINARY(31) INIT(0);
+    DCL RATING     CHAR(24) VAR;
+
+    CALC_BONUS: PROCEDURE(BASE_SAL, PCT) RETURNS(FIXED BINARY(31));
+        DCL BASE_SAL FIXED BINARY(31);
+        DCL PCT      FIXED BINARY(31);
+        RETURN ((BASE_SAL * PCT) / 100);
+    END CALC_BONUS;
+
+    PRINT_HEADER: PROCEDURE;
+        PUT SKIP LIST('============================================================');
+        PUT SKIP LIST('  DEC VAX PL/I V3.5 ON VAX/VMS V5.5-2                       ');
+        PUT SKIP LIST('============================================================');
+    END PRINT_HEADER;
+
+    CALL PRINT_HEADER();
+
+    EMP.ID     = 2088;
+    EMP.NAME   = 'DR. FERNANDO CORBATO';
+    EMP.DEPT   = 'SYSTEMS PROGRAMMING & MULTICS/VMS';
+    EMP.SALARY = 92000;
+
+    BONUS      = CALC_BONUS(EMP.SALARY, 20);
+    TOTAL_COMP = EMP.SALARY + BONUS;
+
+    DO I = 1 TO 4 BY 1;
+        QTR_SUM = QTR_SUM + (I * 25);
+    END;
+
+    SELECT (QTR_SUM);
+        WHEN (250) RATING = 'DISTINGUISHED';
+        WHEN (200) RATING = 'COMMENDABLE';
+        OTHERWISE  RATING = 'SATISFACTORY';
+    END;
+
+    PUT SKIP LIST('EMPLOYEE ID: ', EMP.ID);
+    PUT SKIP LIST('EMPLOYEE:    ', EMP.NAME);
+    PUT SKIP LIST('DEPARTMENT:  ', EMP.DEPT);
+    PUT SKIP LIST('BASE SALARY: ', EMP.SALARY);
+    PUT SKIP LIST('BONUS:       ', BONUS);
+    PUT SKIP LIST('TOTAL COMP:  ', TOTAL_COMP);
+    PUT SKIP EDIT('QTR INDEX:   ', QTR_SUM, ' [' || RATING || ']')(A, F(6), A);
+    PUT SKIP LIST('============================================================');
+
+END VAXPLIDEMO;

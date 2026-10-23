@@ -1,0 +1,69 @@
+! ==============================================================================
+! DEC VAX BLISS-32 V4.7 Systems Implementation Language Benchmark (DEMO.B32)
+! Digital Equipment Corporation VAX/VMS V5.5-2
+! ==============================================================================
+MODULE VAXDEMO (IDENT = 'V04-07', MAIN = START_KERNEL) =
+BEGIN
+
+LITERAL
+    MAX_SLOTS = 5,
+    BASE_QUOTA = 1024;
+
+OWN
+    GLOBAL_TICKS : INITIAL(4096),
+    PAGE_TABLE   : VECTOR[5] INITIAL(100, 200, 300, 400, 500);
+
+BIND
+    HDR_LINE = %ASCID '========================================================',
+    BANNER   = %ASCID '  DEC VAX BLISS-32 V4.7 ON VAX/VMS V5.5-2 (32-BIT)      ';
+
+ROUTINE COMPUTE_CHECKSUM (SEED, FACTOR) =
+BEGIN
+    LOCAL
+        ACC;
+    ACC = (.SEED * .FACTOR) + BASE_QUOTA;
+    RETURN .ACC
+END;
+
+GLOBAL ROUTINE START_KERNEL : NOVALUE =
+BEGIN
+    LOCAL
+        I,
+        SUM,
+        CHK,
+        PRIO,
+        CLASS_MSG;
+
+    LIB$PUT_OUTPUT(.HDR_LINE);
+    LIB$PUT_OUTPUT(.BANNER);
+    LIB$PUT_OUTPUT(.HDR_LINE);
+
+    ! 1. Sum 5-element OWN VECTOR[5] using INCR loop and explicit `.` dereference
+    SUM = 0;
+    INCR I FROM 0 TO (MAX_SLOTS - 1) BY 1 DO
+    BEGIN
+        SUM = .SUM + .PAGE_TABLE[.I];
+    END;
+
+    TTY_PUT_MSG('  PAGE_TABLE VECTOR SUM (0..4) = ', .SUM);
+
+    ! 2. Call value-returning BLISS routine COMPUTE_CHECKSUM(1500, 3) + 1024 = 5524
+    CHK = COMPUTE_CHECKSUM(.SUM, 3);
+    TTY_PUT_MSG('  KERNEL CHECKSUM              = ', .CHK);
+
+    ! 3. Classify process priority via SELECTONE ... OF SET ... TES
+    PRIO = 4;
+    SELECTONE .PRIO OF
+    SET
+        [0 TO 3]:   CLASS_MSG = 'NORMAL INTERACTIVE PRIORITY';
+        [4 TO 7]:   CLASS_MSG = 'ELEVATED VAX SYSTEM PRIORITY';
+        [OTHERWISE]: CLASS_MSG = 'REALTIME KERNEL PRIORITY';
+    TES;
+
+    TTY_PUT_MSG('  SCHEDULER CLASS              = ', .CLASS_MSG);
+    TTY_PUT_MSG('  GLOBAL_TICKS (.OWN)          = ', .GLOBAL_TICKS);
+    LIB$PUT_OUTPUT(.HDR_LINE);
+END;
+
+END
+ELUDOM

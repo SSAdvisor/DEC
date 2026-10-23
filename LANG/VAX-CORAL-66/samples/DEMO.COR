@@ -1,0 +1,58 @@
+'COMMENT' ===================================================================== ;
+'COMMENT' DEC VAX CORAL 66 V2.1 Demonstration Program (DEMO.COR)                ;
+'COMMENT' Royal Radar Establishment (RRE) / DEC VAX/VMS V5.5-2                  ;
+'COMMENT' ===================================================================== ;
+'PROGRAM' VAXCORALDEMO;
+
+'BEGIN'
+    'DEFINE' BONUS_FACTOR = 12;
+
+    'TABLE' STAFF[3, 4] [
+        EMP_ID     'INTEGER' 0;
+        EMP_NAME   'STRING'  1;
+        EMP_DEPT   'STRING'  2;
+        EMP_SALARY 'INTEGER' 3
+    ];
+
+    'INTEGER' 'ARRAY' TELEMETRY[1:5];
+    'INTEGER' I, BONUS, TOTAL_COMP, RADAR_SUM;
+
+    'INTEGER' 'PROCEDURE' CALC_ALLOWANCE('VALUE' 'INTEGER' SAL, PCT);
+    'BEGIN'
+        'ANSWER' (SAL * PCT) / 100;
+    'END';
+
+    'PROCEDURE' PRINT_BANNER;
+    'BEGIN'
+        WRITELN("============================================================");
+        WRITELN("  DEC VAX CORAL 66 V2.1 ON VAX/VMS V5.5-2                   ");
+        WRITELN("============================================================");
+    'END';
+
+    PRINT_BANNER;
+
+    STAFF.EMP_ID     := 4096;
+    STAFF.EMP_NAME   := "SIR IAN CURRIE (RRE MALVERN)";
+    STAFF.EMP_DEPT   := "REAL-TIME AVIONICS & DEFENCE SYSTEMS";
+    STAFF.EMP_SALARY := 85000;
+
+    BONUS      := CALC_ALLOWANCE(STAFF.EMP_SALARY, BONUS_FACTOR);
+    TOTAL_COMP := STAFF.EMP_SALARY + BONUS;
+
+    RADAR_SUM := 0;
+    'FOR' I := 1 'STEP' 1 'WHILE' I <= 5 'DO'
+    'BEGIN'
+        TELEMETRY[I] := I * 30;
+        RADAR_SUM    := RADAR_SUM + TELEMETRY[I];
+    'END';
+
+    WRITE_TEXT("EMPLOYEE ID: "); PRINT_VALUE(STAFF.EMP_ID); NEWLINE;
+    WRITE_TEXT("EMPLOYEE:    "); WRITE_TEXT(STAFF.EMP_NAME); NEWLINE;
+    WRITE_TEXT("DEPARTMENT:  "); WRITE_TEXT(STAFF.EMP_DEPT); NEWLINE;
+    WRITE_TEXT("BASE SALARY: "); PRINT_VALUE(STAFF.EMP_SALARY); NEWLINE;
+    WRITE_TEXT("ALLOWANCE:   "); PRINT_VALUE(BONUS); NEWLINE;
+    WRITE_TEXT("TOTAL COMP:  "); PRINT_VALUE(TOTAL_COMP); NEWLINE;
+    WRITE_TEXT("TELEMETRY:   "); PRINT_VALUE(RADAR_SUM); NEWLINE;
+    WRITELN("============================================================");
+'END'
+'FINISH'

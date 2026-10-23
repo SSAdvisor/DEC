@@ -1,0 +1,60 @@
+; ==============================================================================
+; DEC VAX MACRO V05-00 Demonstration Program (DEMO.MAR)
+; Digital Equipment Corporation VAX/VMS V5.5-2
+; ==============================================================================
+        .TITLE  VAXDEMO - VAX-11/780 32-Bit Macro Assembly Benchmark
+        .IDENT  /V05-00/
+
+        .PSECT  $DATA, WRT, NOEXE, LONG
+BANNER: .ASCID  /========================================================/
+HDR1:   .ASCID  /  DEC VAX MACRO V05-00 ON VAX/VMS V5.5-2 (32-BIT VAX)  /
+LBL_F:  .ASCIZ  /  FACTORIAL(7) VIA SOBGTR   = /
+LBL_S:  .ASCIZ  /  ARRAY SUM(0..4) VIA AOBLSS = /
+LBL_D:  .ASCIZ  /  32-BIT ARITH (SUBL3/DIVL3) = /
+FTR:    .ASCID  /  STATUS: SS$_NORMAL (1) - VAX MACRO EXECUTION OK       /
+VEC:    .LONG   120, 240, 360, 480, 600
+
+        .PSECT  $CODE, NOWRT, EXE, LONG
+
+; Local JSB subroutine: computes R2 = 7! using VAX SOBGTR instruction
+CALC_FACT:
+        MOVL    #1, R2
+        MOVL    #7, R3
+FACT_LOOP:
+        MULL2   R3, R2
+        SOBGTR  R3, FACT_LOOP
+        RSB
+
+        .ENTRY  START, ^M<R2,R3,R4,R5,R6>
+        PUSHAL  BANNER
+        CALLS   #1, G^LIB$PUT_OUTPUT
+        PUSHAL  HDR1
+        CALLS   #1, G^LIB$PUT_OUTPUT
+        PUSHAL  BANNER
+        CALLS   #1, G^LIB$PUT_OUTPUT
+
+        ; 1. Compute 7! = 5040 in R2 via JSB / RSB
+        JSB     CALC_FACT
+        PRTINT  LBL_F, R2
+
+        ; 2. Sum 5-element .LONG vector VEC[0..4] = 1800 using AOBLSS
+        CLRL    R4
+        CLRL    R5
+SUM_LOOP:
+        ADDL2   VEC[R5], R4
+        AOBLSS  #5, R5, SUM_LOOP
+        PRTINT  LBL_S, R4
+
+        ; 3. 3-operand VAX arithmetic: R6 = (R2 - R4) / 9 = (5040 - 1800) / 9 = 360
+        SUBL3   R4, R2, R6
+        DIVL3   #9, R6, R6
+        PRTINT  LBL_D, R6
+
+        PUSHAL  FTR
+        CALLS   #1, G^LIB$PUT_OUTPUT
+        PUSHAL  BANNER
+        CALLS   #1, G^LIB$PUT_OUTPUT
+
+        MOVL    #SS$_NORMAL, R0
+        RET
+        .END    START

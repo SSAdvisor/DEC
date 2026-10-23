@@ -1,0 +1,32 @@
+* ======================================================================
+* DEC VAX RPG II V2.2 REVENUE & SUBROUTINE REPORT (DEMO.RPG)
+* Digital Equipment Corporation VAX/VMS V5.5-2
+* ======================================================================
+H VAXRPGDEMO
+F QPRINT  O   F  132     PRINTER
+I SYSREC  AA  01
+I                                        1  10 DEPTID
+C            MOVE  'VAX-SYS'  DEPTID
+C            Z-ADD 1200       Q1REV
+C            Z-ADD 1800       Q2REV
+C            Z-ADD 0          BONUS
+C   1        DO    4          QTRIDX
+C            EXSR  ADDBON
+C            END
+C   Q1REV   ADD   Q2REV      SUBTOT
+C   SUBTOT  ADD   BONUS      TOTREV
+C   TOTREV  COMP  4250       10
+C            EXCPT
+C            SETON            LR
+C   ADDBON  BEGSR
+C   QTRIDX  MULT  125        STEPB
+C   BONUS   ADD   STEPB      BONUS
+C            ENDSR
+O QPRINT  H  1P
+O                         'DEC VAX RPG II V2.2 ON VAX/VMS V5.5-2'
+O QPRINT  E
+O                         'EXCPT AUDIT DEPT=' DEPTID ' BONUS=' BONUS
+O QPRINT  D  10
+O                         'Q1=' Q1REV ' Q2=' Q2REV ' SUBTOT=' SUBTOT
+O QPRINT  T  LR
+O                         'TOTAL VAX REVENUE=' TOTREV

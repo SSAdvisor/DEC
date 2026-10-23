@@ -1,0 +1,8 @@
+*.obj
+*.OBJ
+*.LST
+*.MAP
+*.EXE
+.pytest_cache/
+__pycache__/
+.vms_pascal_args.tmp
