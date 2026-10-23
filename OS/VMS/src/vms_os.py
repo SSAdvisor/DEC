@@ -95,10 +95,16 @@ class VMSEmulator:
         "SORTMERGE": "sort11",
         "MAIL": "decmail",
         "EDT": "edt",
+        "BASIC": "vaxbasic",
+        "VAXBASIC": "vaxbasic",
+        "LINK": "vmslink",
+        "VMSLINK": "vmslink",
     }
 
     # Supported VAX/VMS DCL & Foreign Commands (12 DEC-APPS + Toolchain)
     SUPPORTED_VMS_APPS = {
+        "VAXBASIC": ("vaxbasic", "DEC VAX BASIC V3.5 Compiler & Interactive Environment"),
+        "VMSLINK": ("vmslink", "DEC OpenVMS VAX Linker Utility V05-05"),
         "HAMURABI": ("hamurabi", "Ancient Sumeria Economic Simulation (DECUS VAX BASIC)"),
         "SORT": ("sort11", "VAX/VMS SORT/MERGE Utility"),
         "SORT11": ("sort11", "DEC RMS File Sort & Index Utility"),
@@ -440,6 +446,70 @@ class VMSEmulator:
                     "30 END\n"
                 )
 
+        vaxdemo_bas = os.path.join(sysmgr_dir, "VAXDEMO.BAS")
+        if not os.path.exists(vaxdemo_bas):
+            with open(vaxdemo_bas, "w") as f:
+                f.write(
+                    "PROGRAM VAXDEMO\n"
+                    "    %TITLE \"DEC VAX BASIC V3.5 Employee & Engineering Benchmark\"\n"
+                    "    %IDENT \"V03-05\"\n"
+                    "    OPTION TYPE = EXPLICIT\n"
+                    "\n"
+                    "    RECORD EMPLOYEE_REC\n"
+                    "        STRING NAME\n"
+                    "        LONG   DEPT_CODE\n"
+                    "        LONG   BASE_SALARY\n"
+                    "        LONG   BONUS\n"
+                    "    END RECORD EMPLOYEE_REC\n"
+                    "\n"
+                    "    DECLARE EMPLOYEE_REC EMP\n"
+                    "    DECLARE STRING DEPT_TITLE$\n"
+                    "    DECLARE LONG TOTAL_COMP\n"
+                    "\n"
+                    "    FUNCTION LONG CALC_BONUS(LONG SAL, LONG PCT)\n"
+                    "        CALC_BONUS = INT((SAL * PCT) / 100)\n"
+                    "    END FUNCTION\n"
+                    "\n"
+                    "    SUB PRINT_BANNER(STRING HEADER_TEXT$)\n"
+                    "        PRINT \"============================================================\"\n"
+                    "        PRINT \"  \"; HEADER_TEXT$\n"
+                    "        PRINT \"============================================================\"\n"
+                    "    END SUB\n"
+                    "\n"
+                    "    CALL PRINT_BANNER(\"DEC VAX BASIC V3.5 ON VAX/VMS V5.5-2\")\n"
+                    "    EMP::NAME = \"DR. GORDON BELL\"\n"
+                    "    EMP::DEPT_CODE = 20\n"
+                    "    EMP::BASE_SALARY = 85000\n"
+                    "\n"
+                    "    SELECT EMP::DEPT_CODE\n"
+                    "        CASE 10\n"
+                    "            DEPT_TITLE$ = \"PDP-11 SYSTEMS ENGINEERING\"\n"
+                    "        CASE 20\n"
+                    "            DEPT_TITLE$ = \"VAX ARCHITECTURE & VMS KERNEL\"\n"
+                    "        CASE ELSE\n"
+                    "            DEPT_TITLE$ = \"CORPORATE RESEARCH\"\n"
+                    "    END SELECT\n"
+                    "\n"
+                    "    EMP::BONUS = CALC_BONUS(EMP::BASE_SALARY, 15)\n"
+                    "    TOTAL_COMP = EMP::BASE_SALARY + EMP::BONUS\n"
+                    "    PRINT \"EMPLOYEE:   \"; EMP::NAME\n"
+                    "    PRINT \"DEPARTMENT: \"; DEPT_TITLE$\n"
+                    "    PRINT \"TOTAL COMP: \"; TOTAL_COMP\n"
+                    "END PROGRAM\n"
+                )
+
+        vaxdemo_opt = os.path.join(sysmgr_dir, "VAXDEMO.OPT")
+        if not os.path.exists(vaxdemo_opt):
+            with open(vaxdemo_opt, "w") as f:
+                f.write(
+                    "! DEC OpenVMS VAX Linker V05-05 Options File\n"
+                    "IDENTIFICATION=\"V03-05\"\n"
+                    "GSMATCH=LEQUAL,3,5\n"
+                    "CLUSTER=VAXDEMO_CLUSTER,,VAXDEMO\n"
+                    "PSECT_ATTR=$CODE,NOWRT,SHR,EXE\n"
+                    "SYS$LIBRARY:BASRTL.EXE/SHARE\n"
+                )
+
         shutdown_com = os.path.join(sysexe_dir, "SHUTDOWN.COM")
         if not os.path.exists(shutdown_com):
             with open(shutdown_com, "w") as f:
@@ -526,6 +596,13 @@ class VMSEmulator:
         cand = os.path.join(self.sys_bin, clean)
         if os.path.isfile(cand) and os.access(cand, os.X_OK):
             return cand
+        for sub in (
+            os.path.join(self.dec_root, "LANG", "VAX-BASIC", "compiler", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-BASIC", "linker", clean),
+            os.path.join(self.dec_root, "LANG", "VAX-BASIC", "vm", "build", clean),
+        ):
+            if os.path.isfile(sub) and os.access(sub, os.X_OK):
+                return sub
         which_res = shutil.which(clean)
         if which_res:
             return which_res
@@ -1778,95 +1855,180 @@ class VMSEmulator:
     # Compilers, Linker, DECwindows & Layered Applications
     # ==========================================================================
     def _cmd_basic(self, rest):
+        vaxbasic_bin = self.find_executable("vaxbasic") or self.find_executable("basicc")
+        if not vaxbasic_bin:
+            print("%BASIC-F-NOCOMP, vaxbasic compiler not found")
+            return 1
+
+        if not rest.strip():
+            # Launch interactive VAX BASIC V3.5 "Ready" environment
+            return subprocess.call([vaxbasic_bin], cwd=self.default_dir)
+
+        expanded = []
+        for raw_tok in rest.split():
+            if raw_tok.startswith("/") and raw_tok.count("/") > 1 and not os.path.exists(raw_tok):
+                for p in raw_tok.lstrip("/").split("/"):
+                    if p:
+                        expanded.append("/" + p)
+            else:
+                expanded.append(raw_tok)
+
         tokens = []
         obj_out = None
-        for t in rest.split():
-            if t.upper().startswith("/OBJECT=") or t.upper().startswith("/OBJ="):
+        lst_out = None
+        want_lst = False
+        for t in expanded:
+            up = t.upper()
+            if up.startswith("/OBJECT=") or up.startswith("/OBJ="):
                 obj_out = self.resolve_path(t.split("=", 1)[1])
+            elif up.startswith("/LIST=") or up.startswith("/LST="):
+                lst_out = self.resolve_path(t.split("=", 1)[1])
+            elif up in ("/LIST", "/LST"):
+                want_lst = True
             elif not self._is_dcl_qualifier(t):
                 tokens.append(t)
-        if not tokens:
-            print("%DCL-E-NOFILE, missing VAX BASIC / BASIC-PLUS-2 source filename")
-            return 1
-        src = self.resolve_path(tokens[0])
-        if not os.path.isfile(src) and os.path.isfile(src + ".BAS"):
-            src = src + ".BAS"
-        elif not os.path.isfile(src) and os.path.isfile(src + ".bas"):
-            src = src + ".bas"
-        if not os.path.isfile(src):
-            print(f"%BASIC-E-OPENIN, error opening {tokens[0]} as input")
-            return 1
-        if not obj_out:
-            stem, _ = os.path.splitext(src)
-            obj_out = stem + ".OBJ"
 
-        basicc_bin = self.find_executable("basicc")
-        if not basicc_bin:
-            print("%BASIC-F-NOCOMP, basicc compiler not found")
+        if not tokens:
+            return subprocess.call([vaxbasic_bin], cwd=self.default_dir)
+
+        src_tok = tokens[0]
+        if "/" in src_tok and not os.path.exists(src_tok) and not src_tok.startswith("/"):
+            subparts = src_tok.split("/")
+            src_tok = subparts[0]
+            for sp in subparts[1:]:
+                sp_u = sp.upper()
+                if sp_u.startswith(("OBJECT=", "OBJ=")):
+                    obj_out = self.resolve_path(sp.split("=", 1)[1])
+                elif sp_u.startswith(("LIST=", "LST=")):
+                    lst_out = self.resolve_path(sp.split("=", 1)[1])
+                elif sp_u in ("LIST", "LST"):
+                    want_lst = True
+
+        src = self.resolve_path(src_tok)
+        if not os.path.isfile(src):
+            for ext in (".BAS", ".bas", ".B32", ".b32"):
+                if os.path.isfile(src + ext):
+                    src = src + ext
+                    break
+        if not os.path.isfile(src):
+            print(f"%BASIC-E-OPENIN, error opening {src_tok} as input")
             return 1
-        rc = subprocess.call([basicc_bin, src, "-o", obj_out], cwd=self.default_dir)
-        stem_out, _ = os.path.splitext(obj_out)
-        for bin_cand in (stem_out + ".bin", obj_out + ".bin"):
-            if os.path.isfile(bin_cand):
-                try:
-                    os.remove(bin_cand)
-                except OSError:
-                    pass
-        return rc
+        stem, _ = os.path.splitext(src)
+        if not obj_out:
+            obj_out = stem + ".OBJ"
+        if want_lst and not lst_out:
+            lst_out = stem + ".LST"
+
+        cmd = [vaxbasic_bin, src, "-o", obj_out]
+        if lst_out:
+            cmd.extend(["-l", lst_out])
+        return subprocess.call(cmd, cwd=self.default_dir)
 
     def _cmd_link(self, rest):
+        vmslink_bin = self.find_executable("vmslink") or self.find_executable("basiclink")
+        if not vmslink_bin:
+            print("%LINK-F-NOLINK, OpenVMS Linker (vmslink) not found")
+            return 1
+
+        expanded = []
+        for raw_tok in rest.split():
+            if raw_tok.startswith("/") and raw_tok.count("/") > 1 and not os.path.exists(raw_tok):
+                for p in raw_tok.lstrip("/").split("/"):
+                    if p:
+                        expanded.append("/" + p)
+            else:
+                expanded.append(raw_tok)
+
         tokens = []
         bin_out = None
-        for t in rest.split():
-            if t.upper().startswith("/EXECUTABLE=") or t.upper().startswith("/EXE=") or t.upper().startswith("/OUTPUT="):
+        map_out = None
+        want_map = False
+        full_map = False
+        cross_ref = False
+        include_mods = []
+
+        for t in expanded:
+            up = t.upper()
+            if up.startswith(("/EXECUTABLE=", "/EXE=", "/OUTPUT=")):
                 bin_out = self.resolve_path(t.split("=", 1)[1])
+            elif up.startswith("/MAP="):
+                map_out = self.resolve_path(t.split("=", 1)[1])
+            elif up == "/MAP":
+                want_map = True
+            elif up == "/FULL":
+                full_map = True
+                want_map = True
+            elif up in ("/CROSS_REFERENCE", "/CREF"):
+                cross_ref = True
+                want_map = True
+            elif up.startswith("/INCLUDE="):
+                inc_s = t.split("=", 1)[1].strip("()")
+                include_mods.extend([m.strip() for m in inc_s.split(",") if m.strip()])
             elif not self._is_dcl_qualifier(t):
-                tokens.append(t)
+                for part in [p.strip() for p in t.split(",") if p.strip()]:
+                    tokens.append(part)
+
         if not tokens:
             print("%DCL-E-NOFILE, missing object module to link")
             return 1
-        obj = self.resolve_path(tokens[0])
-        if not os.path.isfile(obj):
-            stem_q, ext_q = os.path.splitext(obj)
-            if ext_q.upper() == ".OBJ":
-                for alt_ext in (".OBJ", ".obj"):
-                    if os.path.isfile(stem_q + alt_ext):
-                        obj = stem_q + alt_ext
-                        break
-            else:
-                for ext_cand in (".OBJ", ".obj"):
-                    if os.path.isfile(obj + ext_cand):
-                        obj = obj + ext_cand
-                        break
-        if not os.path.isfile(obj):
-            print(f"%LINK-E-OPENIN, error opening {tokens[0]} as input")
-            return 1
-        if not bin_out:
-            stem, _ = os.path.splitext(obj)
+
+        resolved_inputs = []
+        first_obj_path = None
+        for raw_item in tokens:
+            suffix_qual = ""
+            base_item = raw_item
+            up_item = raw_item.upper()
+            for q in ("/LIBRARY", "/LIB", "/OPTIONS", "/OPT", "/SHAREABLE", "/SHARE"):
+                if up_item.endswith(q):
+                    base_item = raw_item[:-len(q)]
+                    suffix_qual = q
+                    break
+            res_p = self.resolve_path(base_item)
+            if not os.path.isfile(res_p):
+                stem_q, ext_q = os.path.splitext(res_p)
+                if ext_q:
+                    for alt in (ext_q.upper(), ext_q.lower()):
+                        if os.path.isfile(stem_q + alt):
+                            res_p = stem_q + alt
+                            break
+                else:
+                    if suffix_qual in ("/LIBRARY", "/LIB"):
+                        exts = (".OLB", ".olb")
+                    elif suffix_qual in ("/OPTIONS", "/OPT"):
+                        exts = (".OPT", ".opt")
+                    else:
+                        exts = (".OBJ", ".obj", ".OPT", ".opt", ".OLB", ".olb")
+                    for ext_cand in exts:
+                        if os.path.isfile(res_p + ext_cand):
+                            res_p = res_p + ext_cand
+                            break
+            if not suffix_qual and not os.path.isfile(res_p):
+                print(f"%LINK-E-OPENIN, error opening {raw_item} as input")
+                return 1
+            if first_obj_path is None:
+                first_obj_path = res_p
+            resolved_inputs.append(res_p + suffix_qual if suffix_qual else res_p)
+
+        if not bin_out and first_obj_path:
+            stem, _ = os.path.splitext(first_obj_path)
             bin_out = stem + ".EXE"
+        if want_map and not map_out and bin_out:
+            map_out = os.path.splitext(bin_out)[0] + ".MAP"
 
-        basiclink_bin = self.find_executable("basiclink")
-        if not basiclink_bin:
-            print("%LINK-F-NOLINK, basiclink linker not found")
-            return 1
+        cmd = [vmslink_bin, "-o", bin_out]
+        if map_out:
+            cmd.extend(["-m", map_out])
+        if full_map:
+            cmd.append("--full")
+        if cross_ref:
+            cmd.append("--cross-reference")
+        if include_mods:
+            cmd.extend(["--include", ",".join(include_mods)])
+        cmd.extend(resolved_inputs)
 
-        vm_bin = self.find_executable("rsts_vm")
         env = os.environ.copy()
         env["PATH"] = f"{self.sys_bin}:{env.get('PATH', '')}"
-        vm_link = os.path.join(self.default_dir, "rsts_vm")
-        created_vm_link = False
-        if vm_bin and not os.path.exists(vm_link):
-            try:
-                os.symlink(vm_bin, vm_link)
-                created_vm_link = True
-            except OSError:
-                pass
-        try:
-            rc = subprocess.call([basiclink_bin, "-o", bin_out, obj], cwd=self.default_dir, env=env)
-        finally:
-            if created_vm_link and os.path.islink(vm_link):
-                os.unlink(vm_link)
-        return rc
+        return subprocess.call(cmd, cwd=self.default_dir, env=env)
 
     def _cmd_edit(self, rest):
         tokens = [t for t in rest.split() if not self._is_dcl_qualifier(t)]

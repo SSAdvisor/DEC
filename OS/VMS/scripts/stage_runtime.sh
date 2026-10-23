@@ -10,15 +10,29 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VMS_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DEC_ROOT="$(cd "${VMS_ROOT}/../.." && pwd)"
 BP2_ROOT="${DEC_ROOT}/LANG/BASIC-PLUS-2"
+VAXBASIC_ROOT="${DEC_ROOT}/LANG/VAX-BASIC"
 APPS_ROOT="${DEC_ROOT}/APPS"
 SYS_DIR="${VMS_ROOT}/system"
 
 mkdir -p "${SYS_DIR}/bin"
 mkdir -p "${SYS_DIR}/lib/dcl"
+mkdir -p "${SYS_DIR}/lib/lang"
 mkdir -p "${SYS_DIR}/include"
 mkdir -p "${SYS_DIR}/data"
 
-echo "Staging DEC BASIC-PLUS-2 / VAX BASIC Toolchain into ${SYS_DIR}..."
+echo "Staging DEC VAX BASIC V3.5, OpenVMS Linker V05-05, and BASIC-PLUS-2 Toolchain into ${SYS_DIR}..."
+
+# 1a. Build and stage VAX BASIC V3.5 & OpenVMS VAX Linker V05-05
+if [ -d "${VAXBASIC_ROOT}" ]; then
+    make -C "${VAXBASIC_ROOT}" build >/dev/null
+    cp -f "${VAXBASIC_ROOT}/compiler/vaxbasic" "${SYS_DIR}/bin/vaxbasic"
+    cp -f "${VAXBASIC_ROOT}/linker/vmslink" "${SYS_DIR}/bin/vmslink"
+    cp -f "${VAXBASIC_ROOT}/vm/build/vms_vm" "${SYS_DIR}/bin/vms_vm"
+    chmod 755 "${SYS_DIR}/bin/vaxbasic" "${SYS_DIR}/bin/vmslink" "${SYS_DIR}/bin/vms_vm"
+    cp -f "${VAXBASIC_ROOT}/bootstrap/vaxbasic.py" "${SYS_DIR}/lib/lang/vaxbasic.py"
+    cp -f "${VAXBASIC_ROOT}/bootstrap/vmslink.py" "${SYS_DIR}/lib/lang/vmslink.py"
+    chmod 755 "${SYS_DIR}/lib/lang/vaxbasic.py" "${SYS_DIR}/lib/lang/vmslink.py"
+fi
 
 # 1. Stage BASIC-PLUS-2 binaries
 for bin_name in basicc basiclink dcl edt rsts_vm dec-printq; do

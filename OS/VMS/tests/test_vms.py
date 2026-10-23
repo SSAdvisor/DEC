@@ -161,6 +161,30 @@ class TestVMSEmulationHost:
         assert edt_res.returncode == 0
         assert "Welcome to VAX/VMS V5.5-2" in edt_res.stdout
 
+    def test_06b_vax_basic_v35_and_openvms_linker_opt_map(self, tmp_path):
+        # Compile VAXDEMO.BAS with /LIST, link with VAXDEMO.OPT/OPT and /MAP/FULL, and run VAXDEMO.EXE
+        cmds = (
+            "BASIC/LIST SYS$LOGIN:VAXDEMO.BAS; "
+            "LINK/MAP/FULL SYS$LOGIN:VAXDEMO.OBJ,SYS$LOGIN:VAXDEMO.OPT/OPT; "
+            "RUN SYS$LOGIN:VAXDEMO.EXE; "
+            "TYPE SYS$LOGIN:VAXDEMO.MAP"
+        )
+        res = run_vms(cmds, tmp_root=tmp_path)
+        assert res.returncode == 0
+        assert "VAX BASIC V3.5-00: Compiled VAXDEMO.BAS -> VAXDEMO.OBJ (0 errors)" in res.stdout
+        assert "DEC VAX BASIC V3.5 ON VAX/VMS V5.5-2" in res.stdout
+        assert "EMPLOYEE:   DR. GORDON BELL" in res.stdout
+        assert "DEPARTMENT: VAX ARCHITECTURE & VMS KERNEL" in res.stdout
+        assert "TOTAL COMP: 97750" in res.stdout
+        assert "OpenVMS VAX Linker V05-05 Image Map" in res.stdout
+        assert "V03-05" in res.stdout
+
+        # Also test interactive VAX BASIC V3.5 environment launched via DCL 'BASIC'
+        repl_res = run_vms("BASIC", stdin_text="NEW REPLTEST\n10 PRINT \"VMS BASIC REPL READY\"\n20 END\nRUN\nEXIT\n", tmp_root=tmp_path)
+        assert repl_res.returncode == 0
+        assert "VAX BASIC V3.5-00" in repl_res.stdout
+        assert "VMS BASIC REPL READY" in repl_res.stdout
+
     def test_07_vms_layered_applications(self, tmp_path):
         app_tests = [
             ("HAMURABI", "0\n0\n0\n0\n", "HAMURABI"),
@@ -263,10 +287,16 @@ class TestVMSDockerContainer:
         assert "DECW$SERVER_0" in res.stdout
 
     def test_11_docker_compile_link_and_run_vax_basic(self):
-        res = run_vms_docker("BASIC SYS$LOGIN:HELLO.BAS; DIR; LINK SYS$LOGIN:HELLO.OBJ; RUN SYS$LOGIN:HELLO; DELETE SYS$LOGIN:HELLO.OBJ")
+        res = run_vms_docker(
+            "BASIC SYS$LOGIN:HELLO.BAS; DIR; LINK SYS$LOGIN:HELLO.OBJ; RUN SYS$LOGIN:HELLO; DELETE SYS$LOGIN:HELLO.OBJ; "
+            "BASIC/LIST SYS$LOGIN:VAXDEMO.BAS; LINK/MAP/FULL SYS$LOGIN:VAXDEMO.OBJ,SYS$LOGIN:VAXDEMO.OPT/OPT; RUN SYS$LOGIN:VAXDEMO.EXE"
+        )
         assert res.returncode == 0
         assert "HELLO.OBJ;1" in res.stdout
         assert "HELLO FROM DEC VAX/VMS V5.5-2 ON VAXSTATION 4000!" in res.stdout
+        assert "VAX BASIC V3.5-00: Compiled VAXDEMO.BAS -> VAXDEMO.OBJ (0 errors)" in res.stdout
+        assert "EMPLOYEE:   DR. GORDON BELL" in res.stdout
+        assert "TOTAL COMP: 97750" in res.stdout
 
     def test_12_docker_execute_decwindows_and_vms_apps_and_reject_dibs(self):
         res_clock = run_vms_docker("RUN SYS$SYSTEM:DECW$CLOCK --cli", stdin_text="SAMPLE\nSHOW\nEXIT\n")
