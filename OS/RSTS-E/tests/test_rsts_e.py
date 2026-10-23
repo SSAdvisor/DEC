@@ -175,6 +175,9 @@ class TestRSTSEmulationHost:
             ("DECGRAPH", "SAMPLE\nPLOT\nEXIT\n", "DECGRAPH"),
             ("DECMAIL", "SAMPLE\nDIR\nEXIT\n", "DECMAIL"),
             ("DECWORD", "SAMPLE\nDIR\nEXIT\n", "DECWORD"),
+            ("WORD11", "SAMPLE\nDIR\nEXIT\n", "WORD-11"),
+            ("LEX11", "SAMPLE\nDIR\nEXIT\n", "LEX-11"),
+            ("SATURNWP", "SAMPLE\nDIR\nEXIT\n", "SATURN-WP"),
             ("DIBS", "SAMPLE\nTRIAL\nEXIT\n", "DIBS"),
             ("FMS11", "SAMPLE\nDIR\nEXIT\n", "FMS-11"),
             ("MENU11", "SAMPLE\nDIR\nEXIT\n", "MENU-11"),
@@ -298,6 +301,11 @@ class TestRSTSDockerContainer:
         res_dtr = run_rsts_docker("DTR", stdin_text="READY YACHTS\nPRINT FIRST 2\nEXIT\n")
         assert res_dtr.returncode == 0
         assert "ALBERG" in res_dtr.stdout.upper()
+
+        for oa_cmd, oa_marker in (("WORD11", "WORD-11"), ("LEX11", "LEX-11"), ("SATURNWP", "SATURN-WP")):
+            res_oa = run_rsts_docker(oa_cmd, stdin_text="SAMPLE\nDIR\nEXIT\n")
+            assert res_oa.returncode == 0
+            assert oa_marker in res_oa.stdout.upper()
 
         res_unsup = run_rsts_docker("DECWINDOWS")
         assert res_unsup.returncode != 0

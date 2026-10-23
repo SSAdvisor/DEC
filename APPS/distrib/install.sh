@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|dibs11|cts500|fms|fed|fdv|menu|mcf|bp2fmt|pretty|decw_x11|decwx11|dxsession|decterm|dxterm|bookreader|dxbook|calendar|dxcalendar|cardfiler|dxcardfiler|cdaviewer|dxvdoc|calculator|dxcalc|clock|dxclock|decsound|dxsound|dxmail|decwinmail|fileview|dxfileview|notepad|dxnotepad)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|w11|lex|swp|dibs11|cts500|fms|fed|fdv|menu|mcf|bp2fmt|pretty|decw_x11|decwx11|dxsession|decterm|dxterm|bookreader|dxbook|calendar|dxcalendar|cardfiler|dxcardfiler|cdaviewer|dxvdoc|calculator|dxcalc|clock|dxclock|decsound|dxsound|dxmail|decwinmail|fileview|dxfileview|notepad|dxnotepad)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -129,6 +129,15 @@ list_apps() {
                 ;;
             decwindows)
                 printf "%-16s %-18s %s\n" "decwindows" "Workstation GUI" "DECwindows XUI/Motif desktop suite (DECterm, Bookreader, Calendar, etc.)"
+                ;;
+            word11)
+                printf "%-16s %-18s %s\n" "word11" "Office / WP" "DPD WORD-11 V3.1 multi-user word processing & list processing (RSTS/E)"
+                ;;
+            lex11)
+                printf "%-16s %-18s %s\n" "lex11" "Office / WP" "EEC Systems LEX-11 V2.4 word processing, desk calculator & mass-mailer"
+                ;;
+            saturnwp)
+                printf "%-16s %-18s %s\n" "saturnwp" "Office / WP" "Saturn Systems Saturn-WP V4.2 integrated word processor & Saturn-Calc link"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
@@ -280,6 +289,12 @@ for app in "${VALID_APPS[@]}"; do
         COMPANIONS=("mail" "decmail11")
     elif [ "${app}" = "decword" ]; then
         COMPANIONS=("decworddp" "wps")
+    elif [ "${app}" = "word11" ]; then
+        COMPANIONS=("w11")
+    elif [ "${app}" = "lex11" ]; then
+        COMPANIONS=("lex")
+    elif [ "${app}" = "saturnwp" ]; then
+        COMPANIONS=("swp")
     elif [ "${app}" = "dibs" ]; then
         COMPANIONS=("dibs11" "cts500")
     elif [ "${app}" = "fms11" ]; then

@@ -51,13 +51,13 @@ flowchart TD
 
 ## 3. Detailed Specifications by Category
 
-### Category A: Office Automation & Word Processing
+### Category A: Office Automation & Word Processing (COMPLETED)
 
-| Package | Original Vendor | Historical Era | Primary Language | Proposed CCL Verb(s) | Core Capabilities to Emulate |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **`word11`** (*WORD-11*) | Data Processing Design, Inc. (DPD) | 1977–1990 | `BASIC-PLUS-2` / `MACRO-11` | `WORD11`, `W11` | Multi-user VT100 keypad word processor (`GOLD` key map), document library index (`W11DOC.DAT`), ruler-based margins/tabs, list processing (mail-merge), spelling dictionary check, pagination, and background LP0: spooling. |
-| **`lex11`** (*LEX-11*) | EEC Systems, Inc. | 1979–1989 | `BASIC-PLUS-2` | `LEX11`, `LEX` | Menu-driven & command-driven office automation suite with integrated desk calculator, form-letter mass mailer, glossary abbreviations, and multi-column table layout. |
-| **`saturnwp`** (*Saturn-WP*) | Saturn Systems, Inc. | 1981–1989 | `BASIC-PLUS-2` | `SATURNWP`, `SWP` | Integrated word processor capable of importing live spreadsheet ranges from `Saturn-Calc` and database records from `Saturn-Base`. |
+| Package | Status | Original Vendor | Historical Era | Primary Language | CCL Verb(s) | Core Capabilities Emulated |
+| :--- | :---: | :--- | :---: | :---: | :---: | :--- |
+| **`word11`** (*WORD-11 V3.1*) | **Done** (`APPS/apps/word11`) | Data Processing Design, Inc. (DPD) | 1977–1990 | `BASIC-PLUS-2` | `WORD11`, `W11` | Multi-user VT100 keypad word processor (`GOLD` key map), document library index (`W11DOC.DAT`), ruler-based margins/tabs, list processing (`LPLIST`/`LPADD`/`MERGE`), spelling dictionary check (`SPELL`/`DICTADD`), pagination, and background `LP0:` spooling (`SPOOL`). |
+| **`lex11`** (*LEX-11 V2.4*) | **Done** (`APPS/apps/lex11`) | EEC Systems, Inc. | 1979–1989 | `BASIC-PLUS-2` | `LEX11`, `LEX` | Menu-driven & command-driven office automation suite (`LEXDOC.DAT`) with integrated desk calculator (`CALC`), form-letter mass mailer (`MAILLIST`/`MAILADD`/`MERGE`), glossary abbreviations (`GLOSSARY`/`GLOSSADD`/`EXPAND`), and ruler formatting. |
+| **`saturnwp`** (*Saturn-WP V4.2*) | **Done** (`APPS/apps/saturnwp`) | Saturn Systems, Inc. | 1981–1989 | `BASIC-PLUS-2` | `SATURNWP`, `SWP` | Integrated word processor (`SATWP.DAT`) capable of importing live spreadsheet ranges from `Saturn-Calc` (`CALCTABLE`/`CALCSET`/`EMBEDCALC`) and database records from `Saturn-Base` (`BASELIST`/`BASEADD`/`MERGE`). |
 
 ---
 

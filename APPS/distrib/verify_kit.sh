@@ -283,6 +283,39 @@ for APP in "${TARGET_APPS[@]}"; do
                 FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
             ;;
+        word11|w11)
+            OUT="$("${EXE}" "SAMPLE; DIR; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "WORD-11 Document Index"; then
+                echo "PASSED (DPD WORD-11 V3.1 multi-user word processing verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        lex11|lex)
+            OUT="$("${EXE}" "SAMPLE; DIR; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "LEX-11 Document Catalog"; then
+                echo "PASSED (EEC Systems LEX-11 V2.4 word processing & calculator verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        saturnwp|swp)
+            OUT="$("${EXE}" "SAMPLE; DIR; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Saturn-WP Document Library"; then
+                echo "PASSED (Saturn Systems Saturn-WP V4.2 word processing verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
         dibs|dibs11|cts500)
             OUT="$(printf "SAMPLE\nTRIAL\nEXIT\n" | "${EXE}" 2>&1 || true)"
             if echo "${OUT}" | grep -q "TRIAL BALANCE IS IN BALANCE"; then
