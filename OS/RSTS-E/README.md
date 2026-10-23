@@ -17,8 +17,16 @@ An authentic operating system emulation of **Digital Equipment Corporation's RST
   - **DCL (`$`)**: Default RSTS/E V9/V10 DIGITAL Command Language interface.
   - **BASIC-PLUS (`Ready`)**: Classic interactive line-numbered BASIC Keyboard Monitor (`SWITCH BASIC`).
   - **RSX (`>`)**: RSX-11M Monitor emulation (`SWITCH RSX`, `MCR`, `PIP`, `TKB`).
-- **Concise Command Language (CCL) & Native Toolchain**:
-  - Direct execution of `BASIC`, `LINK`, `RUN`, `EDT`, `SUBMIT`, `PRINT`, `SYSTAT`, `PIP`, `FIT`, `UTILITY`.
+- **Concise Command Language (CCL) & Native Language Compilers**:
+  - Direct execution of **7 PDP-11 / RSTS/E Language Compilers** emitting native `.OBJ` object modules that link via `LINK` (`TKB`) into standalone `.TSK` executables on `rsts_vm`:
+    - `BASIC` (`BP2`, `COMPILE`) — DEC BASIC-PLUS-2 V2.7 (`SY:HELLO.BAS`)
+    - `MACRO` (`MACRO11`, `MAC`) — DEC PDP-11 MACRO-11 V05.05 Relocatable Macro Assembler (`SY:HELLO.MAC`)
+    - `COBOL` (`COBOL81`, `COB`) — DEC PDP-11 COBOL-81 V2.4 (ANSI-74) Compiler (`SY:PAYROL.CBL`)
+    - `FORTRAN` (`FORTRAN77`, `F77`, `FOR`) — DEC PDP-11 FORTRAN-77 V5.0 Compiler (`SY:STATS.FOR`)
+    - `DIBOL` (`DIBOL83`, `DBL`) — DEC CTS-500 / RSTS/E DIBOL-83 V5.3 Compiler (`SY:INVOIC.DBL`)
+    - `RPG` (`RPGII`) — DEC PDP-11 RPG II V2.1 Report Program Generator (`SY:SLSRPT.RPG`)
+    - `APL` (`APL11`, `APLC`) — DEC PDP-11 APL-11 V2.1 Compiler & Interactive Workspace (`SY:VECTOR.APL` or interactive `APL`)
+  - Direct execution of `LINK`, `RUN`, `EDT`, `SUBMIT`, `PRINT`, `SYSTAT`, `PIP`, `FIT`, `UTILITY`.
   - Pre-configured CCL verbs for all **12 RSTS/E-supported DEC-APPS**: `HAMURABI`, `SORT11` (`SORT`), `RMSUTILS` (`RMSDES`, `RMSDEF`, `RMSIFL`, `RMSCNV`, `RMSBCK`, `RMSRST`, `RMSDSP`), `ADE`, `DATATRIEVE11` (`DTR`), `DECGRAPH` (`GRAPH`), `DECMAIL` (`MAIL`), `DECWORD` (`WPS`), `DIBS` (`CTS500`), `FMS11` (`FMS`), `MENU11` (`MENU`), and `INDENT` (`BP2FMT`).
   - Enforces historical OS boundaries: 32-bit VAX/VMS-only `DECwindows` X11 applications are excluded and rejected with an authentic RSTS/E diagnostic.
 

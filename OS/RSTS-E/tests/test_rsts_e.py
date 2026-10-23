@@ -226,6 +226,38 @@ class TestRSTSEmulationHost:
         assert r4.returncode != 0
         assert "cannot delete protected system account" in r4.stdout
 
+    def test_09c_rsts_e_six_language_compilers_and_apl_workspace(self, tmp_path):
+        # Compile, link, and execute MACRO-11, COBOL-81, FORTRAN-77, DIBOL-83, RPG II, and APL-11
+        res = run_rsts(
+            "MACRO SY:HELLO.MAC; LINK SY:HELLO.OBJ; RUN SY:HELLO.TSK; "
+            "COBOL SY:PAYROL.CBL; LINK SY:PAYROL.OBJ; RUN SY:PAYROL.TSK; "
+            "FORTRAN SY:STATS.FOR; LINK SY:STATS.OBJ; RUN SY:STATS.TSK; "
+            "DIBOL SY:INVOIC.DBL; LINK SY:INVOIC.OBJ; RUN SY:INVOIC.TSK; "
+            "RPG SY:SLSRPT.RPG; LINK SY:SLSRPT.OBJ; RUN SY:SLSRPT.TSK; "
+            "APL SY:VECTOR.APL; LINK SY:VECTOR.OBJ; RUN SY:VECTOR.TSK",
+            tmp_root=tmp_path,
+        )
+        assert res.returncode == 0
+        assert "HELLO FROM DEC MACRO-11 V05.05 ON RSTS-E!" in res.stdout
+        assert "COBOL-81 PAYROLL: J. DEC ENGINEER GROSS=1200" in res.stdout
+        assert "FORTRAN-77 SUM(1..10)=55" in res.stdout
+        assert "DIBOL-83 CUSTOMER: DIGITAL EQUIPMENT CORP TOTAL=1800" in res.stdout
+        assert "DEC RPG II V2.1 SALES REPORT" in res.stdout
+        assert "RPG II TOTAL SALES=3000" in res.stdout
+        assert "DEC APL-11 V2.1 VECTOR ENGINE" in res.stdout
+        assert "120" in res.stdout
+
+        # Test interactive APL-11 workspace via `APL` command
+        apl_res = run_rsts(
+            "APL",
+            stdin_text="X <- .IOTA 6\n+/ X\n)VARS\n)OFF\n",
+            tmp_root=tmp_path,
+        )
+        assert apl_res.returncode == 0
+        assert "CLEAR WS" in apl_res.stdout
+        assert "21" in apl_res.stdout
+        assert "X" in apl_res.stdout
+
 
 class TestRSTSDockerContainer:
     def test_10_docker_image_and_system_commands(self):
@@ -240,6 +272,23 @@ class TestRSTSDockerContainer:
         assert res.returncode == 0
         assert "HELLO .OBJ" in res.stdout
         assert "HELLO FROM DEC RSTS/E V10.1-L ON PDP-11!" in res.stdout
+
+    def test_11b_docker_six_rsts_e_language_compilers(self):
+        res = run_rsts_docker(
+            "MACRO SY:HELLO.MAC; LINK SY:HELLO.OBJ; RUN SY:HELLO.TSK; "
+            "COBOL SY:PAYROL.CBL; LINK SY:PAYROL.OBJ; RUN SY:PAYROL.TSK; "
+            "FORTRAN SY:STATS.FOR; LINK SY:STATS.OBJ; RUN SY:STATS.TSK; "
+            "DIBOL SY:INVOIC.DBL; LINK SY:INVOIC.OBJ; RUN SY:INVOIC.TSK; "
+            "RPG SY:SLSRPT.RPG; LINK SY:SLSRPT.OBJ; RUN SY:SLSRPT.TSK; "
+            "APL SY:VECTOR.APL; LINK SY:VECTOR.OBJ; RUN SY:VECTOR.TSK"
+        )
+        assert res.returncode == 0
+        assert "HELLO FROM DEC MACRO-11 V05.05 ON RSTS-E!" in res.stdout
+        assert "COBOL-81 PAYROLL: J. DEC ENGINEER GROSS=1200" in res.stdout
+        assert "FORTRAN-77 SUM(1..10)=55" in res.stdout
+        assert "DIBOL-83 CUSTOMER: DIGITAL EQUIPMENT CORP TOTAL=1800" in res.stdout
+        assert "RPG II TOTAL SALES=3000" in res.stdout
+        assert "DEC APL-11 V2.1 VECTOR ENGINE" in res.stdout
 
     def test_12_docker_execute_rsts_applications_and_reject_decwindows(self):
         res_dibs = run_rsts_docker("DIBS", stdin_text="SAMPLE\nTRIAL\nEXIT\n")

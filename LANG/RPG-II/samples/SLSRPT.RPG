@@ -1,0 +1,15 @@
+* DEC PDP-11 RPG II V2.1 QUARTERLY SALES SUMMARY REPORT
+H SLSRPT
+F QPRINT  O   F  132     PRINTER
+C           Z-ADD 1250     Q1SLS
+C           Z-ADD 1750     Q2SLS
+C   Q1SLS   ADD   Q2SLS    TOTSLS
+C           SETON          LR
+O QPRINT  H  1P
+O                         'DEC PDP-11 RPG II V2.1 SALES REPORT'
+O QPRINT  D
+O                         'Q1 SALES: ' Q1SLS
+O QPRINT  D
+O                         'Q2 SALES: ' Q2SLS
+O QPRINT  T  LR
+O                         'TOTAL H1 SALES: ' TOTSLS

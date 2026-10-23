@@ -15,6 +15,7 @@ SYS_DIR="${RSTS_ROOT}/system"
 
 mkdir -p "${SYS_DIR}/bin"
 mkdir -p "${SYS_DIR}/lib/dcl"
+mkdir -p "${SYS_DIR}/lib/lang"
 mkdir -p "${SYS_DIR}/bootstrap"
 mkdir -p "${SYS_DIR}/data"
 
@@ -48,6 +49,29 @@ fi
 if [ -f "${BP2_ROOT}/dec-printq.conf" ]; then
     cp -f "${BP2_ROOT}/dec-printq.conf" "${SYS_DIR}/lib/dcl/dec-printq.conf"
 fi
+
+# 1b. Stage RSTS/E Language Compilers (MACRO-11, COBOL-81, FORTRAN-77, DIBOL-83, RPG-II, APL-11)
+echo "Staging RSTS/E Language Compilers into ${SYS_DIR}..."
+RSTS_LANGS=(
+    "MACRO-11:macro11"
+    "COBOL-81:cobol81"
+    "FORTRAN-77:fortran77"
+    "DIBOL-83:dibol83"
+    "RPG-II:rpgii"
+    "APL-11:apl11"
+)
+for entry in "${RSTS_LANGS[@]}"; do
+    lang_dir="${entry%%:*}"
+    lang_bin="${entry##*:}"
+    if [ ! -f "${DEC_ROOT}/LANG/${lang_dir}/compiler/${lang_bin}" ]; then
+        make -C "${DEC_ROOT}/LANG/${lang_dir}" build >/dev/null
+    fi
+    cp -f "${DEC_ROOT}/LANG/${lang_dir}/compiler/${lang_bin}" "${SYS_DIR}/bin/${lang_bin}"
+    chmod 755 "${SYS_DIR}/bin/${lang_bin}"
+    cp -f "${DEC_ROOT}/LANG/${lang_dir}/bootstrap/${lang_bin}.py" "${SYS_DIR}/lib/lang/${lang_bin}.py"
+    chmod 755 "${SYS_DIR}/lib/lang/${lang_bin}.py"
+done
+ln -sf apl11 "${SYS_DIR}/bin/aplc"
 
 # 2. Stage the 12 RSTS/E-supported DEC-APPS (excluding VAX/VMS-only decwindows)
 RSTS_APPS=(

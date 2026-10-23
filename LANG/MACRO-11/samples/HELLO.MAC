@@ -1,0 +1,24 @@
+        .TITLE  HELLO - DEC PDP-11 RSTS/E MACRO-11 SAMPLE
+        .IDENT  /V05.05/
+        .MCALL  .PRINT,.EXIT
+
+        COUNT   = 10.
+        BASE    = 32.
+
+START:  MOV     #COUNT,R0       ; Load counter 10 decimal
+        MOV     #BASE,R1        ; Load base 32 decimal
+        ADD     R0,R1           ; R1 = 42
+        JSR     PC,BANNER       ; Call banner subroutine
+        .PRINT  #MSG2
+        .PRINT  R1              ; Display computed R1
+        MOV     #3.,R2          ; Loop 3 times
+LOOP1:  DEC     R2
+        BNE     LOOP1
+        .EXIT
+
+BANNER: .PRINT  #MSG1
+        RTS     PC
+
+MSG1:   .ASCIZ  /HELLO FROM DEC MACRO-11 V05.05 ON RSTS-E!/
+MSG2:   .ASCIZ  /PDP-11 REGISTER R1 RESULT:/
+        .END    START

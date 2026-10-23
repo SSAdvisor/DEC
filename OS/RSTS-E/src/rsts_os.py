@@ -119,6 +119,19 @@ class RSTSEmulator:
         "PRETTY": ("indent", "INDENT V2.0 BASIC-PLUS-2 Pretty-Printer"),
         "EDT": ("edt", "DEC EDT Interactive Text Editor V3.0"),
         "EDIT": ("edt", "DEC EDT Interactive Text Editor V3.0"),
+        "MACRO": ("macro11", "DEC PDP-11 MACRO-11 V05.05 Relocatable Macro Assembler"),
+        "MACRO11": ("macro11", "DEC PDP-11 MACRO-11 V05.05 Relocatable Macro Assembler"),
+        "COBOL": ("cobol81", "DEC PDP-11 COBOL-81 V2.4 (ANSI-74) Compiler"),
+        "COBOL81": ("cobol81", "DEC PDP-11 COBOL-81 V2.4 (ANSI-74) Compiler"),
+        "FORTRAN": ("fortran77", "DEC PDP-11 FORTRAN-77 V5.0 Compiler"),
+        "FORTRAN77": ("fortran77", "DEC PDP-11 FORTRAN-77 V5.0 Compiler"),
+        "F77": ("fortran77", "DEC PDP-11 FORTRAN-77 V5.0 Compiler"),
+        "DIBOL": ("dibol83", "DEC CTS-500 / RSTS/E DIBOL-83 V5.3 Compiler"),
+        "DIBOL83": ("dibol83", "DEC CTS-500 / RSTS/E DIBOL-83 V5.3 Compiler"),
+        "RPG": ("rpgii", "DEC PDP-11 RPG II V2.1 Report Program Generator"),
+        "RPGII": ("rpgii", "DEC PDP-11 RPG II V2.1 Report Program Generator"),
+        "APL": ("apl11", "DEC PDP-11 APL-11 V2.1 Compiler & Interactive Workspace"),
+        "APL11": ("apl11", "DEC PDP-11 APL-11 V2.1 Compiler & Interactive Workspace"),
     }
 
     # Applications strictly requiring 32-bit VAX/VMS or ULTRIX (NOT supported on PDP-11 RSTS/E)
@@ -421,6 +434,105 @@ class RSTSEmulator:
                     "30 END\n"
                 )
 
+        hello_mac = os.path.join(sys_dir, "HELLO.MAC")
+        if not os.path.exists(hello_mac):
+            with open(hello_mac, "w") as f:
+                f.write(
+                    "        .TITLE  HELLO - DEC PDP-11 RSTS/E MACRO-11 SAMPLE\n"
+                    "        .IDENT  /V05.05/\n"
+                    "        .MCALL  .PRINT,.EXIT\n"
+                    "START:  MOV     #10.,R0\n"
+                    "        MOV     #32.,R1\n"
+                    "        ADD     R0,R1\n"
+                    "        .PRINT  #MSG1\n"
+                    "        .PRINT  R1\n"
+                    "        .EXIT\n"
+                    "MSG1:   .ASCIZ  /HELLO FROM DEC MACRO-11 V05.05 ON RSTS-E!/\n"
+                    "        .END    START\n"
+                )
+
+        payrol_cbl = os.path.join(sys_dir, "PAYROL.CBL")
+        if not os.path.exists(payrol_cbl):
+            with open(payrol_cbl, "w") as f:
+                f.write(
+                    "       IDENTIFICATION DIVISION.\n"
+                    "       PROGRAM-ID. PAYROL.\n"
+                    "       ENVIRONMENT DIVISION.\n"
+                    "       DATA DIVISION.\n"
+                    "       WORKING-STORAGE SECTION.\n"
+                    "       01  EMP-NAME       PIC X(20) VALUE \"J. DEC ENGINEER\".\n"
+                    "       01  HOURS-WORKED   PIC 9(4)  VALUE 40.\n"
+                    "       01  HOURLY-RATE    PIC 9(4)  VALUE 25.\n"
+                    "       01  GROSS-PAY      PIC 9(6)  VALUE 0.\n"
+                    "       PROCEDURE DIVISION.\n"
+                    "       MAIN-LOGIC.\n"
+                    "           MULTIPLY HOURS-WORKED BY HOURLY-RATE GIVING GROSS-PAY.\n"
+                    "           ADD 200 TO GROSS-PAY.\n"
+                    "           DISPLAY \"COBOL-81 PAYROLL: \" EMP-NAME \" GROSS=\" GROSS-PAY.\n"
+                    "           STOP RUN.\n"
+                )
+
+        stats_for = os.path.join(sys_dir, "STATS.FOR")
+        if not os.path.exists(stats_for):
+            with open(stats_for, "w") as f:
+                f.write(
+                    "C     DEC PDP-11 FORTRAN-77 V5.0 SAMPLE\n"
+                    "      PROGRAM STATS\n"
+                    "      INTEGER I, ISUM\n"
+                    "      ISUM = 0\n"
+                    "      DO 100 I = 1, 10\n"
+                    "         ISUM = ISUM + I\n"
+                    " 100  CONTINUE\n"
+                    "      WRITE(6,*) 'FORTRAN-77 SUM(1..10)=', ISUM\n"
+                    "      STOP\n"
+                    "      END\n"
+                )
+
+        invoic_dbl = os.path.join(sys_dir, "INVOIC.DBL")
+        if not os.path.exists(invoic_dbl):
+            with open(invoic_dbl, "w") as f:
+                f.write(
+                    ".TITLE 'INVOIC - DEC DIBOL-83 SAMPLE'\n"
+                    "RECORD\n"
+                    "    CUST,   A24, 'DIGITAL EQUIPMENT CORP'\n"
+                    "    QTY,    D4,  12\n"
+                    "    PRICE,  D6,  150\n"
+                    "    TOTAL,  D8,  0\n"
+                    "PROC\n"
+                    "    TOTAL = QTY * PRICE\n"
+                    "    DISPLAY(1, 'DIBOL-83 CUSTOMER: ', CUST, ' TOTAL=', TOTAL)\n"
+                    "    STOP\n"
+                    "END\n"
+                )
+
+        slsrpt_rpg = os.path.join(sys_dir, "SLSRPT.RPG")
+        if not os.path.exists(slsrpt_rpg):
+            with open(slsrpt_rpg, "w") as f:
+                f.write(
+                    "* DEC PDP-11 RPG II V2.1 SAMPLE\n"
+                    "H SLSRPT\n"
+                    "F QPRINT  O   F  132     PRINTER\n"
+                    "C           Z-ADD 1250     Q1SLS\n"
+                    "C           Z-ADD 1750     Q2SLS\n"
+                    "C   Q1SLS   ADD   Q2SLS    TOTSLS\n"
+                    "C           SETON          LR\n"
+                    "O QPRINT  H  1P\n"
+                    "O                         'DEC RPG II V2.1 SALES REPORT'\n"
+                    "O QPRINT  T  LR\n"
+                    "O                         'RPG II TOTAL SALES=' TOTSLS\n"
+                )
+
+        vector_apl = os.path.join(sys_dir, "VECTOR.APL")
+        if not os.path.exists(vector_apl):
+            with open(vector_apl, "w") as f:
+                f.write(
+                    "'DEC APL-11 V2.1 VECTOR ENGINE'\n"
+                    "V <- .IOTA 10\n"
+                    "+/ V\n"
+                    "*/ .IOTA 5\n"
+                    ")OFF\n"
+                )
+
     def resolve_path(self, rsts_spec):
         """Translate a RSTS/E file specification (e.g. SY:HELLO.BAS, LB:SORT11, [1,2]FILE.TXT) to host path."""
         if not rsts_spec:
@@ -502,13 +614,17 @@ class RSTSEmulator:
         return exact
 
     def find_executable(self, name):
-        """Find a binary in staged system/bin or PATH."""
+        """Find a binary in staged system/bin, LANG/*/compiler, or PATH."""
         clean = name.strip().lower()
         if clean.startswith("$"):
             clean = clean[1:]
         cand = os.path.join(self.sys_bin, clean)
         if os.path.isfile(cand) and os.access(cand, os.X_OK):
             return cand
+        for lang_dir in ("BASIC-PLUS-2", "MACRO-11", "COBOL-81", "FORTRAN-77", "DIBOL-83", "RPG-II", "APL-11"):
+            lang_cand = os.path.join(self.dec_root, "LANG", lang_dir, "compiler", clean)
+            if os.path.isfile(lang_cand) and os.access(lang_cand, os.X_OK):
+                return lang_cand
         which_res = shutil.which(clean)
         if which_res:
             return which_res
@@ -844,6 +960,18 @@ class RSTSEmulator:
             return self._cmd_pip(arg)
         if verb in ("TKB", "LINK"):
             return self._cmd_link(arg)
+        if verb in ("MAC", "MACRO", "MACRO11"):
+            return self._cmd_lang_compiler("macro11", "MACRO-11", (".MAC", ".mac", ".ASM", ".asm"), arg)
+        if verb in ("F77", "FOR", "FORTRAN", "FORTRAN77"):
+            return self._cmd_lang_compiler("fortran77", "FORTRAN-77", (".FOR", ".for", ".FTN", ".ftn", ".F77", ".f77"), arg)
+        if verb in ("COB", "COBOL", "COBOL81"):
+            return self._cmd_lang_compiler("cobol81", "COBOL-81", (".CBL", ".cbl", ".COB", ".cob"), arg)
+        if verb in ("DBL", "DIBOL", "DIBOL83"):
+            return self._cmd_lang_compiler("dibol83", "DIBOL-83", (".DBL", ".dbl", ".DIB", ".dib"), arg)
+        if verb in ("RPG", "RPGII"):
+            return self._cmd_lang_compiler("rpgii", "RPG II", (".RPG", ".rpg"), arg)
+        if verb in ("APL", "APL11"):
+            return self._cmd_apl(verb, arg)
         return self._execute_dcl_monitor(s)
 
     # ==========================================================================
@@ -966,6 +1094,18 @@ class RSTSEmulator:
             return self._cmd_write(rest)
         if verb in ("BASIC", "COMPILE", "BP2"):
             return self._cmd_basic(rest)
+        if verb in ("MACRO", "MACRO11", "MAC"):
+            return self._cmd_lang_compiler("macro11", "MACRO-11", (".MAC", ".mac", ".ASM", ".asm"), rest)
+        if verb in ("COBOL", "COBOL81", "COB"):
+            return self._cmd_lang_compiler("cobol81", "COBOL-81", (".CBL", ".cbl", ".COB", ".cob"), rest)
+        if verb in ("FORTRAN", "FORTRAN77", "F77", "FOR"):
+            return self._cmd_lang_compiler("fortran77", "FORTRAN-77", (".FOR", ".for", ".FTN", ".ftn", ".F77", ".f77"), rest)
+        if verb in ("DIBOL", "DIBOL83", "DBL"):
+            return self._cmd_lang_compiler("dibol83", "DIBOL-83", (".DBL", ".dbl", ".DIB", ".dib"), rest)
+        if verb in ("RPG", "RPGII"):
+            return self._cmd_lang_compiler("rpgii", "RPG II", (".RPG", ".rpg"), rest)
+        if verb in ("APL", "APL11", "APLC"):
+            return self._cmd_apl(verb, rest)
         if verb in ("LINK", "TKB"):
             return self._cmd_link(rest)
         if verb == "RUN":
@@ -1055,8 +1195,14 @@ class RSTSEmulator:
                 "\n"
                 "  Programming & Applications (CCL):\n"
                 "    BASIC <file.bas>   Compile DEC BASIC-PLUS-2 program (.BAS -> .OBJ)\n"
-                "    LINK <file.obj>    Link BASIC-PLUS-2 object module into executable\n"
-                "    RUN <prog>         Execute compiled program or .BAS file\n"
+                "    MACRO <file.mac>   Assemble DEC PDP-11 MACRO-11 program (.MAC -> .OBJ)\n"
+                "    COBOL <file.cbl>   Compile DEC PDP-11 COBOL-81 program (.CBL -> .OBJ)\n"
+                "    FORTRAN <file.for> Compile DEC PDP-11 FORTRAN-77 program (.FOR -> .OBJ)\n"
+                "    DIBOL <file.dbl>   Compile DEC CTS-500 DIBOL-83 program (.DBL -> .OBJ)\n"
+                "    RPG <file.rpg>     Compile DEC PDP-11 RPG II program (.RPG -> .OBJ)\n"
+                "    APL [file.apl]     Interactive APL-11 workspace or compile .APL -> .OBJ\n"
+                "    LINK <file.obj>    Link RSTS/E object module (.OBJ -> .TSK executable)\n"
+                "    RUN <prog>         Execute compiled .TSK program or source file\n"
                 "    EDT <file>         Invoke DEC EDT V3.0 Text Editor\n"
                 "    SUBMIT / PRINT     Submit batch job (.COM) or print job to PBS spooler\n"
                 "    HAMURABI, SORT11, RMSUTILS, ADE, DATATRIEVE11 (DTR), DECGRAPH,\n"
@@ -1702,6 +1848,165 @@ class RSTSEmulator:
                     pass
         return rc
 
+    def _rel_to_cwd(self, path):
+        if not path:
+            return path
+        try:
+            rel = os.path.relpath(path, self.default_dir)
+            if len(rel) < len(path):
+                return rel
+        except ValueError:
+            pass
+        return path
+
+    def _cmd_lang_compiler(self, bin_name, lang_label, default_exts, rest):
+        if not rest or not rest.strip():
+            return self._invoke_app(bin_name, "")
+        tokens = []
+        obj_out = None
+        lst_out = None
+        want_default_lst = False
+        for t in rest.split():
+            up = t.upper()
+            if up.startswith("/OBJECT=") or up.startswith("/OBJ="):
+                obj_out = self.resolve_path(t.split("=", 1)[1])
+            elif up.startswith("/LIST=") or up.startswith("/LST="):
+                lst_out = self.resolve_path(t.split("=", 1)[1])
+            elif up in ("/LIST", "/LST"):
+                want_default_lst = True
+            elif not self._is_dcl_qualifier(t):
+                tokens.append(t)
+
+        if not tokens:
+            print(f"%DCL-E-NOFILE, missing {lang_label} source filename")
+            return 1
+
+        raw_spec = tokens[0]
+        if "=" in raw_spec and not raw_spec.startswith("/"):
+            lhs, rhs = raw_spec.split("=", 1)
+            src_token = rhs.strip()
+            if "," in lhs:
+                o_part, l_part = lhs.split(",", 1)
+                if o_part.strip():
+                    obj_out = self.resolve_path(o_part.strip())
+                if l_part.strip():
+                    lst_out = self.resolve_path(l_part.strip())
+            elif lhs.strip():
+                obj_out = self.resolve_path(lhs.strip())
+        else:
+            src_token = raw_spec
+
+        src = self.resolve_path(src_token)
+        if not os.path.isfile(src):
+            for ext_cand in default_exts:
+                if os.path.isfile(src + ext_cand):
+                    src = src + ext_cand
+                    break
+        if not os.path.isfile(src):
+            print(f"?Can't find {lang_label} source file - {src_token}")
+            return 1
+
+        src_dir = os.path.dirname(src) or self.default_dir
+        r_stem, _ = self._rad50_parts(src)
+        if not obj_out:
+            obj_out = os.path.join(src_dir, f"{r_stem}.OBJ")
+        if want_default_lst and not lst_out:
+            lst_out = os.path.join(src_dir, f"{r_stem}.LST")
+
+        comp_bin = self.find_executable(bin_name)
+        if not comp_bin:
+            print(f"%{bin_name.upper()}-F-NOCOMP, native {lang_label} compiler not found")
+            return 1
+
+        env = os.environ.copy()
+        env["PATH"] = f"{self.sys_bin}:{env.get('PATH', '')}"
+        cmd = [comp_bin, self._rel_to_cwd(src), "-o", self._rel_to_cwd(obj_out)]
+        if lst_out:
+            cmd.extend(["-l", self._rel_to_cwd(lst_out)])
+        return subprocess.call(cmd, cwd=self.default_dir, env=env)
+
+    def _cmd_apl(self, verb, rest):
+        apl_bin = self.find_executable("apl11")
+        if not apl_bin:
+            print("%APL11-F-NOCOMP, native APL-11 compiler/interpreter not found")
+            return 1
+        env = os.environ.copy()
+        env["PATH"] = f"{self.sys_bin}:{env.get('PATH', '')}"
+
+        if not rest or not rest.strip():
+            if verb.upper() == "APLC":
+                print("%DCL-E-NOFILE, missing APL-11 source filename")
+                return 1
+            return subprocess.call([apl_bin, "--interactive"], cwd=self.default_dir, env=env)
+
+        tokens = []
+        obj_out = None
+        lst_out = None
+        want_default_lst = False
+        interactive_mode = False
+        run_script_mode = False
+        for t in rest.split():
+            up = t.upper()
+            if up.startswith("/OBJECT=") or up.startswith("/OBJ="):
+                obj_out = self.resolve_path(t.split("=", 1)[1])
+            elif up.startswith("/LIST=") or up.startswith("/LST="):
+                lst_out = self.resolve_path(t.split("=", 1)[1])
+            elif up in ("/LIST", "/LST"):
+                want_default_lst = True
+            elif up in ("/INTERACTIVE", "/WS"):
+                interactive_mode = True
+            elif up in ("/RUN", "/EXEC"):
+                run_script_mode = True
+            elif not self._is_dcl_qualifier(t):
+                tokens.append(t)
+
+        if interactive_mode and not tokens:
+            return subprocess.call([apl_bin, "--interactive"], cwd=self.default_dir, env=env)
+
+        if not tokens:
+            print("%DCL-E-NOFILE, missing APL-11 source filename")
+            return 1
+
+        raw_spec = tokens[0]
+        if "=" in raw_spec and not raw_spec.startswith("/"):
+            lhs, rhs = raw_spec.split("=", 1)
+            src_token = rhs.strip()
+            if "," in lhs:
+                o_part, l_part = lhs.split(",", 1)
+                if o_part.strip():
+                    obj_out = self.resolve_path(o_part.strip())
+                if l_part.strip():
+                    lst_out = self.resolve_path(l_part.strip())
+            elif lhs.strip():
+                obj_out = self.resolve_path(lhs.strip())
+        else:
+            src_token = raw_spec
+
+        src = self.resolve_path(src_token)
+        if not os.path.isfile(src):
+            for ext_cand in (".APL", ".apl", ".AWS", ".aws"):
+                if os.path.isfile(src + ext_cand):
+                    src = src + ext_cand
+                    break
+        if not os.path.isfile(src):
+            print(f"?Can't find APL-11 source file - {src_token}")
+            return 1
+
+        if run_script_mode:
+            return subprocess.call([apl_bin, "--run", self._rel_to_cwd(src)], cwd=self.default_dir, env=env)
+
+        src_dir = os.path.dirname(src) or self.default_dir
+        r_stem, _ = self._rad50_parts(src)
+        if not obj_out:
+            obj_out = os.path.join(src_dir, f"{r_stem}.OBJ")
+        if want_default_lst and not lst_out:
+            lst_out = os.path.join(src_dir, f"{r_stem}.LST")
+
+        cmd = [apl_bin, self._rel_to_cwd(src), "-o", self._rel_to_cwd(obj_out)]
+        if lst_out:
+            cmd.extend(["-l", self._rel_to_cwd(lst_out)])
+        return subprocess.call(cmd, cwd=self.default_dir, env=env)
+
     def _cmd_link(self, rest):
         tokens = []
         bin_out = None
@@ -1767,6 +2072,19 @@ class RSTSEmulator:
             return rc
         return subprocess.call([bin_path], cwd=self.default_dir)
 
+    def _compile_and_run_lang(self, src_path, bin_name, lang_label, default_exts):
+        r_stem, _ = self._rad50_parts(src_path)
+        src_dir = os.path.dirname(src_path) or self.default_dir
+        obj_path = os.path.join(src_dir, f"{r_stem}.OBJ")
+        tsk_path = os.path.join(src_dir, f"{r_stem}.TSK")
+        rc = self._cmd_lang_compiler(bin_name, lang_label, default_exts, f"{src_path} /OBJECT={obj_path}")
+        if rc != 0:
+            return rc
+        rc = self._cmd_link(f"{obj_path} /OUTPUT={tsk_path}")
+        if rc != 0:
+            return rc
+        return subprocess.call([tsk_path], cwd=self.default_dir)
+
     def _cmd_run(self, rest):
         if not rest:
             print("%DCL-E-NOFILE, missing program to run")
@@ -1789,22 +2107,41 @@ class RSTSEmulator:
             return 2
 
         # Check if it's a CCL app name (e.g. RUN LB:HAMURABI or RUN $SORT11)
-        if clean_upper in self.ccl_table:
+        if clean_upper in self.ccl_table and "." not in prog:
             bname, _ = self.ccl_table[clean_upper]
             return self._invoke_app(bname, args_str)
 
         target = self.resolve_path(prog)
         if not os.path.isfile(target):
-            for ext_cand in (".TSK", ".tsk", ".BAC", ".bac", ".EXE", ".exe", ".BAS", ".bas"):
+            for ext_cand in (
+                ".TSK", ".tsk", ".BAC", ".bac", ".EXE", ".exe",
+                ".BAS", ".bas", ".MAC", ".mac", ".CBL", ".cbl",
+                ".FOR", ".for", ".DBL", ".dbl", ".RPG", ".rpg",
+                ".APL", ".apl",
+            ):
                 cand = self.resolve_path(prog + ext_cand)
                 if os.path.isfile(cand):
                     target = cand
                     break
-        if os.path.isfile(target) and target.upper().endswith(".BAS"):
-            return self._compile_and_run_bas(target)
-        if os.path.isfile(target) and os.access(target, os.X_OK):
-            cmd = [target] + (shlex.split(args_str) if args_str else [])
-            return subprocess.call(cmd, cwd=self.default_dir)
+        if os.path.isfile(target):
+            up_t = target.upper()
+            if up_t.endswith(".BAS"):
+                return self._compile_and_run_bas(target)
+            if up_t.endswith((".MAC", ".ASM")):
+                return self._compile_and_run_lang(target, "macro11", "MACRO-11", (".MAC", ".mac"))
+            if up_t.endswith((".CBL", ".COB")):
+                return self._compile_and_run_lang(target, "cobol81", "COBOL-81", (".CBL", ".cbl"))
+            if up_t.endswith((".FOR", ".FTN", ".F77")):
+                return self._compile_and_run_lang(target, "fortran77", "FORTRAN-77", (".FOR", ".for"))
+            if up_t.endswith((".DBL", ".DIB")):
+                return self._compile_and_run_lang(target, "dibol83", "DIBOL-83", (".DBL", ".dbl"))
+            if up_t.endswith(".RPG"):
+                return self._compile_and_run_lang(target, "rpgii", "RPG II", (".RPG", ".rpg"))
+            if up_t.endswith((".APL", ".AWS")):
+                return self._compile_and_run_lang(target, "apl11", "APL-11", (".APL", ".apl"))
+            if os.access(target, os.X_OK):
+                cmd = [target] + (shlex.split(args_str) if args_str else [])
+                return subprocess.call(cmd, cwd=self.default_dir)
 
         exe = self.find_executable(clean_upper.lower())
         if exe:
