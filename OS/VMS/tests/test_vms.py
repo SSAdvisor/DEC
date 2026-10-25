@@ -239,6 +239,25 @@ class TestVMSEmulationHost:
             ("DECGRAPH", "SAMPLE\nPLOT\nEXIT\n", "DECGRAPH"),
             ("MAIL", "SAMPLE\nDIR\nEXIT\n", "DECMAIL"),
             ("DECWORD", "SAMPLE\nDIR\nEXIT\n", "DECWORD"),
+            ("WP51", "SAMPLE\nREVEAL\nEXIT\n", "WORDPERFECT"),
+            ("INTERLEAF", "SAMPLE\nLIST\nEXIT\n", "INTERLEAF"),
+            ("LOTUS123", "SAMPLE\nLIST\nEXIT\n", "LOTUS 1-2-3"),
+            ("IFPS", "SAMPLE\nLIST\nEXIT\n", "IFPS"),
+            ("SYSTEMW", "SAMPLE\nLIST\nEXIT\n", "SYSTEM W"),
+            ("ORACLE", "SAMPLE\nLIST\nEXIT\n", "ORACLE"),
+            ("INGRES", "SAMPLE\nLIST\nEXIT\n", "INGRES"),
+            ("FOCUS", "SAMPLE\nLIST\nEXIT\n", "FOCUS"),
+            ("POWERHOUSE", "SAMPLE\nLIST\nEXIT\n", "POWERHOUSE"),
+            ("S1032", "SAMPLE\nLIST\nEXIT\n", "SYSTEM 1032"),
+            ("MANMAN", "SAMPLE\nLIST\nEXIT\n", "MANMAN"),
+            ("CERNER", "SAMPLE\nLIST\nEXIT\n", "PATHNET"),
+            ("SAS", "SAMPLE\nLIST\nEXIT\n", "WORK.CLINICAL"),
+            ("RS1", "SAMPLE\nLIST\nEXIT\n", "RS/1"),
+            ("SPICE3", "SAMPLE\nLIST\nEXIT\n", "SPICE"),
+            ("ANSYS", "SAMPLE\nLIST\nEXIT\n", "ANSYS"),
+            ("GAUSSIAN", "SAMPLE\nLIST\nEXIT\n", "GAUSSIAN"),
+            ("DISKEEPER", "SAMPLE\nLIST\nEXIT\n", "INDEXF.SYS"),
+            ("ROBOMON", "SAMPLE\nLIST\nEXIT\n", "ROBOMON"),
             ("FMS", "SAMPLE\nDIR\nEXIT\n", "FMS-11"),
             ("MENU", "SAMPLE\nDIR\nEXIT\n", "MENU-11"),
             ("INDENT", "SAMPLE\nCHECK\nEXIT\n", "INDENT"),
@@ -394,6 +413,19 @@ class TestVMSDockerContainer:
         assert res_dtr.returncode == 0
         assert "ALBERG" in res_dtr.stdout.upper()
 
+        for vms_cmd, vms_marker in (
+            ("WP51", "WORDPERFECT"),
+            ("LOTUS123", "LOTUS 1-2-3"),
+            ("ORACLE", "ORACLE"),
+            ("MANMAN", "MANMAN"),
+            ("SAS", "WORK.CLINICAL"),
+            ("SPICE3", "SPICE"),
+            ("DISKEEPER", "INDEXF.SYS"),
+        ):
+            res_tp = run_vms_docker(vms_cmd, stdin_text="SAMPLE\nLIST\nEXIT\n")
+            assert res_tp.returncode == 0
+            assert vms_marker in res_tp.stdout.upper()
+
         res_unsup = run_vms_docker("DIBS")
         assert res_unsup.returncode != 0
         assert "%DCL-W-UNSUPOS" in res_unsup.stdout
@@ -459,3 +491,269 @@ class TestVMSDockerContainer:
         assert not ok_blank and "NOTVALID" in err_blank
         ok_nouser, _, err_nouser = srv.verify_sysuaf_credentials("NO_SUCH_USER_99", "PASS")
         assert not ok_nouser and "NOSUCHUSER" in err_nouser
+
+    def test_15_subscriber_provisioning_sysuaf_and_disuser(self, tmp_path):
+        import sys
+        sys.path.insert(0, os.path.join(VMS_ROOT, "src"))
+        import vms_os
+        import multiuser_service
+
+        emu = vms_os.VMSEmulator(root_dir=str(tmp_path))
+        ok, _ = emu.check_username_available("CUTLER")
+        assert ok
+
+        rec = emu.provision_subscriber_account(
+            username="CUTLER",
+            password="VMS$V55",
+            email="cutler@dec.example.com",
+            plan="LCS_VMS_10",
+            clerk_user_id="user_clerk_202",
+        )
+        assert rec["ok"] is True
+        assert rec["uic"] == "[200,201]"
+        assert rec["quota"] == 50000
+        assert "DECW$USERS" in rec["identifiers"]
+        assert os.path.isfile(os.path.join(rec["dir_path"], "LOGIN.COM;1"))
+        assert os.path.isfile(os.path.join(rec["dir_path"], "WELCOME.TXT;1"))
+        assert os.path.isfile(os.path.join(rec["dir_path"], "HELLO.BAS;1"))
+
+        ok_after, _ = emu.check_username_available("CUTLER")
+        assert not ok_after
+
+        # Verify interactive login at Username: prompt and execution of LOGIN.COM and HELLO.BAS
+        login_res = run_vms(
+            [],
+            stdin_text=(
+                "CUTLER\n"
+                "VMS$V55\n"
+                "@SYS$LOGIN:LOGIN.COM\n"
+                "RUN SYS$LOGIN:HELLO.BAS\n"
+                "LOGOUT/DISCONNECT\n"
+            ),
+            tmp_root=tmp_path,
+        )
+        assert login_res.returncode == 0
+        assert "Welcome CUTLER ([200,201]) to Legacy Computing Systems VAX/VMS" in login_res.stdout
+        assert "HELLO CUTLER FROM LEGACY COMPUTING SYSTEMS VAX/VMS V5.5-2!" in login_res.stdout
+
+        # Suspend account (DISUSER) and verify VT220 and DECwindows X11 login are blocked
+        upd = emu.update_subscriber_account("user_clerk_202", status="DISUSER")
+        assert upd["flags"] == "DISUSER"
+
+        dis_res = run_vms(
+            [],
+            stdin_text="CUTLER\nGUEST\nLOGOUT/DISCONNECT\n",
+            tmp_root=tmp_path,
+        )
+        assert "%LOGIN-F-DISUSER, account is disabled" in dis_res.stdout
+
+        env_prev = os.environ.get("VMS_FS_ROOT")
+        os.environ["VMS_FS_ROOT"] = str(tmp_path)
+        try:
+            srv = multiuser_service.MultiUserTerminalServer(
+                emu_cmd=[VMS_EMU],
+                os_title="DEC VAX/VMS X11 Auth Test",
+                header_title="DEC VAXstation 4000",
+                https_port=18456,
+                enable_x11=False,
+            )
+            ok_x11, _, err_x11 = srv.verify_sysuaf_credentials("CUTLER", "VMS$V55")
+            assert not ok_x11 and "DISUSER" in err_x11
+        finally:
+            if env_prev is None:
+                os.environ.pop("VMS_FS_ROOT", None)
+            else:
+                os.environ["VMS_FS_ROOT"] = env_prev
+
+    def test_16_https_signup_portal_clerk_workos_webhooks_and_wss_login(self, tmp_path):
+        import json
+        import socket
+        import ssl
+        import time
+        import urllib.request
+        import base64
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        env = os.environ.copy()
+        env["VMS_FS_ROOT"] = str(tmp_path)
+        srv_script = os.path.join(VMS_ROOT, "src", "multiuser_service.py")
+        proc = subprocess.Popen(
+            [
+                "python3",
+                srv_script,
+                "--serve-https",
+                "--emu",
+                VMS_EMU,
+                "--port",
+                str(port),
+            ],
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        ssl_ctx = ssl._create_unverified_context()
+        base_url = f"https://127.0.0.1:{port}"
+
+        try:
+            for _ in range(30):
+                try:
+                    with urllib.request.urlopen(f"{base_url}/api/v1/status", context=ssl_ctx, timeout=2) as r:
+                        if r.status == 200:
+                            break
+                except Exception:
+                    time.sleep(0.15)
+
+            # 1. GET /signup portal
+            with urllib.request.urlopen(f"{base_url}/signup", context=ssl_ctx, timeout=5) as r:
+                html = r.read().decode("utf-8")
+                assert r.status == 200
+                assert "LEGACY COMPUTING SYSTEMS" in html
+                assert "VAX/VMS &amp; DECwindows" in html
+                assert "$10 / month" in html
+
+            # 2. Check username availability
+            with urllib.request.urlopen(f"{base_url}/api/v1/users/check?username=VAXUSER1", context=ssl_ctx, timeout=5) as r:
+                chk = json.loads(r.read().decode("utf-8"))
+                assert chk["available"] is True
+
+            # 3. POST /api/v1/signup ($10/mo VAX/VMS subscriber)
+            signup_payload = json.dumps({
+                "username": "VAXUSER1",
+                "password": "VAX$1991",
+                "email": "vaxuser1@dec.example.com",
+                "plan": "LCS_VMS_10",
+                "clerk_user_id": "user_clerk_vax1",
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                f"{base_url}/api/v1/signup",
+                data=signup_payload,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, context=ssl_ctx, timeout=5) as r:
+                assert r.status == 201
+                created = json.loads(r.read().decode("utf-8"))
+                assert created["ok"] is True
+                assert created["uic"] == "[200,201]"
+                assert created["clerk_metadata"]["dec_username"] == "VAXUSER1"
+
+            # 4. Clerk webhook: subscription.canceled -> DISUSER, then invoice.paid -> ACTIVE
+            clerk_cancel = json.dumps({
+                "type": "subscription.canceled",
+                "data": {"id": "user_clerk_vax1", "public_metadata": {"dec_username": "VAXUSER1"}},
+            }).encode("utf-8")
+            req_cc = urllib.request.Request(
+                f"{base_url}/api/v1/webhooks/clerk",
+                data=clerk_cancel,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_cc, context=ssl_ctx, timeout=5) as r:
+                cc_res = json.loads(r.read().decode("utf-8"))
+                assert cc_res["action"] == "SUSPENDED"
+                assert cc_res["account"]["status"] == "DISUSER"
+
+            clerk_paid = json.dumps({
+                "type": "invoice.paid",
+                "data": {"id": "user_clerk_vax1", "status": "active", "public_metadata": {"dec_username": "VAXUSER1"}},
+            }).encode("utf-8")
+            req_cp = urllib.request.Request(
+                f"{base_url}/api/v1/webhooks/clerk",
+                data=clerk_paid,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_cp, context=ssl_ctx, timeout=5) as r:
+                cp_res = json.loads(r.read().decode("utf-8"))
+                assert cp_res["action"] == "REACTIVATED"
+                assert cp_res["account"]["status"] == "ACTIVE"
+
+            # 5. WorkOS SCIM webhook: dsync.user.created -> [300,1], dsync.user.suspended -> DISUSER
+            wos_create = json.dumps({
+                "event": "dsync.user.created",
+                "data": {
+                    "id": "wos_vms_01",
+                    "organization_id": "org_cern_lab",
+                    "username": "CERNENG",
+                    "emails": [{"value": "eng@cern.ch"}],
+                    "state": "active",
+                },
+            }).encode("utf-8")
+            req_wc = urllib.request.Request(
+                f"{base_url}/api/v1/webhooks/workos",
+                data=wos_create,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_wc, context=ssl_ctx, timeout=5) as r:
+                wc_res = json.loads(r.read().decode("utf-8"))
+                assert wc_res["action"] == "PROVISIONED"
+                assert wc_res["account"]["uic"] == "[300,1]"
+                assert wc_res["account"]["quota"] == 100000
+
+            wos_susp = json.dumps({
+                "event": "dsync.user.suspended",
+                "data": {"id": "wos_vms_01", "organization_id": "org_cern_lab", "username": "CERNENG"},
+            }).encode("utf-8")
+            req_ws = urllib.request.Request(
+                f"{base_url}/api/v1/webhooks/workos",
+                data=wos_susp,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_ws, context=ssl_ctx, timeout=5) as r:
+                ws_res = json.loads(r.read().decode("utf-8"))
+                assert ws_res["action"] == "SUSPENDED"
+                assert ws_res["account"]["status"] == "DISUSER"
+
+            # 6. Connect via live WSS (/ws) and log in with newly provisioned VAXUSER1 account
+            raw_sock = socket.create_connection(("127.0.0.1", port), timeout=5)
+            tls_sock = ssl_ctx.wrap_socket(raw_sock, server_hostname="127.0.0.1")
+            ws_key = base64.b64encode(os.urandom(16)).decode("ascii")
+            handshake = (
+                f"GET /ws?sid=test_vaxuser1 HTTP/1.1\r\n"
+                f"Host: 127.0.0.1:{port}\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                f"Sec-WebSocket-Key: {ws_key}\r\n"
+                "Sec-WebSocket-Version: 13\r\n\r\n"
+            )
+            tls_sock.sendall(handshake.encode("ascii"))
+            resp_hdr = tls_sock.recv(1024).decode("latin-1", errors="replace")
+            assert "101 Switching Protocols" in resp_hdr
+
+            def send_masked_ws(text):
+                payload = text.encode("utf-8")
+                mask = b"\x12\x34\x56\x78"
+                masked = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
+                frame = bytearray([0x81, 0x80 | len(payload)]) + mask + masked
+                tls_sock.sendall(bytes(frame))
+
+            send_masked_ws("VAXUSER1\n")
+            time.sleep(0.2)
+            send_masked_ws("VAX$1991\n")
+            time.sleep(0.2)
+            send_masked_ws("SHOW PROCESS\nLOGOUT/DISCONNECT\n")
+
+            collected = b""
+            tls_sock.settimeout(2.0)
+            try:
+                while True:
+                    chunk = tls_sock.recv(4096)
+                    if not chunk:
+                        break
+                    collected += chunk
+            except Exception:
+                pass
+            tls_sock.close()
+            decoded_out = collected.decode("latin-1", errors="replace")
+            assert "[200,201]" in decoded_out
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except Exception:
+                proc.kill()

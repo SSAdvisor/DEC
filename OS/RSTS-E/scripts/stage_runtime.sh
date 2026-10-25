@@ -73,7 +73,7 @@ for entry in "${RSTS_LANGS[@]}"; do
 done
 ln -sf apl11 "${SYS_DIR}/bin/aplc"
 
-# 2. Stage the 15 RSTS/E-supported DEC-APPS (excluding VAX/VMS-only decwindows)
+# 2. Stage the 33 RSTS/E-supported DEC-APPS (excluding VAX/VMS-only decwindows)
 RSTS_APPS=(
     "hamurabi"
     "sort11"
@@ -86,13 +86,31 @@ RSTS_APPS=(
     "word11"
     "lex11"
     "saturnwp"
+    "calc2020"
+    "saturncalc"
+    "nyplan"
+    "total"
+    "ambase"
+    "accentr"
+    "saturnbase"
+    "mcba"
+    "maps"
+    "timeline"
+    "compushare"
+    "cjbusiness"
+    "kdss"
+    "tam"
+    "fsort3"
+    "clyde"
+    "minitab"
+    "spss11"
     "dibs"
     "fms11"
     "menu11"
     "indent"
 )
 
-echo "Staging 15 RSTS/E-compatible applications from ${APPS_ROOT}..."
+echo "Staging 33 RSTS/E-compatible applications from ${APPS_ROOT}..."
 for app in "${RSTS_APPS[@]}"; do
     APP_BIN_DIR="${APPS_ROOT}/apps/${app}/bin"
     if [ ! -d "${APP_BIN_DIR}" ]; then

@@ -225,6 +225,102 @@ class VMSEmulator:
         "DECMAIL": ("decmail", "VAX/VMS Personal Mail Utility V3.0"),
         "DECWORD": ("decword", "WPS-PLUS / DECword V3.0 Word Processing System"),
         "WPS": ("decword", "WPS-PLUS / DECword V3.0 Word Processing System"),
+        "WORD11": ("word11", "DPD WORD-11 V3.1 Multi-User Word Processing System"),
+        "W11": ("word11", "DPD WORD-11 V3.1 Multi-User Word Processing System"),
+        "LEX11": ("lex11", "EEC Systems LEX-11 V2.4 Word Processing & Calculator"),
+        "LEX": ("lex11", "EEC Systems LEX-11 V2.4 Word Processing & Calculator"),
+        "SATURNWP": ("saturnwp", "Saturn Systems Saturn-WP V4.2 Integrated Word Processor"),
+        "SWP": ("saturnwp", "Saturn Systems Saturn-WP V4.2 Integrated Word Processor"),
+        "WP51": ("wp51", "WordPerfect 5.1 for VAX/VMS Word Processing System"),
+        "WORDPERFECT": ("wp51", "WordPerfect 5.1 for VAX/VMS Word Processing System"),
+        "WP": ("wp51", "WordPerfect 5.1 for VAX/VMS Word Processing System"),
+        "INTERLEAF": ("interleaf", "Interleaf TPS 4.0 Technical Publishing Software"),
+        "TPS": ("interleaf", "Interleaf TPS 4.0 Technical Publishing Software"),
+        "CALC2020": ("calc2020", "Access Technology 20/20 V2.3 (Supercomp-20) Spreadsheet"),
+        "2020": ("calc2020", "Access Technology 20/20 V2.3 (Supercomp-20) Spreadsheet"),
+        "SC20": ("calc2020", "Access Technology 20/20 V2.3 (Supercomp-20) Spreadsheet"),
+        "SATURNCALC": ("saturncalc", "Saturn Systems Saturn-Calc V3.4 Electronic Worksheet"),
+        "SATCALC": ("saturncalc", "Saturn Systems Saturn-Calc V3.4 Electronic Worksheet"),
+        "SCALC": ("saturncalc", "Saturn Systems Saturn-Calc V3.4 Electronic Worksheet"),
+        "NYPLAN": ("nyplan", "Nyplan Inc. NYPLAN V4.1 Financial Modeling & Risk Suite"),
+        "NYP": ("nyplan", "Nyplan Inc. NYPLAN V4.1 Financial Modeling & Risk Suite"),
+        "LOTUS123": ("lotus123", "Lotus 1-2-3 for VAX/VMS V1.0 3D Spreadsheet"),
+        "LOTUS": ("lotus123", "Lotus 1-2-3 for VAX/VMS V1.0 3D Spreadsheet"),
+        "123": ("lotus123", "Lotus 1-2-3 for VAX/VMS V1.0 3D Spreadsheet"),
+        "IFPS": ("ifps", "Execucom IFPS/Plus V4.0 Interactive Financial Planning System"),
+        "IFPSPLUS": ("ifps", "Execucom IFPS/Plus V4.0 Interactive Financial Planning System"),
+        "SYSTEMW": ("systemw", "Comshare System W / Commander EIS Multidimensional DSS"),
+        "SYSW": ("systemw", "Comshare System W / Commander EIS Multidimensional DSS"),
+        "EIS": ("systemw", "Comshare System W / Commander EIS Multidimensional DSS"),
+        "TOTAL": ("total", "Cincom Systems TOTAL V8.0 Network DBMS"),
+        "TOTDBM": ("total", "Cincom Systems TOTAL V8.0 Network DBMS"),
+        "AMBASE": ("ambase", "Amcor Computer Corp. AMBASE V4.2 DBMS & AMWRITER"),
+        "AMQRY": ("ambase", "Amcor Computer Corp. AMBASE V4.2 Query Facility"),
+        "AMWRITER": ("ambase", "Amcor Computer Corp. AMBASE V4.2 Report Writer"),
+        "ACCENTR": ("accentr", "NIS ACCENT R V11.4 4GL & Relational DBMS"),
+        "ACCENT": ("accentr", "NIS ACCENT R V11.4 4GL & Relational DBMS"),
+        "ACCR": ("accentr", "NIS ACCENT R V11.4 4GL & Relational DBMS"),
+        "SATURNBASE": ("saturnbase", "Saturn Systems Saturn-Base V3.2 Relational DBMS"),
+        "SATBASE": ("saturnbase", "Saturn Systems Saturn-Base V3.2 Relational DBMS"),
+        "SBASE": ("saturnbase", "Saturn Systems Saturn-Base V3.2 Relational DBMS"),
+        "ORACLE": ("oracle", "Oracle RDBMS V6.0 for VAX/VMS (SQL*Plus/Forms/DBA)"),
+        "SQLPLUS": ("oracle", "Oracle SQL*Plus V3.0 Interactive SQL Interface"),
+        "SQLFORMS": ("oracle", "Oracle SQL*Forms V3.0 Interactive Forms Designer"),
+        "SQLDBA": ("oracle", "Oracle SQL*DBA V6.0 SGA & Tablespace Monitor"),
+        "INGRES": ("ingres", "RTI INGRES V6.2 RDBMS for VAX/VMS (QUEL/SQL/ABF)"),
+        "IQUEL": ("ingres", "RTI INGRES V6.2 Interactive QUEL Terminal Monitor"),
+        "ISQL": ("ingres", "RTI INGRES V6.2 Interactive SQL Terminal Monitor"),
+        "ABF": ("ingres", "RTI INGRES V6.2 Application-By-Forms 4GL"),
+        "FOCUS": ("focus", "Information Builders FOCUS V6.5 4GL & DBMS"),
+        "POWERHOUSE": ("powerhouse", "Cognos PowerHouse 4GL V5.0 (PDL/QUICK/QUIZ/QTP)"),
+        "PHOUSE": ("powerhouse", "Cognos PowerHouse 4GL V5.0 (PDL/QUICK/QUIZ/QTP)"),
+        "QUICK": ("powerhouse", "Cognos PowerHouse QUICK Interactive Screen Designer"),
+        "QUIZ": ("powerhouse", "Cognos PowerHouse QUIZ Report Writer"),
+        "QTP": ("powerhouse", "Cognos PowerHouse QTP Volume Transaction Processor"),
+        "S1032": ("s1032", "Software House System 1032 VAX/VMS Bitmap 4GL/DBMS"),
+        "SYS1032": ("s1032", "Software House System 1032 VAX/VMS Bitmap 4GL/DBMS"),
+        "MCBA": ("mcba", "MCBA V7.2 ERP, Distribution & Manufacturing MRP Suite"),
+        "MCBAMRP": ("mcba", "MCBA V7.2 ERP, Distribution & Manufacturing MRP Suite"),
+        "MAPS": ("maps", "Ross Systems MAPS V5.0 Management Accounting & Planning"),
+        "MAPSGL": ("maps", "Ross Systems MAPS/GL V5.0 General Ledger"),
+        "TIMELINE": ("timeline", "Timeline Inc. DIGI-GL V4.3 General Ledger & Financials"),
+        "DIGIGL": ("timeline", "Timeline Inc. DIGI-GL V4.3 General Ledger & Financials"),
+        "COMPUSHARE": ("compushare", "Compu-Share CAS V6.1 Commercial Accounting System"),
+        "CAS": ("compushare", "Compu-Share CAS V6.1 Commercial Accounting System"),
+        "CJBUSINESS": ("cjbusiness", "Collier-Jackson CJ/BUSINESS V5.4 Ledger & Payroll"),
+        "CJBIZ": ("cjbusiness", "Collier-Jackson CJ/BUSINESS V5.4 Ledger & Payroll"),
+        "CJGL": ("cjbusiness", "Collier-Jackson CJ/GL V5.4 Enterprise General Ledger"),
+        "MANMAN": ("manman", "ASK MANMAN V7.0 Manufacturing Management MRP II Suite"),
+        "ASKMAN": ("manman", "ASK MANMAN V7.0 Manufacturing Management MRP II Suite"),
+        "CERNER": ("cerner", "Cerner PathNet V3.0 Clinical Laboratory Information System"),
+        "PATHNET": ("cerner", "Cerner PathNet V3.0 Clinical Laboratory Information System"),
+        "KDSS": ("kdss", "EG&H KDSS V4.0 Key-to-Disk Data Entry Subsystem"),
+        "KDFMT": ("kdss", "EG&H KDSS V4.0 Format Definition Utility"),
+        "KDENT": ("kdss", "EG&H KDSS V4.0 Batch Entry & Verification"),
+        "TAM": ("tam", "EG&H TAM V3.2 Terminal Access Module"),
+        "FSORT3": ("fsort3", "EG&H FSORT3 & VSELECT V3.5 High-Speed Sort/Select"),
+        "VSELECT": ("fsort3", "EG&H VSELECT V3.5 Record Selection & Projection"),
+        "CLYDE": ("clyde", "Clyde Digital Systems CONTRL / AUDIT / LOCK V4.1"),
+        "CONTRL": ("clyde", "Clyde Digital Systems CONTRL Terminal Monitor"),
+        "CAUDIT": ("clyde", "Clyde Digital Systems CAUDIT Keystroke Audit Logger"),
+        "MINITAB": ("minitab", "MINITAB V82.1 Interactive Statistical Worksheet"),
+        "MTAB": ("minitab", "MINITAB V82.1 Interactive Statistical Worksheet"),
+        "SPSS11": ("spss11", "SPSS-X / SPSS-11 V9.0 Statistical Package"),
+        "SPSS": ("spss11", "SPSS-X / SPSS-11 V9.0 Statistical Package"),
+        "SAS": ("sas", "SAS System V6.06 for VAX/VMS Statistical Suite"),
+        "SASVMS": ("sas", "SAS System V6.06 for VAX/VMS Statistical Suite"),
+        "RS1": ("rs1", "BBN RS/1 V4.0 Electronic Research Lab Notebook"),
+        "BBNRS1": ("rs1", "BBN RS/1 V4.0 Electronic Research Lab Notebook"),
+        "SPICE3": ("spice3", "VAX SPICE 3D1 / HSPICE Electronic Circuit Simulator"),
+        "SPICE": ("spice3", "VAX SPICE 3D1 / HSPICE Electronic Circuit Simulator"),
+        "HSPICE": ("spice3", "VAX SPICE 3D1 / HSPICE Electronic Circuit Simulator"),
+        "ANSYS": ("ansys", "Swanson Analysis ANSYS V4.4 Finite Element Analysis"),
+        "GAUSSIAN": ("gaussian", "Gaussian 90 Ab Initio Quantum Chemistry System"),
+        "G90": ("gaussian", "Gaussian 90 Ab Initio Quantum Chemistry System"),
+        "DISKEEPER": ("diskeeper", "Executive Software DISKEEPER V4.0 Online Defragmenter"),
+        "DEFRAG": ("diskeeper", "Executive Software DISKEEPER V4.0 Online Defragmenter"),
+        "ROBOMON": ("robomon", "Heroix RoboMon V5.0 Rule-Based VMS Operations Manager"),
+        "ROBO": ("robomon", "Heroix RoboMon V5.0 Rule-Based VMS Operations Manager"),
         "FMS": ("fms11", "VAX FMS V2.0 Forms Management System"),
         "FMS11": ("fms11", "DEC Forms Management System V2.0"),
         "FED": ("fms11", "VAX FMS Form Editor"),
@@ -287,7 +383,6 @@ class VMSEmulator:
         self.dka0_root = os.path.join(self.fs_root, "dka0")
 
         self.users = {k: dict(v) for k, v in self.DEFAULT_USERS.items()}
-        self.current_user = self.normalize_user(username) or "SYSTEM"
         self.prompt = "$ "
         self.verify = False
         self.exit_requested = False
@@ -307,6 +402,7 @@ class VMSEmulator:
         self.term_device = "OPA0:"
 
         self._init_filesystem()
+        self.current_user = self.normalize_user(username) or "SYSTEM"
         self._allocate_terminal_device()
         user_info = self.users[self.current_user]
         self.default_dir = self.get_user_dir(self.current_user)
@@ -374,11 +470,17 @@ class VMSEmulator:
     def normalize_user(self, raw):
         if not raw:
             return None
-        s = raw.strip().upper()
+        raw_str = str(raw).strip()
+        s = raw_str.upper()
         if s in self.users:
             return s
         for uname, uinfo in self.users.items():
             if uinfo["uic"] == s or uinfo["uic"].strip("[]") == s.strip("[]"):
+                return uname
+            if raw_str and (
+                uinfo.get("clerk_user_id") == raw_str
+                or uinfo.get("workos_user_id") == raw_str
+            ):
                 return uname
         return None
 
@@ -484,7 +586,222 @@ class VMSEmulator:
         uaf_dat = os.path.join(sysexe_dir, "SYSUAF.DAT")
         with open(uaf_dat, "w") as f:
             for k, v in self.users.items():
-                f.write(f"{v['username']}:{v['uic']}:{v.get('account','USER')}:{v['quota']}:{v['privs']}:{v['dir_spec']}\n")
+                flags = v.get("flags", "NODISUSER")
+                f.write(
+                    f"{v['username']}:{v['uic']}:{v.get('account','USER')}:{v['quota']}:{v['privs']}:{flags}:{v['dir_spec']}\n"
+                )
+
+    def check_username_available(self, username):
+        """Validate a 1-12 char DEC username and check if it is available in SYSUAF.DAT."""
+        self._reload_sysuaf()
+        clean = (username or "").strip().upper()
+        if not clean:
+            return False, "Username is required"
+        if not re.match(r"^[A-Z][A-Z0-9_$]{0,11}$", clean):
+            return False, "VAX/VMS username must be 1-12 alphanumeric characters starting with a letter"
+        reserved = {"SYSTEM", "DECW", "GUEST", "DEFAULT", "DECNET", "ROOT", "OPERATOR", "ADMIN"}
+        if clean in reserved:
+            return False, f"Username '{clean}' is a reserved VAX/VMS SYSUAF account"
+        if clean in self.users:
+            return False, f"Username '{clean}' is already registered in SYSUAF.DAT ({self.users[clean]['uic']})"
+        return True, "Available"
+
+    def provision_subscriber_account(
+        self,
+        username,
+        password="",
+        email="",
+        plan="LCS_VMS_10",
+        clerk_user_id="",
+        workos_org_id="",
+        workos_user_id="",
+        uic_group=None,
+        quota=None,
+        owner=None,
+    ):
+        """
+        Provision a Legacy Computing Systems subscriber or WorkOS Enterprise account in SYSUAF.DAT.
+        - B2C Clerk subscribers are allocated UIC [200,201]..[200,999].
+        - WorkOS Enterprise subscribers are allocated UIC [300,1]..[300,999] (or custom uic_group).
+        - Grants DECW$USERS + LCS$SUBSCRIBER identifiers and scaffolds DKA0:[USERNAME] with LOGIN.COM;1, WELCOME.TXT;1, HELLO.BAS;1.
+        """
+        self._reload_sysuaf()
+        clean_user = (username or "").strip().upper()
+        if not re.match(r"^[A-Z][A-Z0-9_$]{0,11}$", clean_user):
+            raise ValueError("VAX/VMS username must be 1-12 alphanumeric characters starting with a letter")
+        if clean_user in {"SYSTEM", "DECW", "GUEST"}:
+            raise ValueError(f"Username '{clean_user}' is a reserved VAX/VMS SYSUAF account")
+
+        plan_upper = (plan or "LCS_VMS_10").strip().upper()
+        is_enterprise = bool(workos_org_id or workos_user_id or "ENTERPRISE" in plan_upper or "WORKOS" in plan_upper)
+
+        if clean_user in self.users:
+            uic_str = self.users[clean_user]["uic"]
+        else:
+            if uic_group is not None:
+                grp_num = int(uic_group)
+                start_mem = 1
+            elif is_enterprise:
+                grp_num = 300
+                start_mem = 1
+            else:
+                grp_num = 200
+                start_mem = 201
+
+            used_members = set()
+            for urec in self.users.values():
+                raw_uic = urec.get("uic", "").strip("[]")
+                if "," in raw_uic:
+                    g_part, m_part = raw_uic.split(",", 1)
+                    if g_part.strip().isdigit() and m_part.strip().isdigit() and int(g_part.strip()) == grp_num:
+                        used_members.add(int(m_part.strip()))
+            mem_num = start_mem
+            while mem_num in used_members and mem_num < 999:
+                mem_num += 1
+            uic_str = f"[{grp_num},{mem_num}]"
+
+        if quota is None:
+            if "BUNDLE" in plan_upper or "15" in plan_upper or is_enterprise:
+                quota = 100000
+            else:
+                quota = 50000
+        quota = int(quota)
+
+        if not owner:
+            if is_enterprise:
+                owner = f"LCS ENTERPRISE ({workos_org_id or clean_user})"
+            else:
+                owner = f"LCS SUBSCRIBER ({clean_user})"
+
+        identifiers = ["DECW$USERS", "LCS$SUBSCRIBER"]
+        if is_enterprise:
+            identifiers.append("LCS$ENTERPRISE")
+
+        dir_spec = f"DKA0:[{clean_user}]"
+        dir_rel = clean_user.lower()
+
+        uaf_record = {
+            "username": clean_user,
+            "owner": str(owner),
+            "account": "ENTERPRS" if is_enterprise else "SUBSCRIB",
+            "uic": uic_str,
+            "password": str(password or ""),
+            "privs": "TMPMBX,NETMBX",
+            "flags": "NODISUSER",
+            "status": "ACTIVE",
+            "identifiers": identifiers,
+            "dir_spec": dir_spec,
+            "dir_rel": dir_rel,
+            "quota": quota,
+            "plan": plan_upper,
+            "email": str(email or ""),
+            "clerk_user_id": str(clerk_user_id or ""),
+            "workos_org_id": str(workos_org_id or ""),
+            "workos_user_id": str(workos_user_id or ""),
+            "created_at": datetime.now().isoformat(),
+        }
+        self.users[clean_user] = uaf_record
+        user_dir = self.get_user_dir(clean_user)
+        self._save_sysuaf()
+
+        # Scaffold ODS-2 subscriber home directory files (LOGIN.COM;1, WELCOME.TXT;1, HELLO.BAS;1)
+        login_content = (
+            f"$ ! Legacy Computing Systems — VAX/VMS {self.VERSION} Subscriber Login Procedure {dir_spec}LOGIN.COM;1\n"
+            f"$ WRITE SYS$OUTPUT \"Welcome {clean_user} ({uic_str}) to Legacy Computing Systems VAX/VMS {self.VERSION} on Node {self.NODE_NAME}!\"\n"
+        )
+        for lp in (os.path.join(user_dir, "LOGIN.COM"), os.path.join(user_dir, "LOGIN.COM;1")):
+            if not os.path.exists(lp):
+                with open(lp, "w") as f:
+                    f.write(login_content)
+
+        welcome_content = (
+            "========================================================================\n"
+            f"  LEGACY COMPUTING SYSTEMS — VAX/VMS {self.VERSION} & DECWINDOWS WORKSTATION\n"
+            "========================================================================\n"
+            f"  Subscriber Username : {clean_user}\n"
+            f"  SYSUAF UIC          : {uic_str} ({dir_spec})\n"
+            f"  Subscription Plan   : {plan_upper} (Quota: {quota} blocks)\n"
+            "  Identifiers Held    : " + ", ".join(identifiers) + "\n"
+            "  Type HELP or SHOW APPS for 18 VAX compilers, DECwindows X11 & 52 apps.\n"
+        )
+        for wp in (os.path.join(user_dir, "WELCOME.TXT"), os.path.join(user_dir, "WELCOME.TXT;1")):
+            if not os.path.exists(wp):
+                with open(wp, "w") as f:
+                    f.write(welcome_content)
+
+        hello_content = (
+            f"10 ! VAX/VMS {self.VERSION} Subscriber Program for {clean_user} {uic_str}\n"
+            f"20 PRINT \"HELLO {clean_user} FROM LEGACY COMPUTING SYSTEMS VAX/VMS V5.5-2!\"\n"
+            "30 END\n"
+        )
+        for hp in (os.path.join(user_dir, "HELLO.BAS"), os.path.join(user_dir, "HELLO.BAS;1")):
+            if not os.path.exists(hp):
+                with open(hp, "w") as f:
+                    f.write(hello_content)
+
+        return {
+            "ok": True,
+            "os": "VAX/VMS V5.5-2",
+            "username": clean_user,
+            "uic": uic_str,
+            "dir_spec": dir_spec,
+            "dir_path": user_dir,
+            "quota": quota,
+            "privs": uaf_record["privs"],
+            "flags": uaf_record["flags"],
+            "status": uaf_record["status"],
+            "identifiers": identifiers,
+            "plan": plan_upper,
+            "email": uaf_record["email"],
+            "clerk_user_id": uaf_record["clerk_user_id"],
+            "workos_org_id": uaf_record["workos_org_id"],
+            "workos_user_id": uaf_record["workos_user_id"],
+        }
+
+    def update_subscriber_account(
+        self,
+        identifier,
+        status=None,
+        password=None,
+        quota=None,
+        plan=None,
+    ):
+        """Update VAX/VMS SYSUAF subscriber account status (ACTIVE / DISUSER), password, quota, or plan."""
+        self._reload_sysuaf()
+        uname = self.normalize_user(identifier)
+        if not uname or uname not in self.users:
+            raise KeyError(f"VAX/VMS account '{identifier}' not found in SYSUAF.DAT")
+        if uname in ("SYSTEM", "DECW"):
+            raise PermissionError(f"Cannot modify protected system account {uname} via subscriber API")
+
+        u = self.users[uname]
+        if status is not None:
+            st_up = str(status).strip().upper()
+            if st_up in ("DISUSER", "SUSPENDED", "CANCELED", "CANCELLED", "DISABLED", "DELETED"):
+                u["flags"] = "DISUSER"
+                u["status"] = "DISUSER"
+            elif st_up in ("ACTIVE", "NODISUSER", "ENABLED"):
+                u["flags"] = "NODISUSER"
+                u["status"] = "ACTIVE"
+        if password is not None:
+            u["password"] = str(password)
+        if quota is not None:
+            u["quota"] = int(quota)
+        if plan is not None:
+            u["plan"] = str(plan).strip().upper()
+
+        self._save_sysuaf()
+        return {
+            "ok": True,
+            "os": "VAX/VMS V5.5-2",
+            "username": uname,
+            "uic": u["uic"],
+            "dir_spec": u["dir_spec"],
+            "quota": u["quota"],
+            "flags": u.get("flags", "NODISUSER"),
+            "status": u.get("status", "ACTIVE"),
+            "plan": u.get("plan", "LCS_VMS_10"),
+        }
 
     def _init_filesystem(self):
         for sub in (
@@ -799,7 +1116,8 @@ class VMSEmulator:
                 continue
             uinfo = self.users[uname]
             flags_list = [fl.strip().upper() for fl in uinfo.get("flags", "").split(",") if fl.strip()]
-            if "DISUSER" in flags_list and "NODISUSER" not in flags_list:
+            status_str = str(uinfo.get("status", "ACTIVE")).upper()
+            if ("DISUSER" in flags_list and "NODISUSER" not in flags_list) or status_str in ("DISUSER", "SUSPENDED", "DISABLED"):
                 print("%LOGIN-F-DISUSER, account is disabled")
                 continue
             if uinfo["password"]:
@@ -1204,7 +1522,13 @@ class VMSEmulator:
                 "    BLISS (BLISS32) / BLISS16 / RPG / APL / LISP / OPS5 / DSM / SCAN / CORAL\n"
                 "    LINK / RUN / EDIT (EDT) / SUBMIT / PRINT / ANALYZE/RMS_FILE\n"
                 "    SORT, RMSUTILS, ADE, DATATRIEVE (DTR), DECGRAPH, MAIL (DECMAIL),\n"
-                "    DECWORD (WPS), FMS, MENU, INDENT, HAMURABI\n"
+                "    DECWORD (WPS), WORD11, LEX11, SATURNWP, WP51 (WORDPERFECT), INTERLEAF (TPS),\n"
+                "    CALC2020 (2020), SATURNCALC, NYPLAN, LOTUS123 (LOTUS), IFPS, SYSTEMW (EIS),\n"
+                "    ORACLE (SQLPLUS), INGRES (IQUEL), FOCUS, POWERHOUSE (QUIZ), S1032,\n"
+                "    TOTAL, AMBASE, ACCENTR, SATURNBASE, MANMAN, CERNER (PATHNET),\n"
+                "    MCBA, MAPS, TIMELINE, COMPUSHARE (CAS), CJBUSINESS, KDSS, TAM, FSORT3, CLYDE,\n"
+                "    SAS, RS1, MINITAB, SPSS, SPICE3 (HSPICE), ANSYS, GAUSSIAN (G90),\n"
+                "    DISKEEPER (DEFRAG), ROBOMON, FMS, MENU, INDENT, HAMURABI\n"
                 "    DECWINDOWS, DXSESSION, DECTERM, BOOKREADER, CALENDAR, CARDFILER,\n"
                 "    CDAVIEWER, CALCULATOR, CLOCK, DECSOUND, DXMAIL, FILEVIEW, NOTEPAD\n"
                 "    RUN SYS$SYSTEM:DECW$CLOCK (and all SYS$SYSTEM:DECW$* images)\n"
@@ -1464,9 +1788,16 @@ class VMSEmulator:
         if not rest:
             print(f"Currently logged in as {self.current_user} {self.users[self.current_user]['uic']}")
             return 0
+        self._reload_sysuaf()
         uname = self.normalize_user(rest.split()[0])
         if not uname:
             print(f"%LOGIN-F-NOSUCHUSER, no such user '{rest}'")
+            return 1
+        uinfo = self.users[uname]
+        flags_list = [fl.strip().upper() for fl in uinfo.get("flags", "").split(",") if fl.strip()]
+        status_str = str(uinfo.get("status", "ACTIVE")).upper()
+        if ("DISUSER" in flags_list and "NODISUSER" not in flags_list) or status_str in ("DISUSER", "SUSPENDED", "DISABLED"):
+            print("%LOGIN-F-DISUSER, account is disabled")
             return 1
         self._switch_user(uname)
         print(f"%LOGIN-S-LOGGEDIN, switched session to {uname} {self.users[uname]['uic']} ({self.default_vms_spec})")
@@ -2300,6 +2631,12 @@ class VMSEmulator:
             if os.path.isfile(target) and os.access(target, os.X_OK):
                 cmd = [target] + (shlex.split(args_str) if args_str else [])
                 return subprocess.call(cmd, cwd=self.default_dir)
+            if os.path.isfile(target) and target.upper().split(";")[0].endswith(".BAS"):
+                stem_b = os.path.splitext(target.split(";")[0])[0]
+                exe_b = stem_b + ".EXE"
+                stem_name = os.path.basename(stem_b)
+                if self._cmd_basic(prog) == 0 and self._cmd_link(f"{stem_name}.OBJ") == 0 and os.path.isfile(exe_b):
+                    return subprocess.call([exe_b], cwd=self.default_dir)
 
         if clean_upper == "AUTHORIZE":
             return self._cmd_authorize(args_str, interactive_uaf=not bool(args_str.strip()))

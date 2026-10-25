@@ -316,6 +316,413 @@ for APP in "${TARGET_APPS[@]}"; do
                 FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
             ;;
+        calc2020|2020|sc20)
+            OUT="$("${EXE}" "SAMPLE; GRID; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Access Technology 20/20 Worksheet"; then
+                echo "PASSED (Access Technology 20/20 V2.3 spreadsheet verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        saturncalc|satcalc|scalc)
+            OUT="$("${EXE}" "SAMPLE; GRID; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Saturn-Calc V3.4 Virtual Worksheet"; then
+                echo "PASSED (Saturn Systems Saturn-Calc V3.4 worksheet verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        nyplan|nyp)
+            OUT="$("${EXE}" "SAMPLE; MODEL; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "NYPLAN Corporate P&L & Budget Model"; then
+                echo "PASSED (Nyplan Inc. NYPLAN V4.1 financial modeling verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        total|totdbm)
+            OUT="$("${EXE}" "SAMPLE; SCHEMA; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "CINCOM TOTAL V8.0 DDL Compiler"; then
+                echo "PASSED (Cincom TOTAL V8.0 network DBMS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        ambase|amqry|amwriter)
+            OUT="$("${EXE}" "SAMPLE; SCHEMA; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "AMBASE V4.2 Data Dictionary"; then
+                echo "PASSED (Amcor AMBASE V4.2 DBMS & query verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        accentr|accent|accr)
+            OUT="$("${EXE}" "SAMPLE; DSD; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample ACCENT R Data Base Library"; then
+                echo "PASSED (NIS ACCENT R V11.4 4GL & RDBMS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        saturnbase|satbase|sbase)
+            OUT="$("${EXE}" "SAMPLE; SCHEMA; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Saturn-Base V3.2 Relational Schema"; then
+                echo "PASSED (Saturn Systems Saturn-Base V3.2 RDBMS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        mcba|mcbamrp)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "MCBA Inventory Management"; then
+                echo "PASSED (MCBA V7.2 ERP & MRP suite verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        maps|mapsgl)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Ross Systems MAPS/GL"; then
+                echo "PASSED (Ross Systems MAPS V5.0 financial suite verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        timeline|digigl)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Timeline DIGI-GL"; then
+                echo "PASSED (Timeline DIGI-GL V4.3 general ledger verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        compushare|cas)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Compu-Share CAS"; then
+                echo "PASSED (Compu-Share CAS V6.1 accounting suite verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        cjbusiness|cjbiz|cjgl)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Collier-Jackson CJ/GL"; then
+                echo "PASSED (Collier-Jackson CJ/BUSINESS V5.4 ledger & payroll verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        kdss|kdfmt|kdent)
+            OUT="$("${EXE}" "SAMPLE; BATCH; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "EG&H KDSS Batch Buffer"; then
+                echo "PASSED (EG&H KDSS V4.0 key-to-disk data entry verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        tam)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample EG&H TAM screen definition"; then
+                echo "PASSED (EG&H TAM V3.2 terminal access module verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        fsort3|vselect)
+            OUT="$("${EXE}" "SAMPLE; SORT ASC; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "EG&H FSORT3 High-Speed Sort Complete"; then
+                echo "PASSED (EG&H FSORT3 & VSELECT V3.5 sort/select verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        clyde|contrl|caudit)
+            OUT="$("${EXE}" "SAMPLE; AUDIT; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Clyde CAUDIT V4.1"; then
+                echo "PASSED (Clyde Digital Systems CONTRL/AUDIT/LOCK V4.1 verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        minitab|mtab)
+            OUT="$("${EXE}" "SAMPLE; DESCRIBE; STOP" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "MINITAB-11 DESCRIBE"; then
+                echo "PASSED (MINITAB-11 V82.1 statistical worksheet verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        spss11|spss)
+            OUT="$("${EXE}" "SAMPLE; FREQUENCIES; FINISH" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "SPSS-11 FREQUENCIES"; then
+                echo "PASSED (SPSS-11 V9.0 statistical package verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        wp51|wordperfect|wp)
+            OUT="$("${EXE}" "SAMPLE; REVEAL; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample WordPerfect 5.1 document loaded"; then
+                echo "PASSED (WordPerfect 5.1 for VAX/VMS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        interleaf|tps)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Interleaf TPS 4.0 book container loaded"; then
+                echo "PASSED (Interleaf TPS 4.0 technical publishing verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        lotus123|lotus|123)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Lotus 1-2-3 3D worksheet loaded"; then
+                echo "PASSED (Lotus 1-2-3 for VAX/VMS 3D spreadsheet verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        ifps|ifpsplus)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Execucom IFPS/Plus corporate model loaded"; then
+                echo "PASSED (Execucom IFPS/Plus V4.0 financial planning verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        systemw|sysw|eis)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Comshare System W multidimensional hypercube loaded"; then
+                echo "PASSED (Comshare System W / Commander EIS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        oracle|sqlplus|sqlforms|sqldba)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Oracle V6 tablespace"; then
+                echo "PASSED (Oracle RDBMS V6.0 for VAX/VMS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        ingres|iquel|isql|abf)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample RTI INGRES V6.2 database"; then
+                echo "PASSED (RTI INGRES V6.2 for VAX/VMS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        focus)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample FOCUS Master File"; then
+                echo "PASSED (Information Builders FOCUS V6.5 4GL verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        powerhouse|phouse|quick|quiz|qtp)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Cognos PowerHouse Dictionary"; then
+                echo "PASSED (Cognos PowerHouse 4GL V5.0 verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        s1032|sys1032)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample System 1032 dataset"; then
+                echo "PASSED (Software House System 1032 bitmap DBMS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        manman|askman)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample ASK MANMAN V7.0 MRP II dataset loaded"; then
+                echo "PASSED (ASK MANMAN V7.0 MRP II suite verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        cerner|pathnet)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Cerner PathNet V3.0 LIS dataset loaded"; then
+                echo "PASSED (Cerner PathNet V3.0 clinical LIS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        sas|sasvms)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "WORK.CLINICAL"; then
+                echo "PASSED (SAS System V6.06 for VAX/VMS verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        rs1|bbnrs1)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample BBN RS/1 Notebook Table"; then
+                echo "PASSED (BBN RS/1 V4.0 research lab notebook verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        spice3|spice|hspice)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample VAX SPICE 3D1 circuit deck loaded"; then
+                echo "PASSED (VAX SPICE 3D1 / HSPICE circuit simulator verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        ansys)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample ANSYS V4.4 FEA structural mesh loaded"; then
+                echo "PASSED (Swanson Analysis ANSYS V4.4 FEA verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        gaussian|g90)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Gaussian 90 Formaldehyde"; then
+                echo "PASSED (Gaussian 90 quantum chemistry verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        diskeeper|defrag)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample ODS-2 Volume"; then
+                echo "PASSED (Executive Software DISKEEPER V4.0 verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        robomon|robo)
+            OUT="$("${EXE}" "SAMPLE; LIST; EXIT" 2>&1 || true)"
+            if echo "${OUT}" | grep -q "Sample Heroix RoboMon V5.0 VMS rule base loaded"; then
+                echo "PASSED (Heroix RoboMon V5.0 operations monitor verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
         dibs|dibs11|cts500)
             OUT="$(printf "SAMPLE\nTRIAL\nEXIT\n" | "${EXE}" 2>&1 || true)"
             if echo "${OUT}" | grep -q "TRIAL BALANCE IS IN BALANCE"; then

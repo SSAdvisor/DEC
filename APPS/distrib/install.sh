@@ -16,7 +16,7 @@ if [ -d "${SCRIPT_DIR}/bin" ]; then
             bname="$(basename "$f")"
             if [[ "$bname" != *.sh ]]; then
                 case "$bname" in
-                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|w11|lex|swp|dibs11|cts500|fms|fed|fdv|menu|mcf|bp2fmt|pretty|decw_x11|decwx11|dxsession|decterm|dxterm|bookreader|dxbook|calendar|dxcalendar|cardfiler|dxcardfiler|cdaviewer|dxvdoc|calculator|dxcalc|clock|dxclock|decsound|dxsound|dxmail|decwinmail|fileview|dxfileview|notepad|dxnotepad)
+                    rmsdes|rmsdef|rmsifl|rmscnv|rmsbck|rmsrst|rmsdsp|dtr|dtr11|graph|decg|mail|decmail11|decworddp|wps|w11|lex|swp|2020|sc20|satcalc|scalc|nyp|totdbm|amqry|amwriter|accent|accr|satbase|sbase|mcbamrp|mapsgl|digigl|cas|cjbiz|cjgl|kdfmt|kdent|vselect|contrl|caudit|mtab|spss|wordperfect|wp|tps|lotus|123|ifpsplus|sysw|eis|sqlplus|sqlforms|sqldba|iquel|isql|abf|phouse|quick|quiz|qtp|sys1032|askman|pathnet|sasvms|bbnrs1|spice|hspice|g90|defrag|robo|dibs11|cts500|fms|fed|fdv|menu|mcf|bp2fmt|pretty|decw_x11|decwx11|dxsession|decterm|dxterm|bookreader|dxbook|calendar|dxcalendar|cardfiler|dxcardfiler|cdaviewer|dxvdoc|calculator|dxcalc|clock|dxclock|decsound|dxsound|dxmail|decwinmail|fileview|dxfileview|notepad|dxnotepad)
                         ;;
                     *)
                         AVAILABLE_APPS+=("$bname")
@@ -138,6 +138,117 @@ list_apps() {
                 ;;
             saturnwp)
                 printf "%-16s %-18s %s\n" "saturnwp" "Office / WP" "Saturn Systems Saturn-WP V4.2 integrated word processor & Saturn-Calc link"
+                ;;
+            calc2020)
+                printf "%-16s %-18s %s\n" "calc2020" "Spreadsheet" "Access Technology 20/20 V2.3 (Supercomp-20) electronic spreadsheet"
+                ;;
+            saturncalc)
+                printf "%-16s %-18s %s\n" "saturncalc" "Spreadsheet" "Saturn Systems Saturn-Calc V3.4 VT100 electronic worksheet"
+                ;;
+            nyplan)
+                printf "%-16s %-18s %s\n" "nyplan" "Financial Model" "Nyplan Inc. NYPLAN V4.1 corporate financial modeling & risk simulation"
+                ;;
+            total)
+                printf "%-16s %-18s %s\n" "total" "Network DBMS" "Cincom Systems TOTAL V8.0 network DBMS ( Master & Variable files )"
+                ;;
+            ambase)
+                printf "%-16s %-18s %s\n" "ambase" "RSTS/E DBMS" "Amcor Computer Corp. AMBASE V4.2 DBMS, AMQRY & AMWRITER"
+                ;;
+            accentr)
+                printf "%-16s %-18s %s\n" "accentr" "4GL & RDBMS" "National Information Systems ACCENT R V11.4 4GL & RDBMS"
+                ;;
+            saturnbase)
+                printf "%-16s %-18s %s\n" "saturnbase" "Relational DBMS" "Saturn Systems Saturn-Base V3.2 relational data manager"
+                ;;
+            mcba)
+                printf "%-16s %-18s %s\n" "mcba" "ERP / MRP" "MCBA V7.2 Accounting, Distribution & Manufacturing MRP Suite"
+                ;;
+            maps)
+                printf "%-16s %-18s %s\n" "maps" "Financial / GL" "Ross Systems MAPS/GL & MAPS/MODEL V5.0 Financial Suite"
+                ;;
+            timeline)
+                printf "%-16s %-18s %s\n" "timeline" "Accounting / GL" "Timeline Inc. DIGI-GL V4.3 General Ledger & Financial Statements"
+                ;;
+            compushare)
+                printf "%-16s %-18s %s\n" "compushare" "Accounting / ERP" "Compu-Share CAS V6.1 Commercial Accounting System (GL/AP/AR/OE)"
+                ;;
+            cjbusiness)
+                printf "%-16s %-18s %s\n" "cjbusiness" "Business / Payroll" "Collier-Jackson CJ/BUSINESS V5.4 Ledger & Payroll System"
+                ;;
+            kdss)
+                printf "%-16s %-18s %s\n" "kdss" "Data Entry" "Evans Griffiths & Hart KDSS V4.0 Key-to-Disk Data Entry Subsystem"
+                ;;
+            tam)
+                printf "%-16s %-18s %s\n" "tam" "Screen Manager" "Evans Griffiths & Hart TAM V3.2 Terminal Access Module"
+                ;;
+            fsort3)
+                printf "%-16s %-18s %s\n" "fsort3" "Sort / Select" "Evans Griffiths & Hart FSORT3 & VSELECT V3.5 High-Speed Sort"
+                ;;
+            clyde)
+                printf "%-16s %-18s %s\n" "clyde" "Security / Audit" "Clyde Digital Systems CONTRL / AUDIT / LOCK V4.1 Security Suite"
+                ;;
+            minitab)
+                printf "%-16s %-18s %s\n" "minitab" "Statistics" "Minitab Inc. / Penn State MINITAB-11 V82.1 Statistical Worksheet"
+                ;;
+            spss11)
+                printf "%-16s %-18s %s\n" "spss11" "Statistics" "SPSS Inc. SPSS-11 V9.0 Statistical Package for the Social Sciences"
+                ;;
+            wp51)
+                printf "%-16s %-18s %s\n" "wp51" "VAX Office / WP" "WordPerfect 5.1 for VAX/VMS (Reveal Codes, Speller, Mail-Merge)"
+                ;;
+            interleaf)
+                printf "%-16s %-18s %s\n" "interleaf" "VAX Publishing" "Interleaf TPS 4.0 Technical Publishing Software for VAXstation"
+                ;;
+            lotus123)
+                printf "%-16s %-18s %s\n" "lotus123" "VAX Spreadsheet" "Lotus 1-2-3 for VAX/VMS V1.0 3D Multi-Sheet Spreadsheet (.WK3)"
+                ;;
+            ifps)
+                printf "%-16s %-18s %s\n" "ifps" "VAX Financial" "Execucom IFPS/Plus V4.0 Interactive Financial Planning System"
+                ;;
+            systemw)
+                printf "%-16s %-18s %s\n" "systemw" "VAX OLAP / EIS" "Comshare System W / Commander EIS Multidimensional DSS"
+                ;;
+            oracle)
+                printf "%-16s %-18s %s\n" "oracle" "VAX RDBMS" "Oracle RDBMS V6.0 for VAX/VMS (SQL*Plus, SQL*Forms, SQL*DBA)"
+                ;;
+            ingres)
+                printf "%-16s %-18s %s\n" "ingres" "VAX RDBMS" "RTI INGRES V6.2 for VAX/VMS (QUEL, SQL, VIFRED, ABF)"
+                ;;
+            focus)
+                printf "%-16s %-18s %s\n" "focus" "VAX 4GL / DBMS" "Information Builders FOCUS V6.5 4GL & Reporting System"
+                ;;
+            powerhouse)
+                printf "%-16s %-18s %s\n" "powerhouse" "VAX 4GL Suite" "Cognos PowerHouse 4GL V5.0 (PDL, QUICK, QUIZ, QTP)"
+                ;;
+            s1032)
+                printf "%-16s %-18s %s\n" "s1032" "VAX Bitmap DBMS" "Software House System 1032 VAX/VMS 4GL & Compressed Bitmap DBMS"
+                ;;
+            manman)
+                printf "%-16s %-18s %s\n" "manman" "VAX MRP II / ERP" "ASK MANMAN V7.0 Manufacturing Management MRP II Suite"
+                ;;
+            cerner)
+                printf "%-16s %-18s %s\n" "cerner" "VAX Clinical LIS" "Cerner PathNet V3.0 Clinical Laboratory Information System"
+                ;;
+            sas)
+                printf "%-16s %-18s %s\n" "sas" "VAX Statistics" "SAS System V6.06 for VAX/VMS (DATA Step & Statistical PROCs)"
+                ;;
+            rs1)
+                printf "%-16s %-18s %s\n" "rs1" "VAX Lab Notebook" "BBN RS/1 V4.0 Electronic Research Notebook & Curve Fitting"
+                ;;
+            spice3)
+                printf "%-16s %-18s %s\n" "spice3" "VAX CAD / IC Sim" "VAX SPICE 3D1 / HSPICE Electronic Circuit Simulator"
+                ;;
+            ansys)
+                printf "%-16s %-18s %s\n" "ansys" "VAX CAE / FEA" "Swanson Analysis ANSYS V4.4 Finite Element Analysis Suite"
+                ;;
+            gaussian)
+                printf "%-16s %-18s %s\n" "gaussian" "VAX Comp Chem" "Gaussian 90 Ab Initio Quantum Chemistry System"
+                ;;
+            diskeeper)
+                printf "%-16s %-18s %s\n" "diskeeper" "VAX Disk Utility" "Executive Software DISKEEPER V4.0 Online ODS-2 Disk Defragmenter"
+                ;;
+            robomon)
+                printf "%-16s %-18s %s\n" "robomon" "VAX Ops Monitor" "Heroix RoboMon V5.0 Rule-Based VAX/VMS Operations Manager"
                 ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
@@ -295,6 +406,74 @@ for app in "${VALID_APPS[@]}"; do
         COMPANIONS=("lex")
     elif [ "${app}" = "saturnwp" ]; then
         COMPANIONS=("swp")
+    elif [ "${app}" = "calc2020" ]; then
+        COMPANIONS=("2020" "sc20")
+    elif [ "${app}" = "saturncalc" ]; then
+        COMPANIONS=("satcalc" "scalc")
+    elif [ "${app}" = "nyplan" ]; then
+        COMPANIONS=("nyp")
+    elif [ "${app}" = "total" ]; then
+        COMPANIONS=("totdbm")
+    elif [ "${app}" = "ambase" ]; then
+        COMPANIONS=("amqry" "amwriter")
+    elif [ "${app}" = "accentr" ]; then
+        COMPANIONS=("accent" "accr")
+    elif [ "${app}" = "saturnbase" ]; then
+        COMPANIONS=("satbase" "sbase")
+    elif [ "${app}" = "mcba" ]; then
+        COMPANIONS=("mcbamrp")
+    elif [ "${app}" = "maps" ]; then
+        COMPANIONS=("mapsgl")
+    elif [ "${app}" = "timeline" ]; then
+        COMPANIONS=("digigl")
+    elif [ "${app}" = "compushare" ]; then
+        COMPANIONS=("cas")
+    elif [ "${app}" = "cjbusiness" ]; then
+        COMPANIONS=("cjbiz" "cjgl")
+    elif [ "${app}" = "kdss" ]; then
+        COMPANIONS=("kdfmt" "kdent")
+    elif [ "${app}" = "fsort3" ]; then
+        COMPANIONS=("vselect")
+    elif [ "${app}" = "clyde" ]; then
+        COMPANIONS=("contrl" "caudit")
+    elif [ "${app}" = "minitab" ]; then
+        COMPANIONS=("mtab")
+    elif [ "${app}" = "spss11" ]; then
+        COMPANIONS=("spss")
+    elif [ "${app}" = "wp51" ]; then
+        COMPANIONS=("wordperfect" "wp")
+    elif [ "${app}" = "interleaf" ]; then
+        COMPANIONS=("tps")
+    elif [ "${app}" = "lotus123" ]; then
+        COMPANIONS=("lotus" "123")
+    elif [ "${app}" = "ifps" ]; then
+        COMPANIONS=("ifpsplus")
+    elif [ "${app}" = "systemw" ]; then
+        COMPANIONS=("sysw" "eis")
+    elif [ "${app}" = "oracle" ]; then
+        COMPANIONS=("sqlplus" "sqlforms" "sqldba")
+    elif [ "${app}" = "ingres" ]; then
+        COMPANIONS=("iquel" "isql" "abf")
+    elif [ "${app}" = "powerhouse" ]; then
+        COMPANIONS=("phouse" "quick" "quiz" "qtp")
+    elif [ "${app}" = "s1032" ]; then
+        COMPANIONS=("sys1032")
+    elif [ "${app}" = "manman" ]; then
+        COMPANIONS=("askman")
+    elif [ "${app}" = "cerner" ]; then
+        COMPANIONS=("pathnet")
+    elif [ "${app}" = "sas" ]; then
+        COMPANIONS=("sasvms")
+    elif [ "${app}" = "rs1" ]; then
+        COMPANIONS=("bbnrs1")
+    elif [ "${app}" = "spice3" ]; then
+        COMPANIONS=("spice" "hspice")
+    elif [ "${app}" = "gaussian" ]; then
+        COMPANIONS=("g90")
+    elif [ "${app}" = "diskeeper" ]; then
+        COMPANIONS=("defrag")
+    elif [ "${app}" = "robomon" ]; then
+        COMPANIONS=("robo")
     elif [ "${app}" = "dibs" ]; then
         COMPANIONS=("dibs11" "cts500")
     elif [ "${app}" = "fms11" ]; then

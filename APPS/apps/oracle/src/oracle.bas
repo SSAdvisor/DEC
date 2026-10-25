@@ -1,0 +1,145 @@
+10 MAP (REC_BUF) STRING MAP_LINE$ = 255% \ DIM E_ID$(15%) \ DIM E_NAME$(15%) \ DIM E_DEPT$(15%) \ DIM E_SAL%(15%)
+20 NUM_REC% = 0% \ ORA_SID$ = "VAXPROD" \ TBL_SPC$ = "SYSTEM.DBF" \ DB_FILE$ = "ORADB.DAT"
+30 BLANKS$ = "                                                                                "
+40 SEP$    = "--------------------------------------------------------------------------------"
+50 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ CMD_LINE$ = COMMAND$
+60 IF CMD_LINE$ = "" THEN GOTO 80
+70 IS_BATCH% = 1% \ SC_REM$ = CMD_LINE$ \ GOTO 170
+80 PRINT EQU$ \ PRINT "    Oracle RDBMS V6.0.36 for DEC VAX/VMS - SQL*Plus, SQL*Forms & SQL*DBA" \ PRINT "    Oracle Corporation (Redwood Shores, CA) - VAX/VMS Transaction Processing" \ PRINT EQU$
+90 PRINT "Type HELP for commands, SAMPLE to load EMP, DESCRIBE, SELECT, SQLFORMS, SQLDBA, or EXIT." \ PRINT ""
+100 PRINT "SQL> "; \ LINE INPUT RAW_INPUT$
+110 IF LEN(RAW_INPUT$) = 0% THEN GOTO 3400
+120 IF ASCII(LEFT$(RAW_INPUT$, 1%)) = 26% THEN GOTO 3400
+130 IF ASCII(LEFT$(RAW_INPUT$, 1%)) = 0% THEN GOTO 3400
+140 T_IN$ = RAW_INPUT$ \ GOSUB 500
+150 IF T_OUT$ = "" THEN GOTO 100
+160 SC_REM$ = T_OUT$
+170 IF SC_REM$ = "" THEN GOTO 230
+180 SC_P% = INSTR(1%, SC_REM$, ";")
+190 IF SC_P% = 0% THEN GOTO 210
+200 RAW_CMD$ = LEFT$(SC_REM$, SC_P% - 1%) \ SC_REM$ = MID$(SC_REM$, SC_P% + 1%, LEN(SC_REM$) - SC_P%) \ GOTO 220
+210 RAW_CMD$ = SC_REM$ \ SC_REM$ = ""
+220 GOSUB 250 \ GOTO 170
+230 IF IS_BATCH% = 1% THEN GOTO 3400
+240 GOTO 100
+250 T_IN$ = RAW_CMD$ \ GOSUB 500 \ WORK_CMD$ = T_OUT$
+260 IF WORK_CMD$ = "" THEN GOTO 495
+270 SP% = INSTR(1%, WORK_CMD$, " ")
+280 IF SP% = 0% THEN GOTO 300
+290 VERB$ = LEFT$(WORK_CMD$, SP% - 1%) \ ARGS$ = MID$(WORK_CMD$, SP% + 1%, LEN(WORK_CMD$) - SP%) \ GOTO 310
+300 VERB$ = WORK_CMD$ \ ARGS$ = ""
+310 U_IN$ = VERB$ \ GOSUB 580 \ VERB$ = U_OUT$ \ T_IN$ = ARGS$ \ GOSUB 500 \ ARGS$ = T_OUT$
+320 IF VERB$ = "EXIT" OR VERB$ = "QUIT" OR VERB$ = "BYE" THEN GOTO 3400
+330 IF VERB$ = "HELP" OR VERB$ = "?" THEN GOTO 3000
+340 IF VERB$ = "SAMPLE" OR VERB$ = "DEMO" THEN GOTO 700
+350 IF VERB$ = "DESCRIBE" OR VERB$ = "SCHEMA" OR VERB$ = "DESC" THEN GOTO 820
+360 IF VERB$ = "SELECT" OR VERB$ = "LIST" OR VERB$ = "SQLPLUS" THEN GOTO 920
+370 IF VERB$ = "SQLFORMS" OR VERB$ = "FORMS" OR VERB$ = "INP" THEN GOTO 1150
+380 IF VERB$ = "SQLDBA" OR VERB$ = "DBA" OR VERB$ = "SGA" THEN GOTO 1320
+390 IF VERB$ = "ADD" OR VERB$ = "INSERT" THEN GOTO 1480
+400 IF VERB$ = "SAVE" OR VERB$ = "COMMIT" THEN GOTO 1650
+410 IF VERB$ = "LOAD" OR VERB$ = "IMPORT" THEN GOTO 1800
+420 IF VERB$ = "SHOW" OR VERB$ = "STATUS" THEN GOTO 2050
+430 IF VERB$ = "CLEAR" OR VERB$ = "RESET" THEN GOTO 2150
+480 PRINT "ORA-00900: invalid SQL statement '"; VERB$; "'. Type HELP for syntax."
+495 RETURN
+500 T_OUT$ = T_IN$
+510 IF LEN(T_OUT$) = 0% THEN GOTO 570
+520 IF LEFT$(T_OUT$, 1%) = " " THEN T_OUT$ = MID$(T_OUT$, 2%, LEN(T_OUT$) - 1%)
+530 IF LEFT$(T_OUT$, 1%) = " " THEN GOTO 510
+540 IF LEN(T_OUT$) = 0% THEN GOTO 570
+550 IF MID$(T_OUT$, LEN(T_OUT$), 1%) = " " THEN T_OUT$ = LEFT$(T_OUT$, LEN(T_OUT$) - 1%)
+560 IF MID$(T_OUT$, LEN(T_OUT$), 1%) = " " THEN GOTO 540
+570 RETURN
+580 U_OUT$ = "" \ UJ% = 1%
+590 IF UJ% > LEN(U_IN$) THEN GOTO 630
+600 UCH$ = MID$(U_IN$, UJ%, 1%) \ UA% = ASCII(UCH$)
+610 IF UA% >= 97% AND UA% <= 122% THEN UCH$ = CHR$(UA% - 32%)
+620 U_OUT$ = U_OUT$ + UCH$ \ UJ% = UJ% + 1% \ GOTO 590
+630 RETURN
+700 NUM_REC% = 4% \ ORA_SID$ = "VAXPROD" \ TBL_SPC$ = "SYSTEM.DBF"
+710 E_ID$(1%) = "7369" \ E_NAME$(1%) = "SMITH, JOHN      " \ E_DEPT$(1%) = "RESEARCH" \ E_SAL%(1%) = 2400%
+720 E_ID$(2%) = "7566" \ E_NAME$(2%) = "JONES, TERRY     " \ E_DEPT$(2%) = "RESEARCH" \ E_SAL%(2%) = 3850%
+730 E_ID$(3%) = "7698" \ E_NAME$(3%) = "BLAKE, ROBERT    " \ E_DEPT$(3%) = "SALES   " \ E_SAL%(3%) = 3420%
+740 E_ID$(4%) = "7839" \ E_NAME$(4%) = "KING, ARTHUR     " \ E_DEPT$(4%) = "EXEC    " \ E_SAL%(4%) = 5000%
+750 PRINT "[Sample Oracle V6 tablespace "; TBL_SPC$; " (ORA_SID="; ORA_SID$; ") loaded - 4 rows in SCOTT.EMP]" \ GOTO 495
+820 PRINT EQU$ \ PRINT "  SQL*Plus V3.0 DESCRIBE SCOTT.EMP — Tablespace: "; TBL_SPC$; " (SID: "; ORA_SID$; ")" \ PRINT SEP$
+830 PRINT "  EMPNO   NOT NULL NUMBER(4)   [PRIMARY KEY] | ENAME  NOT NULL CHAR(18)"
+840 PRINT "  DNAME   NOT NULL CHAR(10)    [FOREIGN KEY] | SAL    NOT NULL NUMBER(7,2)" \ PRINT EQU$ \ GOTO 495
+920 IF NUM_REC% = 0% THEN GOTO 3370
+930 F_DEPT$ = ""
+940 IF ARGS$ <> "" THEN U_IN$ = ARGS$
+945 IF ARGS$ <> "" THEN GOSUB 580
+950 IF ARGS$ <> "" THEN F_DEPT$ = U_OUT$
+960 PRINT EQU$ \ PRINT "  SQL*Plus V3.0: SELECT EMPNO, ENAME, DNAME, SAL FROM SCOTT.EMP JOIN SCOTT.DEPT" \ PRINT SEP$
+970 PRINT "  EMPNO   ENAME                DNAME        SAL($/Mo)   ANNUAL($)" \ PRINT SEP$
+980 QI% = 1% \ Q_CNT% = 0% \ Q_SUM% = 0%
+990 IF QI% > NUM_REC% THEN GOTO 1090
+1000 T_IN$ = E_DEPT$(QI%) \ GOSUB 500 \ D_CLEAN$ = T_OUT$
+1010 IF F_DEPT$ = "" THEN GOTO 1040
+1020 IF D_CLEAN$ = F_DEPT$ THEN GOTO 1040
+1030 GOTO 1080
+1040 Q_CNT% = Q_CNT% + 1% \ Q_SUM% = Q_SUM% + E_SAL%(QI%) \ ANN_V% = E_SAL%(QI%) * 6%
+1050 ID_P$ = LEFT$(E_ID$(QI%) + BLANKS$, 6%) \ NM_P$ = LEFT$(E_NAME$(QI%) + BLANKS$, 19%) \ DP_P$ = LEFT$(D_CLEAN$ + BLANKS$, 10%)
+1060 PRINT "  "; ID_P$; "  "; NM_P$; "  "; DP_P$; "   "; E_SAL%(QI%); "        "; ANN_V%; " (6Mo)"
+1080 QI% = QI% + 1% \ GOTO 990
+1090 AVG_S% = 0%
+1095 IF Q_CNT% > 0% THEN AVG_S% = INT(Q_SUM% / Q_CNT%)
+1100 PRINT SEP$ \ PRINT "  ["; Q_CNT%; " rows selected | SUM(SAL) = $"; Q_SUM%; " | AVG(SAL) = $"; AVG_S%; "]" \ PRINT EQU$ \ GOTO 495
+1150 IF NUM_REC% = 0% THEN GOTO 3370
+1160 FRM_NM$ = "EMPFORM"
+1170 IF ARGS$ <> "" THEN FRM_NM$ = ARGS$
+1180 U_IN$ = FRM_NM$ \ GOSUB 580 \ FRM_NM$ = U_OUT$
+1190 PRINT EQU$ \ PRINT "  SQL*Forms V3.0 (IAP) VT220 Runtime — Form: "; FRM_NM$; ".INP" \ PRINT SEP$
+1200 PRINT "  | ORACLE SQL*FORMS 3.0  BLOCK: EMP_BLK   EMPNO: ["; E_ID$(1%); "] ENAME: ["; E_NAME$(1%); "] |"
+1210 PRINT "  | DEPT: ["; E_DEPT$(1%); "] SAL: ["; E_SAL%(1%); "] TRIGGER: ON-VALIDATE-FIELD (SAL > 0) [F10] |"
+1220 PRINT "  [SQL*Forms INP Trigger Validation Passed for "; NUM_REC%; " rows in "; FRM_NM$; ".INP]" \ PRINT EQU$ \ GOTO 495
+1320 PRINT EQU$ \ PRINT "  SQL*DBA V6.0 — VAX/VMS System Global Area (SGA) & Instance Monitor" \ PRINT SEP$
+1330 PRINT "  Oracle Instance SID          : "; ORA_SID$; " | SGA Shared Memory: 2,097,152 bytes (512 Buffers)"
+1340 PRINT "  Background Processes Active  : ORA_"; ORA_SID$; "_DBWR, LGWR, SMON, PMON, ARCH [RUNNING]"
+1350 PRINT "  Tablespace Status            : "; TBL_SPC$; " (ONLINE, Read/Write, Rows="; NUM_REC%; ", TPO=ON)" \ PRINT EQU$ \ GOTO 495
+1480 IF NUM_REC% >= 15% THEN GOTO 1610
+1490 C1% = INSTR(1%, ARGS$, ",")
+1500 IF C1% = 0% THEN GOTO 1600
+1510 T_IN$ = LEFT$(ARGS$, C1% - 1%) \ GOSUB 500 \ U_IN$ = T_OUT$ \ GOSUB 580 \ ID_V$ = U_OUT$
+1520 REM1$ = MID$(ARGS$, C1% + 1%, LEN(ARGS$) - C1%) \ C2% = INSTR(1%, REM1$, ",")
+1530 IF C2% = 0% THEN GOTO 1600
+1540 T_IN$ = LEFT$(REM1$, C2% - 1%) \ GOSUB 500 \ NM_V$ = T_OUT$
+1550 REM2$ = MID$(REM1$, C2% + 1%, LEN(REM1$) - C2%) \ C3% = INSTR(1%, REM2$, ",")
+1560 IF C3% = 0% THEN GOTO 1600
+1570 T_IN$ = LEFT$(REM2$, C3% - 1%) \ GOSUB 500 \ U_IN$ = T_OUT$ \ GOSUB 580 \ DP_V$ = U_OUT$
+1580 SL_V% = VAL(MID$(REM2$, C3% + 1%, LEN(REM2$) - C3%))
+1590 NUM_REC% = NUM_REC% + 1% \ E_ID$(NUM_REC%) = ID_V$ \ E_NAME$(NUM_REC%) = NM_V$ \ E_DEPT$(NUM_REC%) = DP_V$ \ E_SAL%(NUM_REC%) = SL_V%
+1595 PRINT "[1 row created in SCOTT.EMP: EMPNO="; ID_V$; " ("; NM_V$; ", Dept="; DP_V$; ", SAL=$"; SL_V%; ")]" \ GOTO 495
+1600 PRINT "ORA-00936: syntax is ADD <empno>, <ename>, <dept>, <sal>" \ GOTO 495
+1610 PRINT "ORA-01653: unable to extend table SCOTT.EMP in tablespace "; TBL_SPC$ \ GOTO 495
+1650 IF NUM_REC% = 0% THEN GOTO 3370
+1660 SV_FILE$ = DB_FILE$
+1670 IF ARGS$ <> "" THEN SV_FILE$ = ARGS$
+1680 OPEN SV_FILE$ FOR OUTPUT AS FILE #2% \ SI% = 1%
+1690 IF SI% > NUM_REC% THEN GOTO 1730
+1700 PRINT #2%, E_ID$(SI%); "|"; E_NAME$(SI%); "|"; E_DEPT$(SI%); "|"; E_SAL%(SI%)
+1710 SI% = SI% + 1% \ GOTO 1690
+1730 CLOSE #2% \ PRINT "[Commit complete: "; NUM_REC%; " Oracle rows saved to "; SV_FILE$; "]" \ GOTO 495
+1800 LD_FILE$ = DB_FILE$
+1810 IF ARGS$ <> "" THEN LD_FILE$ = ARGS$
+1820 ON ERROR GOTO 1950 \ OPEN LD_FILE$ FOR INPUT AS FILE #2% \ NUM_REC% = 0%
+1830 LINE INPUT #2%, T_LINE$ \ T_IN$ = T_LINE$ \ GOSUB 500
+1840 IF T_OUT$ = "" THEN GOTO 1830
+1850 P1% = INSTR(1%, T_OUT$, "|")
+1860 IF P1% = 0% THEN GOTO 1830
+1870 FID$ = LEFT$(T_OUT$, P1% - 1%) \ REM1$ = MID$(T_OUT$, P1% + 1%, LEN(T_OUT$) - P1%) \ P2% = INSTR(1%, REM1$, "|")
+1880 IF P2% = 0% THEN GOTO 1830
+1890 FNM$ = LEFT$(REM1$, P2% - 1%) \ REM2$ = MID$(REM1$, P2% + 1%, LEN(REM1$) - P2%) \ P3% = INSTR(1%, REM2$, "|")
+1900 IF P3% = 0% THEN GOTO 1830
+1910 FDP$ = LEFT$(REM2$, P3% - 1%) \ FSL% = VAL(MID$(REM2$, P3% + 1%, LEN(REM2$) - P3%))
+1920 NUM_REC% = NUM_REC% + 1% \ E_ID$(NUM_REC%) = FID$ \ E_NAME$(NUM_REC%) = FNM$ \ E_DEPT$(NUM_REC%) = FDP$ \ E_SAL%(NUM_REC%) = FSL% \ GOTO 1830
+1950 CLOSE #2% \ RESUME 1960
+1960 ON ERROR GOTO 0 \ PRINT "["; NUM_REC%; " Oracle rows loaded from "; LD_FILE$; "]" \ GOTO 495
+2050 PRINT "Oracle RDBMS V6.0 Status: SID="; ORA_SID$; " | Tablespace="; TBL_SPC$; " | File="; DB_FILE$; " (Rows: "; NUM_REC%; ")" \ GOTO 495
+2150 NUM_REC% = 0% \ PRINT "[Oracle table SCOTT.EMP truncated]" \ GOTO 495
+3000 PRINT EQU$ \ PRINT "    Oracle RDBMS V6.0 (SQL*Plus / SQL*Forms / SQL*DBA) Commands" \ PRINT EQU$
+3010 PRINT "  SAMPLE / DESCRIBE / SELECT [dept] / SQLFORMS [form] / SQLDBA"
+3020 PRINT "  ADD <empno>, <name>, <dept>, <sal> / SAVE [f] / LOAD [f] / SHOW / CLEAR / EXIT" \ PRINT EQU$ \ GOTO 495
+3370 PRINT "ORA-01403: no data found in SCOTT.EMP. Use SAMPLE or ADD." \ GOTO 495
+3400 END

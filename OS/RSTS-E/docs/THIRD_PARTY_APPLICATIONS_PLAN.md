@@ -61,56 +61,56 @@ flowchart TD
 
 ---
 
-### Category B: Electronic Spreadsheets & Corporate Financial Modeling
+### Category B: Electronic Spreadsheets & Corporate Financial Modeling (COMPLETED)
 
-| Package | Original Vendor | Historical Era | Primary Language | Proposed CCL Verb(s) | Core Capabilities to Emulate |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **`calc2020`** (*20/20* / *Supercomp-20*) | Access Technology, Inc. | 1981–1992 | `BASIC-PLUS-2` / `C` | `2020`, `SC20` | Industry-standard minicomputer spreadsheet: 2D grid (`A1..Z99`), `/` slash command bar (`/W`, `/C`, `/F`, `/P`, `/G`, `/S`), formula evaluator (`SUM`, `AVG`, `NPV`, `IRR`, `IF`, `LOOKUP`), goal-seeking, multi-sheet consolidation, and RMS/DATATRIEVE `.DAT` import/export. |
-| **`saturncalc`** (*Saturn-Calc*) | Saturn Systems, Inc. | 1982–1990 | `BASIC-PLUS-2` | `SATCALC`, `SCALC` | Virtual-array backed VT100 electronic worksheet with split-window views, financial depreciation/loan functions, and direct handoff to `Saturn-Graph` and `Saturn-WP`. |
-| **`nyplan`** (*NYPLAN*) | Nyplan, Inc. | 1978–1988 | `BASIC-PLUS-2` | `NYPLAN` | Corporate financial modeling, budgeting, "what-if" sensitivity analysis, Monte Carlo variance runs, and multi-division P&L consolidation language. |
-
----
-
-### Category C: ERP, Accounting, Wholesale Distribution & MRP
-
-| Package | Original Vendor | Historical Era | Primary Language | Proposed CCL Verb(s) | Core Capabilities to Emulate |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **`mcba`** (*MCBA Accounting & Manufacturing*) | Mini-Computer Business Applications, Inc. (MCBA) | 1975–1992 | `DIBOL-83` / `COBOL-81` / `BASIC-PLUS-2` | `MCBA`, `MCBAMRP` | The classic DEC OEM modular ERP & Manufacturing suite: Customer Order Processing (`COP`), Inventory Management (`I/M`), Bill of Material Processor (`BOMP`), Material Requirements Planning (`MRP`), Shop Floor Control (`SFC`), plus `G/L`, `A/R`, `A/P`, and `Payroll`. |
-| **`maps`** (*MAPS/GL, MAPS/MODEL, MAPS/AP, MAPS/AR*) | Ross Systems, Inc. | 1976–1990 | `BASIC-PLUS-2` | `MAPS`, `MAPSGL` | Management Accounting and Planning System: hierarchical responsibility-center accounting, budget vs. actual variance reporting, and executive financial modeling. |
-| **`timeline`** (*Timeline DIGI-GL & Financials*) | Timeline, Inc. | 1977–1989 | `BASIC-PLUS-2` | `TIMELINE`, `DIGIGL` | Multi-segmented 36-character Chart of Accounts engine (Fund / Division / Department / Natural Account / Sub-Account), custom financial report writer, and audit trail ledger. |
-| **`compushare`** (*CAS — Compu-Share Accounting*) | Compu-Share, Inc. | 1978–1989 | `BASIC-PLUS-2` | `CAS` | RMS-11 indexed accounting, distribution, and specialized Oil & Gas joint-interest billing / revenue distribution suite. |
-| **`cjbusiness`** (*CJ/GL, CJ/PAYROLL, CJ/CIRC*) | Collier-Jackson, Inc. | 1977–1989 | `BASIC-PLUS-2` / `COBOL-81` | `CJBIZ`, `CJGL` | Enterprise general ledger, human resources/payroll, and newspaper circulation/advertising billing system. |
+| Package | Status | Original Vendor | Historical Era | Primary Language | CCL Verb(s) | Core Capabilities Emulated |
+| :--- | :---: | :--- | :---: | :---: | :--- | :--- |
+| **`calc2020`** (*20/20 V2.3* / *Supercomp-20*) | **Done** (`APPS/apps/calc2020`) | Access Technology, Inc. | 1981–1992 | `BASIC-PLUS-2` | `CALC2020`, `2020`, `SC20` | Industry-standard minicomputer spreadsheet: 2D grid (`A1..D8`), `/` slash command bar (`/W`, `/C`, `/F`, `/P`, `/G`, `/M`, `/S`), formula evaluator (`@SUM`, `@AVG`, `@NPV`, `@IRR`, `@IF`, `@LOOKUP`), goal-seeking (`GOALSEEK`), multi-sheet consolidation (`CONSOLIDATE`), and RMS/DATATRIEVE `SC20WS.DAT` import/export. |
+| **`saturncalc`** (*Saturn-Calc V3.4*) | **Done** (`APPS/apps/saturncalc`) | Saturn Systems, Inc. | 1982–1990 | `BASIC-PLUS-2` | `SATURNCALC`, `SATCALC`, `SCALC` | Virtual-array backed VT100 electronic worksheet (`SCALC.DAT`) with split-window dual pane views (`SPLIT`), financial depreciation (`@SLN`, `@DDB`, `@SYD`) & loan amortization (`@PMT`), and direct handoff to `Saturn-Graph` (`GRAPH`) and `Saturn-WP` (`EXPORTWP` / `SCALC.WKS`). |
+| **`nyplan`** (*NYPLAN V4.1*) | **Done** (`APPS/apps/nyplan`) | Nyplan, Inc. | 1978–1988 | `BASIC-PLUS-2` | `NYPLAN`, `NYP` | Corporate financial modeling, budgeting, "what-if" sensitivity analysis (`WHATIF`), Monte Carlo variance runs (`MONTECARLO`), and multi-division P&L consolidation (`CONSOLIDATE`) with `NYPLAN.DAT` persistence. |
 
 ---
 
-### Category D: Third-Party Database Management Systems (DBMS) & 4GLs
+### Category C: ERP, Accounting, Wholesale Distribution & MRP (COMPLETED)
 
-| Package | Original Vendor | Historical Era | Primary Language | Proposed CCL Verb(s) | Core Capabilities to Emulate |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **`total`** (*CINCOM TOTAL DBMS*) | Cincom Systems, Inc. | 1974–1988 | `MACRO-11` / `BASIC-PLUS-2` | `TOTAL`, `TOTDBM` | Network-model DBMS distinguishing **Master Data Sets** (single-key direct access) and **Variable Entry Data Sets** (chained linkage paths), with DDL schema compiler (`DBGEN`), interactive DML console (`SINON`, `READM`, `ADDV`, `FINDX`), and reporting. |
-| **`ambase`** (*AMBASE / AMWRITER / AMQUERY*) | Amcor Computer Corp. | 1977–1989 | `BASIC-PLUS-2` | `AMBASE`, `AMQRY` | RSTS/E relational/indexed database engine with `AMWRITER` ad-hoc report generator and `AMGEN` screen application builder. |
-| **`accentr`** (*ACCENT R 4GL*) | National Information Systems (NIS) | 1979–1990 | `BASIC-PLUS-2` | `ACCENT`, `ACCR` | Structured Fourth-Generation Language (4GL) and relational DBMS (`Schema Definition`, `Data Set`, `ProcessModule`, `CommandModule`). |
-| **`saturnbase`** (*Saturn-Base*) | Saturn Systems, Inc. | 1982–1989 | `BASIC-PLUS-2` | `SATBASE`, `SBASE` | Interactive relational data manager and forms/report utility tightly coupled with `Saturn-Calc` and `Saturn-WP`. |
-
----
-
-### Category E: Data Entry, Sorting, Screen Managers & Security Utilities
-
-| Package | Original Vendor | Historical Era | Primary Language | Proposed CCL Verb(s) | Core Capabilities to Emulate |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **`kdss`** (*KDSS Key-to-Disk Subsystem*) | Evans Griffiths & Hart, Inc. (EG&H) | 1976–1989 | `BASIC-PLUS-2` / `MACRO-11` | `KDSS` | High-speed multi-operator keypunch replacement: format definition (`KDFMT`), batch entry (`KDENT`), key-verification pass (`KDVER`), check-digit validation, operator keystroke statistics, and batch tape/RMS export. |
-| **`tam`** (*TAM Terminal Application Manager*) | Evans Griffiths & Hart, Inc. (EG&H) | 1978–1989 | `BASIC-PLUS-2` | `TAM` | VT100 screen-painting, field-attribute validation, and transaction monitor for RSTS/E commercial applications. |
-| **`fsort3`** (*FSORT3 & VSELECT*) | Evans Griffiths & Hart, Inc. (EG&H) | 1977–1989 | `MACRO-11` / `BASIC-PLUS-2` | `FSORT3`, `VSELECT` | High-speed multi-key record sorting (`FSORT3`) and boolean record selection/projection (`VSELECT`) on RMS and sequential files. |
-| **`clyde`** (*CONTRL / AUDIT / LOCK*) | Clyde Digital Systems | 1979–1990 | `BASIC-PLUS-2` | `CONTRL`, `CAUDIT` | RSTS/E security, terminal session auditing, intruder lockouts, and interactive KB: terminal observation/training utility. |
+| Package | Status | Original Vendor | Historical Era | Primary Language | CCL Verb(s) | Core Capabilities Emulated |
+| :--- | :---: | :--- | :---: | :---: | :---: | :--- |
+| **`mcba`** (*MCBA V7.2 ERP & MRP*) | **Done** (`APPS/apps/mcba`) | Mini-Computer Business Applications, Inc. (MCBA) | 1975–1992 | `BASIC-PLUS-2` | `MCBA`, `MCBAMRP` | Modular ERP & Manufacturing suite (`MCBAIM.DAT`): Customer Order Processing (`COP`), Inventory Management (`I/M`), Bill of Material Processor (`BOMP`), Material Requirements Planning (`MRP`), Shop Floor Control (`SFC`), and `GL`. |
+| **`maps`** (*MAPS V5.0*) | **Done** (`APPS/apps/maps`) | Ross Systems, Inc. | 1976–1990 | `BASIC-PLUS-2` | `MAPS`, `MAPSGL` | Management Accounting and Planning System (`MAPSGL.DAT`): hierarchical responsibility-center accounting (`ROLLUP`), budget vs. actual variance reporting (`VARIANCE`), and `MAPS/MODEL` forecasting (`FORECAST`). |
+| **`timeline`** (*Timeline DIGI-GL V4.3*) | **Done** (`APPS/apps/timeline`) | Timeline, Inc. | 1977–1989 | `BASIC-PLUS-2` | `TIMELINE`, `DIGIGL` | Multi-segmented Chart of Accounts engine (`DIGIGL.DAT`), trial balance verification (`TRIAL`), segment filter (`SEGMENT`), and financial statement writer (`FINRPT`). |
+| **`compushare`** (*CAS V6.1*) | **Done** (`APPS/apps/compushare`) | Compu-Share, Inc. | 1978–1989 | `BASIC-PLUS-2` | `COMPUSHARE`, `CAS` | Commercial Accounting System (`CASJIB.DAT`): Division of Interest (`DOI`), Joint-Interest Billing (`JIB`), Net Revenue Interest (`REVDIST`), and AFE capital tracking (`AFE`). |
+| **`cjbusiness`** (*CJ/BUSINESS V5.4*) | **Done** (`APPS/apps/cjbusiness`) | Collier-Jackson, Inc. | 1977–1989 | `BASIC-PLUS-2` | `CJBUSINESS`, `CJBIZ`, `CJGL` | Enterprise general ledger (`CJGL`), human resources/payroll register (`CJPAY`), and newspaper circulation/advertising billing (`CJCIRC`) with `CJBIZ.DAT` persistence. |
 
 ---
 
-### Category F: Statistical & Decision Support Systems
+### Category D: Third-Party Database Management Systems (DBMS) & 4GLs (COMPLETED)
 
-| Package | Original Vendor | Historical Era | Primary Language | Proposed CCL Verb(s) | Core Capabilities to Emulate |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **`minitab`** (*MINITAB-11*) | Minitab, Inc. / Penn State | 1975–1990 | `FORTRAN-77` | `MINITAB`, `MTAB` | Interactive worksheet (`C1..C50` columns, `K1..K50` constants) with `READ`, `SET`, `DESCRIBE`, `HISTOGRAM`, `PLOT`, `REGRESS`, `TWOWAY`, `TTEST`, and `CORRELATE`. |
-| **`spss11`** (*SPSS-11*) | SPSS, Inc. | 1977–1988 | `FORTRAN-77` | `SPSS`, `SPSS11` | PDP-11 RSTS/E statistical analysis batch & interactive system supporting `DATA LIST`, `VARIABLE LABELS`, `FREQUENCIES`, `CROSSTABS`, `CONDESCRIPTIVE`, `ANOVA`, and `PEARSON CORR`. |
+| Package | Status | Original Vendor | Historical Era | Primary Language | CCL Verb(s) | Core Capabilities Emulated |
+| :--- | :---: | :--- | :---: | :---: | :---: | :--- |
+| **`total`** (*CINCOM TOTAL V8.0*) | **Done** (`APPS/apps/total`) | Cincom Systems, Inc. | 1974–1988 | `BASIC-PLUS-2` | `TOTAL`, `TOTDBM` | Network-model DBMS (`TOTDB.DAT`) distinguishing **Master Data Sets** (`READM`, `ADDM`) and **Variable Entry Data Sets** (`READV`, `ADDV`, `FINDX`), with `DBGEN` DDL compiler (`SCHEMA`) and `SINON`. |
+| **`ambase`** (*AMBASE V4.2*) | **Done** (`APPS/apps/ambase`) | Amcor Computer Corp. | 1977–1989 | `BASIC-PLUS-2` | `AMBASE`, `AMQRY`, `AMWRITER` | RSTS/E indexed database engine (`AMBASE.DAT`) with `SCHEMA`, interactive query (`AMQUERY`), `AMWRITER` ad-hoc report generator, and `AMGEN` screen builder. |
+| **`accentr`** (*ACCENT R V11.4*) | **Done** (`APPS/apps/accentr`) | National Information Systems (NIS) | 1979–1990 | `BASIC-PLUS-2` | `ACCENTR`, `ACCENT`, `ACCR` | Structured Fourth-Generation Language (4GL) and RDBMS (`ACCRDB.DAT`): Data Set Definition (`DSD`), Data Set (`DS`), Process Module (`PM`), Command Module (`CM`), and `EXTRACT`. |
+| **`saturnbase`** (*Saturn-Base V3.2*) | **Done** (`APPS/apps/saturnbase`) | Saturn Systems, Inc. | 1982–1989 | `BASIC-PLUS-2` | `SATURNBASE`, `SATBASE`, `SBASE` | Interactive relational data manager (`SBASE.DAT`) with `SCHEMA`, `SELECT`, `SORT`, `REPORT`, and direct export handoff to `Saturn-Calc` (`EXPORTCALC`) and `Saturn-WP` (`EXPORTWP`). |
+
+---
+
+### Category E: Data Entry, Sorting, Screen Managers & Security Utilities (COMPLETED)
+
+| Package | Status | Original Vendor | Historical Era | Primary Language | CCL Verb(s) | Core Capabilities Emulated |
+| :--- | :---: | :--- | :---: | :---: | :---: | :--- |
+| **`kdss`** (*KDSS V4.0*) | **Done** (`APPS/apps/kdss`) | Evans Griffiths & Hart, Inc. (EG&H) | 1976–1989 | `BASIC-PLUS-2` | `KDSS`, `KDFMT`, `KDENT` | High-speed multi-operator key-to-disk subsystem (`KDBAT.DAT`): format definition (`KDFMT`), batch entry (`KDENT`), key-verification pass (`KDVER`), Modulo-10 check-digit validation (`CHECKDIGIT`), operator stats (`STATS`), and RMS release (`RELEASE`). |
+| **`tam`** (*TAM V3.2*) | **Done** (`APPS/apps/tam`) | Evans Griffiths & Hart, Inc. (EG&H) | 1978–1989 | `BASIC-PLUS-2` | `TAM` | VT100 screen-painting (`RENDER`), field-attribute validation (`VALIDATE`), and transaction monitor (`TAMFRM.DAT`) for RSTS/E commercial applications. |
+| **`fsort3`** (*FSORT3 & VSELECT V3.5*) | **Done** (`APPS/apps/fsort3`) | Evans Griffiths & Hart, Inc. (EG&H) | 1977–1989 | `BASIC-PLUS-2` | `FSORT3`, `VSELECT` | High-speed multi-key record sorting (`SORT ASC`/`SORT DESC`) and boolean record selection/projection (`VSELECT`) on `FSORT.DAT` files. |
+| **`clyde`** (*CONTRL / AUDIT / LOCK V4.1*) | **Done** (`APPS/apps/clyde`) | Clyde Digital Systems | 1979–1990 | `BASIC-PLUS-2` | `CLYDE`, `CONTRL`, `CAUDIT` | RSTS/E terminal security suite (`CAUDIT.DAT`): `TERMINALS` monitor, live `CONTRL` session mirror (`OBSERVE`), `CAUDIT` keystroke audit trail (`AUDIT`), and Intruder `LOCK` / `UNLOCK`. |
+
+---
+
+### Category F: Statistical & Decision Support Systems (COMPLETED)
+
+| Package | Status | Original Vendor | Historical Era | Primary Language | CCL Verb(s) | Core Capabilities Emulated |
+| :--- | :---: | :--- | :---: | :---: | :---: | :--- |
+| **`minitab`** (*MINITAB-11 V82.1*) | **Done** (`APPS/apps/minitab`) | Minitab, Inc. / Penn State | 1975–1990 | `BASIC-PLUS-2` | `MINITAB`, `MTAB` | Interactive statistical worksheet (`MTABWS.DAT`, columns `C1..C3`) with `PRINT`, `DESCRIBE`, `HISTOGRAM`, `PLOT`, least-squares linear `REGRESS`, and `TTEST`. |
+| **`spss11`** (*SPSS-11 V9.0*) | **Done** (`APPS/apps/spss11`) | SPSS, Inc. | 1977–1988 | `BASIC-PLUS-2` | `SPSS11`, `SPSS` | PDP-11 RSTS/E statistical package (`SPSS11.DAT`) supporting `DATALIST`, `FREQUENCIES`, `CONDESCRIPTIVE`, `CROSSTABS` (with Chi-Square), One-Way `ANOVA`, and `PEARSON` correlation. |
 
 ---
 

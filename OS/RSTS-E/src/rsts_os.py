@@ -14,6 +14,7 @@ Provides:
 """
 
 import os
+import re
 import sys
 import glob
 import json
@@ -110,6 +111,49 @@ class RSTSEmulator:
         "LEX": ("lex11", "EEC Systems LEX-11 V2.4 Word Processing & Calculator"),
         "SATURNWP": ("saturnwp", "Saturn Systems Saturn-WP V4.2 Integrated Word Processor"),
         "SWP": ("saturnwp", "Saturn Systems Saturn-WP V4.2 Integrated Word Processor"),
+        "CALC2020": ("calc2020", "Access Technology 20/20 V2.3 (Supercomp-20) Spreadsheet"),
+        "2020": ("calc2020", "Access Technology 20/20 V2.3 (Supercomp-20) Spreadsheet"),
+        "SC20": ("calc2020", "Access Technology 20/20 V2.3 (Supercomp-20) Spreadsheet"),
+        "SATURNCALC": ("saturncalc", "Saturn Systems Saturn-Calc V3.4 Electronic Worksheet"),
+        "SATCALC": ("saturncalc", "Saturn Systems Saturn-Calc V3.4 Electronic Worksheet"),
+        "SCALC": ("saturncalc", "Saturn Systems Saturn-Calc V3.4 Electronic Worksheet"),
+        "NYPLAN": ("nyplan", "Nyplan Inc. NYPLAN V4.1 Financial Modeling & Risk Suite"),
+        "NYP": ("nyplan", "Nyplan Inc. NYPLAN V4.1 Financial Modeling & Risk Suite"),
+        "TOTAL": ("total", "Cincom Systems TOTAL V8.0 Network DBMS"),
+        "TOTDBM": ("total", "Cincom Systems TOTAL V8.0 Network DBMS"),
+        "AMBASE": ("ambase", "Amcor Computer Corp. AMBASE V4.2 DBMS & AMWRITER"),
+        "AMQRY": ("ambase", "Amcor Computer Corp. AMBASE V4.2 Query Facility"),
+        "AMWRITER": ("ambase", "Amcor Computer Corp. AMBASE V4.2 Report Writer"),
+        "ACCENTR": ("accentr", "NIS ACCENT R V11.4 4GL & Relational DBMS"),
+        "ACCENT": ("accentr", "NIS ACCENT R V11.4 4GL & Relational DBMS"),
+        "ACCR": ("accentr", "NIS ACCENT R V11.4 4GL & Relational DBMS"),
+        "SATURNBASE": ("saturnbase", "Saturn Systems Saturn-Base V3.2 Relational DBMS"),
+        "SATBASE": ("saturnbase", "Saturn Systems Saturn-Base V3.2 Relational DBMS"),
+        "SBASE": ("saturnbase", "Saturn Systems Saturn-Base V3.2 Relational DBMS"),
+        "MCBA": ("mcba", "MCBA V7.2 ERP, Distribution & Manufacturing MRP Suite"),
+        "MCBAMRP": ("mcba", "MCBA V7.2 ERP, Distribution & Manufacturing MRP Suite"),
+        "MAPS": ("maps", "Ross Systems MAPS V5.0 Management Accounting & Planning"),
+        "MAPSGL": ("maps", "Ross Systems MAPS/GL V5.0 General Ledger"),
+        "TIMELINE": ("timeline", "Timeline Inc. DIGI-GL V4.3 General Ledger & Financials"),
+        "DIGIGL": ("timeline", "Timeline Inc. DIGI-GL V4.3 General Ledger & Financials"),
+        "COMPUSHARE": ("compushare", "Compu-Share CAS V6.1 Commercial Accounting System"),
+        "CAS": ("compushare", "Compu-Share CAS V6.1 Commercial Accounting System"),
+        "CJBUSINESS": ("cjbusiness", "Collier-Jackson CJ/BUSINESS V5.4 Ledger & Payroll"),
+        "CJBIZ": ("cjbusiness", "Collier-Jackson CJ/BUSINESS V5.4 Ledger & Payroll"),
+        "CJGL": ("cjbusiness", "Collier-Jackson CJ/GL V5.4 Enterprise General Ledger"),
+        "KDSS": ("kdss", "EG&H KDSS V4.0 Key-to-Disk Data Entry Subsystem"),
+        "KDFMT": ("kdss", "EG&H KDSS V4.0 Format Definition Utility"),
+        "KDENT": ("kdss", "EG&H KDSS V4.0 Batch Entry & Verification"),
+        "TAM": ("tam", "EG&H TAM V3.2 Terminal Access Module"),
+        "FSORT3": ("fsort3", "EG&H FSORT3 & VSELECT V3.5 High-Speed Sort/Select"),
+        "VSELECT": ("fsort3", "EG&H VSELECT V3.5 Record Selection & Projection"),
+        "CLYDE": ("clyde", "Clyde Digital Systems CONTRL / AUDIT / LOCK V4.1"),
+        "CONTRL": ("clyde", "Clyde Digital Systems CONTRL Terminal Monitor"),
+        "CAUDIT": ("clyde", "Clyde Digital Systems CAUDIT Keystroke Audit Logger"),
+        "MINITAB": ("minitab", "MINITAB-11 V82.1 Interactive Statistical Worksheet"),
+        "MTAB": ("minitab", "MINITAB-11 V82.1 Interactive Statistical Worksheet"),
+        "SPSS11": ("spss11", "SPSS-11 V9.0 Statistical Package for the Social Sciences"),
+        "SPSS": ("spss11", "SPSS-11 V9.0 Statistical Package for the Social Sciences"),
         "DIBS": ("dibs", "DIBS-11 V3.0 (DEC Integrated Business System / CTS-500)"),
         "DIBS11": ("dibs", "DIBS-11 V3.0 (DEC Integrated Business System / CTS-500)"),
         "CTS500": ("dibs", "CTS-500 / DIBS-11 Commercial Transaction System"),
@@ -194,7 +238,6 @@ class RSTSEmulator:
         self.dk0_root = os.path.join(self.fs_root, "dk0")
 
         self.accounts = {k: dict(v) for k, v in self.DEFAULT_ACCOUNTS.items()}
-        self.current_ppn = self.normalize_ppn(current_ppn) or "1,2"
         self.monitor_mode = "DCL"  # 'DCL', 'BASIC', or 'RSX'
         self.verify = False
         self.exit_requested = False
@@ -213,8 +256,9 @@ class RSTSEmulator:
         self.basic_prog_name = "NONAME"
         self.basic_lines = {}
 
-        # Initialize filesystem and logicals
+        # Initialize filesystem and load persisted $ACCT.SYS accounts before resolving current_ppn
         self._init_filesystem()
+        self.current_ppn = self.normalize_ppn(current_ppn) or "1,2"
         self._allocate_terminal_line()
         self.symbols = {
             "$STATUS": "1",
@@ -264,11 +308,17 @@ class RSTSEmulator:
     def normalize_ppn(self, raw):
         if not raw:
             return None
-        s = raw.strip().upper().strip("[]")
+        raw_str = str(raw).strip()
+        s = raw_str.upper().strip("[]")
         if s in self.accounts:
             return s
         for ppn_key, acct in self.accounts.items():
-            if acct["name"].upper() == s:
+            if acct.get("name", "").upper() == s or acct.get("username", "").upper() == s:
+                return ppn_key
+            if raw_str and (
+                acct.get("clerk_user_id") == raw_str
+                or acct.get("workos_user_id") == raw_str
+            ):
                 return ppn_key
         if "," in s:
             parts = [p.strip() for p in s.split(",", 1)]
@@ -386,7 +436,216 @@ class RSTSEmulator:
         acct_sys = os.path.join(lib_dir, "ACCT.SYS")
         with open(acct_sys, "w") as f:
             for k, v in self.accounts.items():
-                f.write(f"{v['ppn']}:{v['name']}:{v['quota']}:{'PRIV' if v['priv'] else 'NOPRIV'}:{v['desc']}\n")
+                flags = v.get("flags", "NODISUSER")
+                f.write(
+                    f"{v['ppn']}:{v['name']}:{v['quota']}:{'PRIV' if v['priv'] else 'NOPRIV'}:{flags}:{v['desc']}\n"
+                )
+
+    def check_username_available(self, username):
+        """Validate a 1-12 char DEC username and check if it is available in $ACCT.SYS."""
+        self._reload_accounts()
+        clean = (username or "").strip().upper()
+        if not clean:
+            return False, "Username is required"
+        if not re.match(r"^[A-Z][A-Z0-9_$]{0,11}$", clean):
+            return False, "DEC username must be 1-12 alphanumeric characters starting with a letter"
+        reserved = {"LIBRARY", "SYSTEM", "PBS", "DIBS", "GUEST", "ROOT", "OPERATOR", "ADMIN"}
+        if clean in reserved:
+            return False, f"Username '{clean}' is a reserved RSTS/E system account"
+        for acct in self.accounts.values():
+            if acct.get("name", "").upper() == clean or acct.get("username", "").upper() == clean:
+                return False, f"Username '{clean}' is already registered in $ACCT.SYS ({acct['ppn']})"
+        return True, "Available"
+
+    def provision_subscriber_account(
+        self,
+        username,
+        password="",
+        email="",
+        plan="LCS_RSTS_10",
+        clerk_user_id="",
+        workos_org_id="",
+        workos_user_id="",
+        project_group=None,
+        quota=None,
+        desc=None,
+    ):
+        """
+        Provision a Legacy Computing Systems subscriber or WorkOS Enterprise account in $ACCT.SYS.
+        - B2C Clerk subscribers are allocated PPN [201,1]..[201,254].
+        - WorkOS Enterprise subscribers are allocated PPN [300,1]..[300,254] (or custom project_group).
+        - Scaffolds DK0:[proj,prog] with LOGIN.COM, WELCOME.TXT, and HELLO.BAS.
+        """
+        self._reload_accounts()
+        clean_user = (username or "").strip().upper()
+        if not re.match(r"^[A-Z][A-Z0-9_$]{0,11}$", clean_user):
+            raise ValueError("DEC username must be 1-12 alphanumeric characters starting with a letter")
+        if clean_user in {"LIBRARY", "SYSTEM", "PBS", "DIBS", "GUEST"}:
+            raise ValueError(f"Username '{clean_user}' is a reserved RSTS/E system account")
+
+        # Check if user already exists
+        existing_ppn = None
+        for ppn_k, acct in self.accounts.items():
+            if acct.get("name", "").upper() == clean_user or acct.get("username", "").upper() == clean_user:
+                existing_ppn = ppn_k
+                break
+
+        plan_upper = (plan or "LCS_RSTS_10").strip().upper()
+        is_enterprise = bool(workos_org_id or workos_user_id or "ENTERPRISE" in plan_upper or "WORKOS" in plan_upper)
+
+        if existing_ppn:
+            ppn_key = existing_ppn
+            proj_num, prog_num = [int(x) for x in ppn_key.split(",", 1)]
+        else:
+            if project_group is not None:
+                proj_num = int(project_group)
+            elif is_enterprise:
+                proj_num = 300
+            else:
+                proj_num = 201
+
+            used_progs = set()
+            for k in self.accounts:
+                if "," in k:
+                    p1, p2 = k.split(",", 1)
+                    if p1.isdigit() and p2.isdigit() and int(p1) == proj_num:
+                        used_progs.add(int(p2))
+            prog_num = 1
+            while prog_num in used_progs and prog_num < 255:
+                prog_num += 1
+            ppn_key = f"{proj_num},{prog_num}"
+
+        if quota is None:
+            if "BUNDLE" in plan_upper or "15" in plan_upper or is_enterprise:
+                quota = 100000
+            else:
+                quota = 25000
+        quota = int(quota)
+
+        if not desc:
+            if is_enterprise:
+                desc = f"Legacy Computing Systems Enterprise Seat ({workos_org_id or 'WorkOS'})"
+            else:
+                desc = f"Legacy Computing Systems Subscriber ({plan_upper})"
+
+        dir_name = f"{proj_num:03d}_{prog_num:03d}"
+        acct_record = {
+            "ppn": f"[{ppn_key}]",
+            "name": clean_user,
+            "username": clean_user,
+            "password": str(password or ""),
+            "priv": False,
+            "quota": quota,
+            "flags": "NODISUSER",
+            "status": "ACTIVE",
+            "plan": plan_upper,
+            "email": str(email or ""),
+            "clerk_user_id": str(clerk_user_id or ""),
+            "workos_org_id": str(workos_org_id or ""),
+            "workos_user_id": str(workos_user_id or ""),
+            "desc": str(desc),
+            "dir_name": dir_name,
+            "created_at": datetime.now().isoformat(),
+        }
+        self.accounts[ppn_key] = acct_record
+        user_dir = self.get_ppn_dir(ppn_key)
+        self._save_accounts()
+
+        # Scaffold subscriber home directory files (LOGIN.COM, WELCOME.TXT, HELLO.BAS)
+        login_com = os.path.join(user_dir, "LOGIN.COM")
+        if not os.path.exists(login_com):
+            with open(login_com, "w") as f:
+                f.write(
+                    f"$ ! Legacy Computing Systems — RSTS/E {self.VERSION} Subscriber Login Procedure\n"
+                    f"$ WRITE SYS$OUTPUT \"Welcome {clean_user} ({acct_record['ppn']}) to Legacy Computing Systems PDP-11/70 RSTS/E {self.VERSION}!\"\n"
+                )
+
+        welcome_txt = os.path.join(user_dir, "WELCOME.TXT")
+        if not os.path.exists(welcome_txt):
+            with open(welcome_txt, "w") as f:
+                f.write(
+                    "========================================================================\n"
+                    "  LEGACY COMPUTING SYSTEMS — PDP-11/70 RSTS/E V10.1-L TIMESHARING\n"
+                    "========================================================================\n"
+                    f"  Subscriber Username : {clean_user}\n"
+                    f"  Assigned PPN        : {acct_record['ppn']} (DK0:{acct_record['ppn']})\n"
+                    f"  Subscription Plan   : {plan_upper} (Quota: {quota} blocks)\n"
+                    "  Compilers           : BASIC, MACRO, COBOL, FORTRAN, DIBOL, RPG, APL\n"
+                    "  Type HELP or SHOW APPS for all 33 RSTS/E applications.\n"
+                )
+
+        hello_bas = os.path.join(user_dir, "HELLO.BAS")
+        if not os.path.exists(hello_bas):
+            with open(hello_bas, "w") as f:
+                f.write(
+                    f"10 ! RSTS/E V10.1-L Subscriber Program for {clean_user} {acct_record['ppn']}\n"
+                    f"20 PRINT \"HELLO {clean_user} FROM LEGACY COMPUTING SYSTEMS PDP-11/70 RSTS/E!\"\n"
+                    "30 END\n"
+                )
+
+        return {
+            "ok": True,
+            "os": "RSTS/E V10.1-L",
+            "username": clean_user,
+            "ppn": acct_record["ppn"],
+            "ppn_key": ppn_key,
+            "dir_spec": f"DK0:{acct_record['ppn']}",
+            "dir_path": user_dir,
+            "quota": quota,
+            "priv": False,
+            "flags": acct_record["flags"],
+            "status": acct_record["status"],
+            "plan": plan_upper,
+            "email": acct_record["email"],
+            "clerk_user_id": acct_record["clerk_user_id"],
+            "workos_org_id": acct_record["workos_org_id"],
+            "workos_user_id": acct_record["workos_user_id"],
+        }
+
+    def update_subscriber_account(
+        self,
+        identifier,
+        status=None,
+        password=None,
+        quota=None,
+        plan=None,
+    ):
+        """Update subscriber account status (ACTIVE / DISUSER), password, quota, or plan."""
+        self._reload_accounts()
+        ppn_key = self.normalize_ppn(identifier)
+        if not ppn_key or ppn_key not in self.accounts:
+            raise KeyError(f"RSTS/E account '{identifier}' not found in $ACCT.SYS")
+        if ppn_key in ("1,1", "1,2", "1,3"):
+            raise PermissionError(f"Cannot modify protected system account [{ppn_key}] via subscriber API")
+
+        acct = self.accounts[ppn_key]
+        if status is not None:
+            st_up = str(status).strip().upper()
+            if st_up in ("DISUSER", "SUSPENDED", "CANCELED", "CANCELLED", "DISABLED", "DELETED"):
+                acct["flags"] = "DISUSER"
+                acct["status"] = "DISUSER"
+            elif st_up in ("ACTIVE", "NODISUSER", "ENABLED"):
+                acct["flags"] = "NODISUSER"
+                acct["status"] = "ACTIVE"
+        if password is not None:
+            acct["password"] = str(password)
+        if quota is not None:
+            acct["quota"] = int(quota)
+        if plan is not None:
+            acct["plan"] = str(plan).strip().upper()
+
+        self._save_accounts()
+        return {
+            "ok": True,
+            "os": "RSTS/E V10.1-L",
+            "username": acct.get("name", ""),
+            "ppn": acct["ppn"],
+            "ppn_key": ppn_key,
+            "quota": acct["quota"],
+            "flags": acct.get("flags", "NODISUSER"),
+            "status": acct.get("status", "ACTIVE"),
+            "plan": acct.get("plan", "LCS_RSTS_10"),
+        }
 
     def _init_filesystem(self):
         os.makedirs(self.dk0_root, exist_ok=True)
@@ -681,6 +940,11 @@ class RSTSEmulator:
                 print("?Invalid user account - use PPN (e.g. 1,2 or 200,200) or account name (SYSTEM, GUEST)")
                 continue
             acct = self.accounts[ppn]
+            flags_list = [fl.strip().upper() for fl in str(acct.get("flags", "NODISUSER")).split(",") if fl.strip()]
+            status_str = str(acct.get("status", "ACTIVE")).upper()
+            if ("DISUSER" in flags_list and "NODISUSER" not in flags_list) or status_str in ("DISUSER", "SUSPENDED", "DISABLED"):
+                print("?Account is disabled (DISUSER) - contact System Manager or Legacy Computing Systems")
+                continue
             if acct["password"]:
                 sys.stdout.write("Password: ")
                 sys.stdout.flush()
@@ -1212,7 +1476,12 @@ class RSTSEmulator:
                 "    EDT <file>         Invoke DEC EDT V3.0 Text Editor\n"
                 "    SUBMIT / PRINT     Submit batch job (.COM) or print job to PBS spooler\n"
                 "    HAMURABI, SORT11, RMSUTILS, ADE, DATATRIEVE11 (DTR), DECGRAPH,\n"
-                "    DECMAIL (MAIL), DECWORD (WPS), DIBS (CTS500), FMS11, MENU11, INDENT\n"
+                "    DECMAIL (MAIL), DECWORD (WPS), WORD11 (W11), LEX11 (LEX), SATURNWP (SWP),\n"
+                "    CALC2020 (2020/SC20), SATURNCALC (SATCALC), NYPLAN (NYP),\n"
+                "    TOTAL (TOTDBM), AMBASE (AMQRY), ACCENTR (ACCENT), SATURNBASE (SATBASE),\n"
+                "    MCBA (MCBAMRP), MAPS (MAPSGL), TIMELINE (DIGIGL), COMPUSHARE (CAS),\n"
+                "    CJBUSINESS (CJBIZ/CJGL), KDSS, TAM, FSORT3 (VSELECT), CLYDE (CONTRL/CAUDIT),\n"
+                "    MINITAB (MTAB), SPSS11 (SPSS), DIBS (CTS500), FMS11, MENU11, INDENT\n"
             )
             return 0
         if topic in self.ccl_table:
@@ -1427,8 +1696,13 @@ class RSTSEmulator:
         if not ppn or ppn not in self.accounts:
             print(f"?Invalid PPN or account '{token}'")
             return 1
-        self._switch_account(ppn)
         acct = self.accounts[ppn]
+        flags_list = [fl.strip().upper() for fl in str(acct.get("flags", "NODISUSER")).split(",") if fl.strip()]
+        status_str = str(acct.get("status", "ACTIVE")).upper()
+        if ("DISUSER" in flags_list and "NODISUSER" not in flags_list) or status_str in ("DISUSER", "SUSPENDED", "DISABLED"):
+            print(f"?Account {acct['ppn']} ({acct['name']}) is disabled (DISUSER)")
+            return 1
+        self._switch_account(ppn)
         print(f"Switched session to User {acct['name']} {acct['ppn']} on {self.kb_line}")
         return 0
 

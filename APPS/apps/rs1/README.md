@@ -1,0 +1,3 @@
+# Bolt Beranek and Newman (BBN) RS/1 V4.0 Electronic Research Notebook
+
+**BBN RS/1 V4.0** is an authentic DEC VAX BASIC recreation of the interactive scientific research notebook, data analysis, curve fitting, and graphics system developed by **Bolt Beranek and Newman, Inc. (Cambridge, MA)** for DEC VAX/VMS engineering, pharmaceutical, and semiconductor R&D laboratories (1981–1994), featuring 2D research tables (`DISPLAY`), least-squares linear curve fitting (`FIT`), statistical group comparisons (`COMPARE`), ASCII control charts (`GRAPH`), and `RPL` (Research Programming Language) procedures.

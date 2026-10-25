@@ -73,3 +73,4 @@ make test
 
 - [VAX/VMS System Management & DCL Reference Manual](docs/VMS_MANUAL.md)
 - [Historical OS Application Compatibility Matrix](docs/COMPATIBILITY.md)
+- [Third-Party Commercial, Scientific & Enterprise Applications Plan](docs/THIRD_PARTY_APPLICATIONS_PLAN.md)

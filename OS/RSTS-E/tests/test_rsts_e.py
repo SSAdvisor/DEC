@@ -178,6 +178,24 @@ class TestRSTSEmulationHost:
             ("WORD11", "SAMPLE\nDIR\nEXIT\n", "WORD-11"),
             ("LEX11", "SAMPLE\nDIR\nEXIT\n", "LEX-11"),
             ("SATURNWP", "SAMPLE\nDIR\nEXIT\n", "SATURN-WP"),
+            ("CALC2020", "SAMPLE\nGRID\nEXIT\n", "20/20"),
+            ("SATURNCALC", "SAMPLE\nGRID\nEXIT\n", "SATURN-CALC"),
+            ("NYPLAN", "SAMPLE\nMODEL\nEXIT\n", "NYPLAN"),
+            ("TOTAL", "SAMPLE\nSCHEMA\nEXIT\n", "CINCOM TOTAL"),
+            ("AMBASE", "SAMPLE\nSCHEMA\nEXIT\n", "AMBASE"),
+            ("ACCENTR", "SAMPLE\nDSD\nEXIT\n", "ACCENT R"),
+            ("SATURNBASE", "SAMPLE\nSCHEMA\nEXIT\n", "SATURN-BASE"),
+            ("MCBA", "SAMPLE\nLIST\nEXIT\n", "MCBA"),
+            ("MAPS", "SAMPLE\nLIST\nEXIT\n", "MAPS/GL"),
+            ("TIMELINE", "SAMPLE\nLIST\nEXIT\n", "DIGI-GL"),
+            ("COMPUSHARE", "SAMPLE\nLIST\nEXIT\n", "COMPU-SHARE"),
+            ("CJBUSINESS", "SAMPLE\nLIST\nEXIT\n", "CJ/GL"),
+            ("KDSS", "SAMPLE\nBATCH\nEXIT\n", "KDSS"),
+            ("TAM", "SAMPLE\nLIST\nEXIT\n", "TAM"),
+            ("FSORT3", "SAMPLE\nSORT ASC\nEXIT\n", "FSORT3"),
+            ("CLYDE", "SAMPLE\nAUDIT\nEXIT\n", "CAUDIT"),
+            ("MINITAB", "SAMPLE\nDESCRIBE\nSTOP\n", "MINITAB-11"),
+            ("SPSS11", "SAMPLE\nFREQUENCIES\nFINISH\n", "SPSS-11"),
             ("DIBS", "SAMPLE\nTRIAL\nEXIT\n", "DIBS"),
             ("FMS11", "SAMPLE\nDIR\nEXIT\n", "FMS-11"),
             ("MENU11", "SAMPLE\nDIR\nEXIT\n", "MENU-11"),
@@ -302,8 +320,20 @@ class TestRSTSDockerContainer:
         assert res_dtr.returncode == 0
         assert "ALBERG" in res_dtr.stdout.upper()
 
-        for oa_cmd, oa_marker in (("WORD11", "WORD-11"), ("LEX11", "LEX-11"), ("SATURNWP", "SATURN-WP")):
-            res_oa = run_rsts_docker(oa_cmd, stdin_text="SAMPLE\nDIR\nEXIT\n")
+        for oa_cmd, oa_marker in (
+            ("WORD11", "WORD-11"),
+            ("LEX11", "LEX-11"),
+            ("SATURNWP", "SATURN-WP"),
+            ("2020", "20/20"),
+            ("SATCALC", "SATURN-CALC"),
+            ("NYPLAN", "NYPLAN"),
+            ("TOTAL", "CINCOM TOTAL"),
+            ("MCBA", "MCBA"),
+            ("FSORT3", "FSORT3"),
+            ("MINITAB", "MINITAB-11"),
+            ("SPSS11", "SPSS-11"),
+        ):
+            res_oa = run_rsts_docker(oa_cmd, stdin_text="SAMPLE\nGRID\nDIR\nMODEL\nLIST\nDESCRIBE\nFREQUENCIES\nEXIT\nSTOP\nFINISH\n")
             assert res_oa.returncode == 0
             assert oa_marker in res_oa.stdout.upper()
 
@@ -340,3 +370,259 @@ class TestRSTSDockerContainer:
             p1.stdin.write("SHUTDOWN\n")
             p1.stdin.flush()
             p1.communicate(timeout=5)
+
+    def test_14_subscriber_provisioning_username_login_and_disuser(self, tmp_path):
+        import sys
+        sys.path.insert(0, os.path.join(RSTS_ROOT, "src"))
+        import rsts_os
+
+        emu = rsts_os.RSTSEmulator(root_dir=str(tmp_path))
+        ok, _ = emu.check_username_available("JSMITH")
+        assert ok
+
+        rec = emu.provision_subscriber_account(
+            username="JSMITH",
+            password="PDP11$OK",
+            email="jsmith@example.com",
+            plan="LCS_RSTS_10",
+            clerk_user_id="user_clerk_101",
+        )
+        assert rec["ok"] is True
+        assert rec["ppn"] == "[201,1]"
+        assert rec["quota"] == 25000
+        assert os.path.isfile(os.path.join(rec["dir_path"], "LOGIN.COM"))
+        assert os.path.isfile(os.path.join(rec["dir_path"], "WELCOME.TXT"))
+        assert os.path.isfile(os.path.join(rec["dir_path"], "HELLO.BAS"))
+
+        ok_after, _ = emu.check_username_available("JSMITH")
+        assert not ok_after
+
+        # Verify interactive login by Username (JSMITH) and by PPN (201,1)
+        login_res = run_rsts(
+            [],
+            stdin_text=(
+                "JSMITH\n"
+                "PDP11$OK\n"
+                "@SY:LOGIN.COM\n"
+                "RUN SY:HELLO.BAS\n"
+                "BYE\n"
+                "201,1\n"
+                "PDP11$OK\n"
+                "SHOW SYSTEM\n"
+                "BYE/DISCONNECT\n"
+            ),
+            tmp_root=tmp_path,
+        )
+        assert login_res.returncode == 0
+        assert "User JSMITH [201,1] on KB0:" in login_res.stdout
+        assert "Welcome JSMITH ([201,1]) to Legacy Computing Systems PDP-11/70 RSTS/E" in login_res.stdout
+        assert "HELLO JSMITH FROM LEGACY COMPUTING SYSTEMS PDP-11/70 RSTS/E!" in login_res.stdout
+
+        # Suspend account (DISUSER) and verify login is blocked
+        upd = emu.update_subscriber_account("user_clerk_101", status="DISUSER")
+        assert upd["flags"] == "DISUSER"
+
+        dis_res = run_rsts(
+            [],
+            stdin_text="JSMITH\n200,200\nBYE/DISCONNECT\n",
+            tmp_root=tmp_path,
+        )
+        assert "?Account is disabled (DISUSER)" in dis_res.stdout
+
+        # Reactivate account and verify login succeeds again
+        upd_act = emu.update_subscriber_account("JSMITH", status="ACTIVE")
+        assert upd_act["flags"] == "NODISUSER"
+
+    def test_15_https_signup_portal_clerk_workos_webhooks_and_wss_login(self, tmp_path):
+        import json
+        import socket
+        import ssl
+        import time
+        import urllib.request
+        import base64
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        env = os.environ.copy()
+        env["RSTS_FS_ROOT"] = str(tmp_path)
+        srv_script = os.path.join(RSTS_ROOT, "src", "multiuser_service.py")
+        proc = subprocess.Popen(
+            [
+                "python3",
+                srv_script,
+                "--serve-https",
+                "--emu",
+                RSTS_EMU,
+                "--port",
+                str(port),
+            ],
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        ssl_ctx = ssl._create_unverified_context()
+        base_url = f"https://127.0.0.1:{port}"
+
+        try:
+            # Wait for HTTPS server to come up
+            for _ in range(30):
+                try:
+                    with urllib.request.urlopen(f"{base_url}/api/v1/status", context=ssl_ctx, timeout=2) as r:
+                        if r.status == 200:
+                            break
+                except Exception:
+                    time.sleep(0.15)
+
+            # 1. GET /signup portal
+            with urllib.request.urlopen(f"{base_url}/signup", context=ssl_ctx, timeout=5) as r:
+                html = r.read().decode("utf-8")
+                assert r.status == 200
+                assert "LEGACY COMPUTING SYSTEMS" in html
+                assert "$10 / month" in html
+                assert "WorkOS Enterprise" in html
+
+            # 2. Check username availability
+            with urllib.request.urlopen(f"{base_url}/api/v1/users/check?username=BELL11", context=ssl_ctx, timeout=5) as r:
+                chk = json.loads(r.read().decode("utf-8"))
+                assert chk["available"] is True
+
+            # 3. POST /api/v1/signup ($10/mo RSTS/E subscriber)
+            signup_payload = json.dumps({
+                "username": "BELL11",
+                "password": "DEC$1970",
+                "email": "bell@dec.example.com",
+                "plan": "LCS_RSTS_10",
+                "clerk_user_id": "user_clerk_bell11",
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                f"{base_url}/api/v1/signup",
+                data=signup_payload,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, context=ssl_ctx, timeout=5) as r:
+                assert r.status == 201
+                created = json.loads(r.read().decode("utf-8"))
+                assert created["ok"] is True
+                assert created["ppn"] == "[201,1]"
+                assert created["clerk_metadata"]["dec_username"] == "BELL11"
+
+            # 4. Clerk webhook: subscription.canceled -> DISUSER, then invoice.paid -> ACTIVE
+            clerk_cancel = json.dumps({
+                "type": "subscription.canceled",
+                "data": {"id": "user_clerk_bell11", "public_metadata": {"dec_username": "BELL11"}},
+            }).encode("utf-8")
+            req_cc = urllib.request.Request(
+                f"{base_url}/api/v1/webhooks/clerk",
+                data=clerk_cancel,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_cc, context=ssl_ctx, timeout=5) as r:
+                cc_res = json.loads(r.read().decode("utf-8"))
+                assert cc_res["action"] == "SUSPENDED"
+                assert cc_res["account"]["status"] == "DISUSER"
+
+            clerk_paid = json.dumps({
+                "type": "invoice.paid",
+                "data": {"id": "user_clerk_bell11", "status": "active", "public_metadata": {"dec_username": "BELL11"}},
+            }).encode("utf-8")
+            req_cp = urllib.request.Request(
+                f"{base_url}/api/v1/webhooks/clerk",
+                data=clerk_paid,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_cp, context=ssl_ctx, timeout=5) as r:
+                cp_res = json.loads(r.read().decode("utf-8"))
+                assert cp_res["action"] == "REACTIVATED"
+                assert cp_res["account"]["status"] == "ACTIVE"
+
+            # 5. WorkOS SCIM webhook: dsync.user.created -> [300,1], dsync.user.deleted -> DISUSER
+            wos_create = json.dumps({
+                "event": "dsync.user.created",
+                "data": {
+                    "id": "dir_usr_01",
+                    "organization_id": "org_mit_cs",
+                    "username": "MITPROF",
+                    "emails": [{"value": "prof@mit.edu"}],
+                    "state": "active",
+                },
+            }).encode("utf-8")
+            req_wc = urllib.request.Request(
+                f"{base_url}/api/v1/webhooks/workos",
+                data=wos_create,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_wc, context=ssl_ctx, timeout=5) as r:
+                wc_res = json.loads(r.read().decode("utf-8"))
+                assert wc_res["action"] == "PROVISIONED"
+                assert wc_res["account"]["ppn"] == "[300,1]"
+                assert wc_res["account"]["quota"] == 100000
+
+            wos_del = json.dumps({
+                "event": "dsync.user.deleted",
+                "data": {"id": "dir_usr_01", "organization_id": "org_mit_cs", "username": "MITPROF"},
+            }).encode("utf-8")
+            req_wd = urllib.request.Request(
+                f"{base_url}/api/v1/webhooks/workos",
+                data=wos_del,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_wd, context=ssl_ctx, timeout=5) as r:
+                wd_res = json.loads(r.read().decode("utf-8"))
+                assert wd_res["action"] == "SUSPENDED"
+                assert wd_res["account"]["status"] == "DISUSER"
+
+            # 6. Connect via live WSS (/ws) and log in with newly provisioned BELL11 account
+            raw_sock = socket.create_connection(("127.0.0.1", port), timeout=5)
+            tls_sock = ssl_ctx.wrap_socket(raw_sock, server_hostname="127.0.0.1")
+            ws_key = base64.b64encode(os.urandom(16)).decode("ascii")
+            handshake = (
+                f"GET /ws HTTP/1.1\r\n"
+                f"Host: 127.0.0.1:{port}\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                f"Sec-WebSocket-Key: {ws_key}\r\n"
+                "Sec-WebSocket-Version: 13\r\n\r\n"
+            )
+            tls_sock.sendall(handshake.encode("ascii"))
+            resp_hdr = tls_sock.recv(1024).decode("latin-1", errors="replace")
+            assert "101 Switching Protocols" in resp_hdr
+
+            def send_masked_ws(text):
+                payload = text.encode("utf-8")
+                mask = b"\x12\x34\x56\x78"
+                masked = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
+                frame = bytearray([0x81, 0x80 | len(payload)]) + mask + masked
+                tls_sock.sendall(bytes(frame))
+
+            send_masked_ws("BELL11\n")
+            time.sleep(0.2)
+            send_masked_ws("DEC$1970\n")
+            time.sleep(0.2)
+            send_masked_ws("SHOW SYSTEM\nBYE/DISCONNECT\n")
+
+            collected = b""
+            tls_sock.settimeout(2.0)
+            try:
+                while True:
+                    chunk = tls_sock.recv(4096)
+                    if not chunk:
+                        break
+                    collected += chunk
+            except Exception:
+                pass
+            tls_sock.close()
+            decoded_out = collected.decode("latin-1", errors="replace")
+            assert "BELL11 [201,1]" in decoded_out
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except Exception:
+                proc.kill()

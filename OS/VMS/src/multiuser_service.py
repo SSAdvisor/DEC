@@ -27,6 +27,9 @@ import time
 import urllib.parse
 import zlib
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+import lcs_provisioning
+
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -348,6 +351,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <button onclick="sendKey('\\x1a')">CTRL+Z</button>
     <button onclick="clearScreen()">CLEAR</button>
     <button onclick="newSession()">NEW SESSION</button>
+    <button onclick="window.location.href='/signup'" style="border-color:#ffb000;color:#ffb000;font-weight:bold;">SIGN UP ($10/MO)</button>
   </div>
 </header>
 <div id="workspace">
@@ -1425,6 +1429,12 @@ class MultiUserTerminalServer:
         self.fs_root = os.environ.get("VMS_FS_ROOT", os.path.join(self.os_dir, "fs"))
         self.sessions_path = os.path.join(self.fs_root, ".vms_sessions.json")
         self.sysuaf_path = os.path.join(self.fs_root, "dka0", "sys0", "syscommon", "sysexe", "SYSUAF.JSON")
+        self.provisioning = lcs_provisioning.LCSProvisioningEngine(
+            primary_os="VMS",
+            os_dir=self.os_dir,
+            fs_root=self.fs_root,
+            https_port=self.https_port,
+        )
 
         # Track per-browser-tab session ID -> (proc, master_fd) and authenticated username
         self.sid_procs = {}
@@ -1478,7 +1488,8 @@ class MultiUserTerminalServer:
 
         uinfo = users[matched_user]
         flags_list = [fl.strip().upper() for fl in uinfo.get("flags", "").split(",") if fl.strip()]
-        if "DISUSER" in flags_list and "NODISUSER" not in flags_list:
+        status_str = str(uinfo.get("status", "ACTIVE")).upper()
+        if ("DISUSER" in flags_list and "NODISUSER" not in flags_list) or status_str in ("DISUSER", "SUSPENDED", "DISABLED"):
             return False, None, "%LOGIN-F-DISUSER, account is disabled"
 
         expected_pw = uinfo.get("password", "")
@@ -1530,6 +1541,7 @@ class MultiUserTerminalServer:
         lines = req_text.split("\r\n")
         first_line = lines[0] if lines else ""
         parts = first_line.split()
+        method = parts[0].upper() if len(parts) >= 1 else "GET"
         raw_path = parts[1] if len(parts) >= 2 else "/"
         parsed = urllib.parse.urlsplit(raw_path)
         path = parsed.path
@@ -1541,6 +1553,19 @@ class MultiUserTerminalServer:
             if ":" in ln:
                 k, v = ln.split(":", 1)
                 headers[k.strip().lower()] = v.strip()
+
+        content_length = 0
+        try:
+            content_length = int(headers.get("content-length", "0"))
+        except ValueError:
+            content_length = 0
+        body_bytes = b""
+        if content_length > 0:
+            try:
+                body_bytes = await asyncio.wait_for(reader.readexactly(content_length), timeout=10.0)
+            except Exception:
+                writer.close()
+                return
 
         if headers.get("upgrade", "").lower() == "websocket" or path.startswith("/ws"):
             ws_key = headers.get("sec-websocket-key", "")
@@ -1558,6 +1583,22 @@ class MultiUserTerminalServer:
                 await self._bridge_websocket_x11(reader, writer, sid)
             else:
                 await self._bridge_websocket_pty(reader, writer, sid)
+            return
+
+        # Dispatch Legacy Computing Systems /signup and /api/v1/* endpoints
+        api_resp = self.provisioning.handle_http_request(method, path, qs, headers, body_bytes)
+        if api_resp is not None:
+            st_code, st_text, ctype, resp_body = api_resp
+            resp_hdr = (
+                f"HTTP/1.1 {st_code} {st_text}\r\n"
+                f"Content-Type: {ctype}\r\n"
+                f"Content-Length: {len(resp_body)}\r\n"
+                "Cache-Control: no-store\r\n"
+                "Connection: close\r\n\r\n"
+            ).encode("ascii")
+            writer.write(resp_hdr + resp_body)
+            await writer.drain()
+            writer.close()
             return
 
         resp_hdr = (

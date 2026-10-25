@@ -1,0 +1,148 @@
+10 MAP (REC_BUF) STRING MAP_LINE$ = 255% \ DIM E_ID$(15%) \ DIM E_NAME$(15%) \ DIM E_DEPT$(15%) \ DIM E_SAL%(15%)
+20 NUM_REC% = 0% \ ING_DB$ = "VAXINGDB" \ FRM_NM$ = "EMP_VIF" \ DB_FILE$ = "INGRES.DAT"
+30 BLANKS$ = "                                                                                "
+40 SEP$    = "--------------------------------------------------------------------------------"
+50 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ CMD_LINE$ = COMMAND$
+60 IF CMD_LINE$ = "" THEN GOTO 80
+70 IS_BATCH% = 1% \ SC_REM$ = CMD_LINE$ \ GOTO 170
+80 PRINT EQU$ \ PRINT "    RTI INGRES V6.2 for DEC VAX/VMS - QUEL, SQL, VIFRED & ABF 4GL Suite" \ PRINT "    Relational Technology, Inc. (Alameda, CA) - VAX/VMS Relational DBMS" \ PRINT EQU$
+90 PRINT "Type HELP for commands, SAMPLE to load EMP, RETRIEVE, ISQL, VIFRED, ABF, or EXIT." \ PRINT ""
+100 PRINT "INGRES> "; \ LINE INPUT RAW_INPUT$
+110 IF LEN(RAW_INPUT$) = 0% THEN GOTO 3400
+120 IF ASCII(LEFT$(RAW_INPUT$, 1%)) = 26% THEN GOTO 3400
+130 IF ASCII(LEFT$(RAW_INPUT$, 1%)) = 0% THEN GOTO 3400
+140 T_IN$ = RAW_INPUT$ \ GOSUB 500
+150 IF T_OUT$ = "" THEN GOTO 100
+160 SC_REM$ = T_OUT$
+170 IF SC_REM$ = "" THEN GOTO 230
+180 SC_P% = INSTR(1%, SC_REM$, ";")
+190 IF SC_P% = 0% THEN GOTO 210
+200 RAW_CMD$ = LEFT$(SC_REM$, SC_P% - 1%) \ SC_REM$ = MID$(SC_REM$, SC_P% + 1%, LEN(SC_REM$) - SC_P%) \ GOTO 220
+210 RAW_CMD$ = SC_REM$ \ SC_REM$ = ""
+220 GOSUB 250 \ GOTO 170
+230 IF IS_BATCH% = 1% THEN GOTO 3400
+240 GOTO 100
+250 T_IN$ = RAW_CMD$ \ GOSUB 500 \ WORK_CMD$ = T_OUT$
+260 IF WORK_CMD$ = "" THEN GOTO 495
+270 SP% = INSTR(1%, WORK_CMD$, " ")
+280 IF SP% = 0% THEN GOTO 300
+290 VERB$ = LEFT$(WORK_CMD$, SP% - 1%) \ ARGS$ = MID$(WORK_CMD$, SP% + 1%, LEN(WORK_CMD$) - SP%) \ GOTO 310
+300 VERB$ = WORK_CMD$ \ ARGS$ = ""
+310 U_IN$ = VERB$ \ GOSUB 580 \ VERB$ = U_OUT$ \ T_IN$ = ARGS$ \ GOSUB 500 \ ARGS$ = T_OUT$
+320 IF VERB$ = "EXIT" OR VERB$ = "QUIT" OR VERB$ = "BYE" THEN GOTO 3400
+330 IF VERB$ = "HELP" OR VERB$ = "?" THEN GOTO 3000
+340 IF VERB$ = "SAMPLE" OR VERB$ = "DEMO" THEN GOTO 700
+350 IF VERB$ = "RETRIEVE" OR VERB$ = "LIST" OR VERB$ = "QUEL" OR VERB$ = "IQUEL" THEN GOTO 820
+360 IF VERB$ = "ISQL" OR VERB$ = "SQL" OR VERB$ = "SELECT" THEN GOTO 1020
+370 IF VERB$ = "VIFRED" OR VERB$ = "FORM" THEN GOTO 1180
+380 IF VERB$ = "ABF" OR VERB$ = "OSL" OR VERB$ = "QBF" THEN GOTO 1340
+390 IF VERB$ = "ADD" OR VERB$ = "APPEND" THEN GOTO 1480
+400 IF VERB$ = "SAVE" THEN GOTO 1650
+410 IF VERB$ = "LOAD" OR VERB$ = "COPY" THEN GOTO 1800
+420 IF VERB$ = "SHOW" OR VERB$ = "STATUS" THEN GOTO 2050
+430 IF VERB$ = "CLEAR" OR VERB$ = "RESET" THEN GOTO 2150
+480 PRINT "E_US09C4 INGRES: Unknown QUEL/SQL command '"; VERB$; "'. Type HELP."
+495 RETURN
+500 T_OUT$ = T_IN$
+510 IF LEN(T_OUT$) = 0% THEN GOTO 570
+520 IF LEFT$(T_OUT$, 1%) = " " THEN T_OUT$ = MID$(T_OUT$, 2%, LEN(T_OUT$) - 1%)
+530 IF LEFT$(T_OUT$, 1%) = " " THEN GOTO 510
+540 IF LEN(T_OUT$) = 0% THEN GOTO 570
+550 IF MID$(T_OUT$, LEN(T_OUT$), 1%) = " " THEN T_OUT$ = LEFT$(T_OUT$, LEN(T_OUT$) - 1%)
+560 IF MID$(T_OUT$, LEN(T_OUT$), 1%) = " " THEN GOTO 540
+570 RETURN
+580 U_OUT$ = "" \ UJ% = 1%
+590 IF UJ% > LEN(U_IN$) THEN GOTO 630
+600 UCH$ = MID$(U_IN$, UJ%, 1%) \ UA% = ASCII(UCH$)
+610 IF UA% >= 97% AND UA% <= 122% THEN UCH$ = CHR$(UA% - 32%)
+620 U_OUT$ = U_OUT$ + UCH$ \ UJ% = UJ% + 1% \ GOTO 590
+630 RETURN
+700 NUM_REC% = 4% \ ING_DB$ = "VAXINGDB" \ FRM_NM$ = "EMP_VIF"
+710 E_ID$(1%) = "I101" \ E_NAME$(1%) = "Stonebraker, M.  " \ E_DEPT$(1%) = "ARCH" \ E_SAL%(1%) = 4800%
+720 E_ID$(2%) = "I102" \ E_NAME$(2%) = "Wong, Eugene     " \ E_DEPT$(2%) = "RES " \ E_SAL%(2%) = 4500%
+730 E_ID$(3%) = "I103" \ E_NAME$(3%) = "Held, Gerald     " \ E_DEPT$(3%) = "ENG " \ E_SAL%(3%) = 4200%
+740 E_ID$(4%) = "I104" \ E_NAME$(4%) = "Kreps, Peter     " \ E_DEPT$(4%) = "ENG " \ E_SAL%(4%) = 3900%
+750 PRINT "[Sample RTI INGRES V6.2 database "; ING_DB$; " loaded - 4 tuples in relation EMP]" \ GOTO 495
+820 IF NUM_REC% = 0% THEN GOTO 3370
+830 F_DEPT$ = ""
+840 IF ARGS$ <> "" THEN U_IN$ = ARGS$
+845 IF ARGS$ <> "" THEN GOSUB 580
+850 IF ARGS$ <> "" THEN F_DEPT$ = U_OUT$
+860 PRINT EQU$ \ PRINT "  IQUEL V6.2: RANGE OF E IS EMP \ RETRIEVE (E.ALL) [Relation: EMP]" \ PRINT SEP$
+870 PRINT "  |empid   |ename                |dept    |salary    |" \ PRINT SEP$
+880 QI% = 1% \ Q_CNT% = 0% \ Q_SUM% = 0%
+890 IF QI% > NUM_REC% THEN GOTO 990
+900 T_IN$ = E_DEPT$(QI%) \ GOSUB 500 \ D_CLEAN$ = T_OUT$
+910 IF F_DEPT$ = "" THEN GOTO 940
+920 IF D_CLEAN$ = F_DEPT$ THEN GOTO 940
+930 GOTO 980
+940 Q_CNT% = Q_CNT% + 1% \ Q_SUM% = Q_SUM% + E_SAL%(QI%)
+950 ID_P$ = LEFT$(E_ID$(QI%) + BLANKS$, 6%) \ NM_P$ = LEFT$(E_NAME$(QI%) + BLANKS$, 19%) \ DP_P$ = LEFT$(D_CLEAN$ + BLANKS$, 6%)
+960 PRINT "  | "; ID_P$; " | "; NM_P$; " | "; DP_P$; " | $"; E_SAL%(QI%); "   |"
+980 QI% = QI% + 1% \ GOTO 890
+990 PRINT SEP$ \ PRINT "  [QUEL RETRIEVE: ("; Q_CNT%; " tuples) | SUM(E.SALARY BY E.ALL) = $"; Q_SUM%; "]" \ PRINT EQU$ \ GOTO 495
+1020 IF NUM_REC% = 0% THEN GOTO 3370
+1030 TOT_S% = 0% \ MAX_S% = 0% \ II% = 1%
+1040 IF II% > NUM_REC% THEN GOTO 1090
+1050 TOT_S% = TOT_S% + E_SAL%(II%)
+1060 IF E_SAL%(II%) > MAX_S% THEN MAX_S% = E_SAL%(II%)
+1070 II% = II% + 1% \ GOTO 1040
+1090 AVG_S% = INT(TOT_S% / NUM_REC%)
+1100 PRINT EQU$ \ PRINT "  ISQL V6.2 Interactive SQL Aggregate View — Database: "; ING_DB$ \ PRINT SEP$
+1110 PRINT "  SELECT COUNT(*), SUM(SALARY), AVG(SALARY), MAX(SALARY) FROM EMP;"
+1120 PRINT "  COUNT = "; NUM_REC%; " | SUM = $"; TOT_S%; " | AVG = $"; AVG_S%; " | MAX = $"; MAX_S% \ PRINT EQU$ \ GOTO 495
+1180 IF ARGS$ <> "" THEN FRM_NM$ = ARGS$
+1190 U_IN$ = FRM_NM$ \ GOSUB 580 \ FRM_NM$ = U_OUT$
+1200 PRINT EQU$ \ PRINT "  INGRES VIFRED (Visual Forms Editor) — VT220 Form Layout: "; FRM_NM$ \ PRINT SEP$
+1210 PRINT "  | RTI INGRES VIFRED FORM: "; FRM_NM$; " | DB: "; ING_DB$; " | Tuple ID: [____] Dept: [____] |"
+1220 PRINT "  | Employee Full Name: [____________________] Salary($): [______] [PF2=Go] |"
+1230 PRINT "  [VIFRED Form "; FRM_NM$; " compiled to INGRES System Catalogs (II_FORMS)]" \ PRINT EQU$ \ GOTO 495
+1340 IF NUM_REC% = 0% THEN GOTO 3370
+1350 PRINT EQU$ \ PRINT "  INGRES ABF (Application-By-Forms) 4GL OSL Frame Execution" \ PRINT SEP$
+1360 PRINT "  Application: EMP_MGR_APP | Frame: PAYROLL_AUDIT_FRM | Form: "; FRM_NM$
+1370 PRINT "  [ABF 4GL Frame PAYROLL_AUDIT_FRM executed across "; NUM_REC%; " tuples — 0 errors]" \ PRINT EQU$ \ GOTO 495
+1480 IF NUM_REC% >= 15% THEN GOTO 1610
+1490 C1% = INSTR(1%, ARGS$, ",")
+1500 IF C1% = 0% THEN GOTO 1600
+1510 T_IN$ = LEFT$(ARGS$, C1% - 1%) \ GOSUB 500 \ U_IN$ = T_OUT$ \ GOSUB 580 \ ID_V$ = U_OUT$
+1520 REM1$ = MID$(ARGS$, C1% + 1%, LEN(ARGS$) - C1%) \ C2% = INSTR(1%, REM1$, ",")
+1530 IF C2% = 0% THEN GOTO 1600
+1540 T_IN$ = LEFT$(REM1$, C2% - 1%) \ GOSUB 500 \ NM_V$ = T_OUT$
+1550 REM2$ = MID$(REM1$, C2% + 1%, LEN(REM1$) - C2%) \ C3% = INSTR(1%, REM2$, ",")
+1560 IF C3% = 0% THEN GOTO 1600
+1570 T_IN$ = LEFT$(REM2$, C3% - 1%) \ GOSUB 500 \ U_IN$ = T_OUT$ \ GOSUB 580 \ DP_V$ = U_OUT$
+1580 SL_V% = VAL(MID$(REM2$, C3% + 1%, LEN(REM2$) - C3%))
+1590 NUM_REC% = NUM_REC% + 1% \ E_ID$(NUM_REC%) = ID_V$ \ E_NAME$(NUM_REC%) = NM_V$ \ E_DEPT$(NUM_REC%) = DP_V$ \ E_SAL%(NUM_REC%) = SL_V%
+1595 PRINT "[QUEL APPEND TO EMP: (1 tuple) ID="; ID_V$; ", Name="; NM_V$; ", Dept="; DP_V$; ", Sal=$"; SL_V%; "]" \ GOTO 495
+1600 PRINT "INGRES: Syntax is ADD <id>, <name>, <dept>, <salary>" \ GOTO 495
+1610 PRINT "INGRES: Relation EMP is full" \ GOTO 495
+1650 IF NUM_REC% = 0% THEN GOTO 3370
+1660 SV_FILE$ = DB_FILE$
+1670 IF ARGS$ <> "" THEN SV_FILE$ = ARGS$
+1680 OPEN SV_FILE$ FOR OUTPUT AS FILE #2% \ SI% = 1%
+1690 IF SI% > NUM_REC% THEN GOTO 1730
+1700 PRINT #2%, E_ID$(SI%); "|"; E_NAME$(SI%); "|"; E_DEPT$(SI%); "|"; E_SAL%(SI%)
+1710 SI% = SI% + 1% \ GOTO 1690
+1730 CLOSE #2% \ PRINT "["; NUM_REC%; " INGRES tuples saved to "; SV_FILE$; "]" \ GOTO 495
+1800 LD_FILE$ = DB_FILE$
+1810 IF ARGS$ <> "" THEN LD_FILE$ = ARGS$
+1820 ON ERROR GOTO 1950 \ OPEN LD_FILE$ FOR INPUT AS FILE #2% \ NUM_REC% = 0%
+1830 LINE INPUT #2%, T_LINE$ \ T_IN$ = T_LINE$ \ GOSUB 500
+1840 IF T_OUT$ = "" THEN GOTO 1830
+1850 P1% = INSTR(1%, T_OUT$, "|")
+1860 IF P1% = 0% THEN GOTO 1830
+1870 FID$ = LEFT$(T_OUT$, P1% - 1%) \ REM1$ = MID$(T_OUT$, P1% + 1%, LEN(T_OUT$) - P1%) \ P2% = INSTR(1%, REM1$, "|")
+1880 IF P2% = 0% THEN GOTO 1830
+1890 FNM$ = LEFT$(REM1$, P2% - 1%) \ REM2$ = MID$(REM1$, P2% + 1%, LEN(REM1$) - P2%) \ P3% = INSTR(1%, REM2$, "|")
+1900 IF P3% = 0% THEN GOTO 1830
+1910 FDP$ = LEFT$(REM2$, P3% - 1%) \ FSL% = VAL(MID$(REM2$, P3% + 1%, LEN(REM2$) - P3%))
+1920 NUM_REC% = NUM_REC% + 1% \ E_ID$(NUM_REC%) = FID$ \ E_NAME$(NUM_REC%) = FNM$ \ E_DEPT$(NUM_REC%) = FDP$ \ E_SAL%(NUM_REC%) = FSL% \ GOTO 1830
+1950 CLOSE #2% \ RESUME 1960
+1960 ON ERROR GOTO 0 \ PRINT "["; NUM_REC%; " INGRES tuples loaded from "; LD_FILE$; "]" \ GOTO 495
+2050 PRINT "RTI INGRES V6.2 Status: DB="; ING_DB$; " | Form="; FRM_NM$; " | File="; DB_FILE$; " (Tuples: "; NUM_REC%; ")" \ GOTO 495
+2150 NUM_REC% = 0% \ PRINT "[INGRES relation EMP cleared]" \ GOTO 495
+3000 PRINT EQU$ \ PRINT "    RTI INGRES V6.2 (QUEL / SQL / VIFRED / ABF) Commands" \ PRINT EQU$
+3010 PRINT "  SAMPLE / RETRIEVE [dept] / ISQL / VIFRED [form] / ABF"
+3020 PRINT "  ADD <id>, <name>, <dept>, <sal> / SAVE [f] / LOAD [f] / SHOW / CLEAR / EXIT" \ PRINT EQU$ \ GOTO 495
+3370 PRINT "INGRES: Relation EMP is empty. Use SAMPLE or ADD." \ GOTO 495
+3400 END

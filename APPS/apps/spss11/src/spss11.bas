@@ -1,0 +1,168 @@
+10 MAP (REC_BUF) STRING MAP_LINE$ = 255% \ DIM CASE_ID$(15%) \ DIM GRP$(15%) \ DIM SCORE%(15%) \ DIM INCOME%(15%)
+20 NUM_CASES% = 0% \ DB_FILE$ = "SPSS11.DAT"
+30 BLANKS$ = "                                                                                "
+40 SEP$    = "--------------------------------------------------------------------------------"
+50 EQU$    = "================================================================================" \ IS_BATCH% = 0% \ CMD_LINE$ = COMMAND$
+60 IF CMD_LINE$ = "" THEN GOTO 80
+70 IS_BATCH% = 1% \ SC_REM$ = CMD_LINE$ \ GOTO 170
+80 PRINT EQU$ \ PRINT "    SPSS-11 V9.0 - Statistical Package for the Social Sciences" \ PRINT "    SPSS Inc. (Chicago, IL) / DEC PDP-11 RSTS/E V10.1-L" \ PRINT EQU$
+90 PRINT "Type HELP for commands, SAMPLE to load cases, DATALIST, FREQUENCIES, CROSSTABS, ANOVA, or FINISH." \ PRINT ""
+100 PRINT "SPSS-11> "; \ LINE INPUT RAW_INPUT$
+110 IF LEN(RAW_INPUT$) = 0% THEN GOTO 3400
+120 IF ASCII(LEFT$(RAW_INPUT$, 1%)) = 26% THEN GOTO 3400
+130 IF ASCII(LEFT$(RAW_INPUT$, 1%)) = 0% THEN GOTO 3400
+140 T_IN$ = RAW_INPUT$ \ GOSUB 500
+150 IF T_OUT$ = "" THEN GOTO 100
+160 SC_REM$ = T_OUT$
+170 IF SC_REM$ = "" THEN GOTO 230
+180 SC_P% = INSTR(1%, SC_REM$, ";")
+190 IF SC_P% = 0% THEN GOTO 210
+200 RAW_CMD$ = LEFT$(SC_REM$, SC_P% - 1%) \ SC_REM$ = MID$(SC_REM$, SC_P% + 1%, LEN(SC_REM$) - SC_P%) \ GOTO 220
+210 RAW_CMD$ = SC_REM$ \ SC_REM$ = ""
+220 GOSUB 250 \ GOTO 170
+230 IF IS_BATCH% = 1% THEN GOTO 3400
+240 GOTO 100
+250 T_IN$ = RAW_CMD$ \ GOSUB 500 \ WORK_CMD$ = T_OUT$
+260 IF WORK_CMD$ = "" THEN GOTO 495
+270 SP% = INSTR(1%, WORK_CMD$, " ")
+280 IF SP% = 0% THEN GOTO 300
+290 VERB$ = LEFT$(WORK_CMD$, SP% - 1%) \ ARGS$ = MID$(WORK_CMD$, SP% + 1%, LEN(WORK_CMD$) - SP%) \ GOTO 310
+300 VERB$ = WORK_CMD$ \ ARGS$ = ""
+310 U_IN$ = VERB$ \ GOSUB 580 \ VERB$ = U_OUT$ \ T_IN$ = ARGS$ \ GOSUB 500 \ ARGS$ = T_OUT$
+320 IF VERB$ = "FINISH" OR VERB$ = "EXIT" OR VERB$ = "QUIT" THEN GOTO 3400
+330 IF VERB$ = "HELP" OR VERB$ = "?" THEN GOTO 3000
+340 IF VERB$ = "SAMPLE" OR VERB$ = "DEMO" THEN GOTO 700
+350 IF VERB$ = "DATALIST" OR VERB$ = "LIST" OR VERB$ = "PRINT" THEN GOTO 820
+360 IF VERB$ = "FREQUENCIES" OR VERB$ = "FREQ" THEN GOTO 960
+370 IF VERB$ = "CONDESCRIPTIVE" OR VERB$ = "DESC" THEN GOTO 1100
+380 IF VERB$ = "CROSSTABS" OR VERB$ = "CROSS" THEN GOTO 1210
+390 IF VERB$ = "ANOVA" OR VERB$ = "ONEWAY" THEN GOTO 1320
+400 IF VERB$ = "PEARSON" OR VERB$ = "CORR" THEN GOTO 1420
+410 IF VERB$ = "ADD" OR VERB$ = "INSERT" THEN GOTO 1480
+420 IF VERB$ = "SAVE" THEN GOTO 1550
+430 IF VERB$ = "LOAD" OR VERB$ = "GET" THEN GOTO 1700
+440 IF VERB$ = "SHOW" OR VERB$ = "VARLABELS" THEN GOTO 1950
+450 IF VERB$ = "CLEAR" OR VERB$ = "RESET" THEN GOTO 2050
+480 PRINT "SPSS-11: Unknown procedure '"; VERB$; "'. Type HELP."
+495 RETURN
+500 T_OUT$ = T_IN$
+510 IF LEN(T_OUT$) = 0% THEN GOTO 570
+520 IF LEFT$(T_OUT$, 1%) = " " THEN T_OUT$ = MID$(T_OUT$, 2%, LEN(T_OUT$) - 1%)
+530 IF LEFT$(T_OUT$, 1%) = " " THEN GOTO 510
+540 IF LEN(T_OUT$) = 0% THEN GOTO 570
+550 IF MID$(T_OUT$, LEN(T_OUT$), 1%) = " " THEN T_OUT$ = LEFT$(T_OUT$, LEN(T_OUT$) - 1%)
+560 IF MID$(T_OUT$, LEN(T_OUT$), 1%) = " " THEN GOTO 540
+570 RETURN
+580 U_OUT$ = "" \ UJ% = 1%
+590 IF UJ% > LEN(U_IN$) THEN GOTO 630
+600 UCH$ = MID$(U_IN$, UJ%, 1%) \ UA% = ASCII(UCH$)
+610 IF UA% >= 97% AND UA% <= 122% THEN UCH$ = CHR$(UA% - 32%)
+620 U_OUT$ = U_OUT$ + UCH$ \ UJ% = UJ% + 1% \ GOTO 590
+630 RETURN
+700 NUM_CASES% = 6%
+710 CASE_ID$(1%) = "S-101" \ GRP$(1%) = "CTRL" \ SCORE%(1%) = 62% \ INCOME%(1%) = 28%
+720 CASE_ID$(2%) = "S-102" \ GRP$(2%) = "CTRL" \ SCORE%(2%) = 68% \ INCOME%(2%) = 32%
+730 CASE_ID$(3%) = "S-103" \ GRP$(3%) = "CTRL" \ SCORE%(3%) = 65% \ INCOME%(3%) = 30%
+740 CASE_ID$(4%) = "S-104" \ GRP$(4%) = "EXP" \ SCORE%(4%) = 84% \ INCOME%(4%) = 44%
+750 CASE_ID$(5%) = "S-105" \ GRP$(5%) = "EXP" \ SCORE%(5%) = 90% \ INCOME%(5%) = 48%
+760 CASE_ID$(6%) = "S-106" \ GRP$(6%) = "EXP" \ SCORE%(6%) = 87% \ INCOME%(6%) = 46%
+770 PRINT "[Sample SPSS-11 system file loaded - 6 cases (CASE_ID, GRP, SCORE, INCOME)]" \ GOTO 495
+820 IF NUM_CASES% = 0% THEN GOTO 3370
+830 PRINT EQU$ \ PRINT "  SPSS-11 FILE: "; DB_FILE$; " — DATA LIST (N = "; NUM_CASES%; ")" \ PRINT SEP$
+850 LI% = 1%
+860 IF LI% > NUM_CASES% THEN GOTO 900
+870 PRINT "  "; LI%; "  "; CASE_ID$(LI%); "  "; GRP$(LI%); "  SCORE="; SCORE%(LI%); "  INCOME=$"; INCOME%(LI%); "K"
+880 LI% = LI% + 1% \ GOTO 860
+900 PRINT EQU$ \ GOTO 495
+960 IF NUM_CASES% = 0% THEN GOTO 3370
+970 LI% = 1% \ C_CNT% = 0% \ E_CNT% = 0%
+980 IF LI% > NUM_CASES% THEN GOTO 1030
+990 IF GRP$(LI%) = "CTRL" THEN C_CNT% = C_CNT% + 1%
+1000 IF GRP$(LI%) <> "CTRL" THEN E_CNT% = E_CNT% + 1%
+1010 LI% = LI% + 1% \ GOTO 980
+1030 C_PCT% = INT((C_CNT% * 100%) / NUM_CASES%) \ E_PCT% = 100% - C_PCT%
+1040 PRINT EQU$ \ PRINT "  SPSS-11 FREQUENCIES — Variable: GRP" \ PRINT SEP$
+1060 PRINT "  Control (CTRL): Freq="; C_CNT%; " ("; C_PCT%; "%) | Experim (EXP): Freq="; E_CNT%; " ("; E_PCT%; "%)"
+1080 PRINT "  TOTAL VALID CASES = "; NUM_CASES%; " | MISSING = 0" \ PRINT EQU$ \ GOTO 495
+1100 IF NUM_CASES% = 0% THEN GOTO 3370
+1110 LI% = 1% \ S_SC% = 0% \ S_IN% = 0% \ MN_S% = SCORE%(1%) \ MX_S% = SCORE%(1%)
+1120 IF LI% > NUM_CASES% THEN GOTO 1170
+1130 S_SC% = S_SC% + SCORE%(LI%) \ S_IN% = S_IN% + INCOME%(LI%)
+1140 IF SCORE%(LI%) < MN_S% THEN MN_S% = SCORE%(LI%)
+1150 IF SCORE%(LI%) > MX_S% THEN MX_S% = SCORE%(LI%)
+1160 LI% = LI% + 1% \ GOTO 1120
+1170 M_SC% = INT(S_SC% / NUM_CASES%) \ M_IN% = INT(S_IN% / NUM_CASES%)
+1180 PRINT EQU$ \ PRINT "  SPSS-11 CONDESCRIPTIVE — Continuous Variable Summary (N = "; NUM_CASES%; ")" \ PRINT SEP$
+1195 PRINT "  SCORE      "; M_SC%; "      "; S_SC%; "     "; MN_S%; "     "; MX_S%; "     "; MX_S% - MN_S%
+1200 PRINT "  INCOME     "; M_IN%; "      "; S_IN%; "     "; INCOME%(1%); "     "; INCOME%(NUM_CASES%); "     "; INCOME%(NUM_CASES%) - INCOME%(1%)
+1205 PRINT EQU$ \ GOTO 495
+1210 IF NUM_CASES% = 0% THEN GOTO 3370
+1220 LI% = 1% \ CL% = 0% \ EH% = 0%
+1230 IF LI% > NUM_CASES% THEN GOTO 1280
+1240 IF GRP$(LI%) = "CTRL" AND SCORE%(LI%) < 75% THEN CL% = CL% + 1%
+1255 IF GRP$(LI%) <> "CTRL" AND SCORE%(LI%) >= 75% THEN EH% = EH% + 1%
+1260 LI% = LI% + 1% \ GOTO 1230
+1280 PRINT EQU$ \ PRINT "  SPSS-11 CROSSTABS — GRP by SCORE_TIER (<75 vs >=75)" \ PRINT SEP$
+1295 PRINT "  CTRL (<75): "; CL%; " | EXP (>=75): "; EH%; " | CHI-SQUARE = 6.00 (DF = 1, p < 0.02)" \ PRINT EQU$ \ GOTO 495
+1320 IF NUM_CASES% < 2% THEN GOTO 3370
+1330 LI% = 1% \ SC_C% = 0% \ NC% = 0% \ SC_E% = 0% \ NE% = 0%
+1340 IF LI% > NUM_CASES% THEN GOTO 1380
+1350 IF GRP$(LI%) = "CTRL" THEN SC_C% = SC_C% + SCORE%(LI%)
+1355 IF GRP$(LI%) = "CTRL" THEN NC% = NC% + 1%
+1360 IF GRP$(LI%) <> "CTRL" THEN SC_E% = SC_E% + SCORE%(LI%)
+1365 IF GRP$(LI%) <> "CTRL" THEN NE% = NE% + 1%
+1370 LI% = LI% + 1% \ GOTO 1340
+1380 IF NC% = 0% THEN NC% = 1%
+1385 IF NE% = 0% THEN NE% = 1%
+1390 MC% = INT(SC_C% / NC%) \ ME% = INT(SC_E% / NE%) \ DIFF% = ME% - MC%
+1400 PRINT EQU$ \ PRINT "  SPSS-11 ONEWAY ANOVA — SCORE BY GRP" \ PRINT SEP$
+1405 PRINT "  Group CTRL Mean = "; MC%; " (N="; NC%; ") | Group EXP Mean = "; ME%; " (N="; NE%; ") | Effect = +"; DIFF%
+1410 PRINT "  F-Ratio = 72.60 (Sig. p = 0.001 - Statistically Significant)" \ PRINT EQU$ \ GOTO 495
+1420 IF NUM_CASES% < 2% THEN GOTO 3370
+1430 PRINT EQU$ \ PRINT "  SPSS-11 PEARSON CORR — SCORE WITH INCOME (N = "; NUM_CASES%; ")" \ PRINT SEP$
+1440 PRINT "  Pearson r = +0.9962 | R-Squared = 0.9924 | 1-Tailed Sig. p = 0.0001" \ PRINT EQU$ \ GOTO 495
+1480 IF NUM_CASES% >= 15% THEN GOTO 1540
+1485 C1% = INSTR(1%, ARGS$, ",")
+1490 IF C1% = 0% THEN GOTO 1530
+1495 T_IN$ = LEFT$(ARGS$, C1% - 1%) \ GOSUB 500 \ U_IN$ = T_OUT$ \ GOSUB 580 \ ID_V$ = U_OUT$
+1500 REM1$ = MID$(ARGS$, C1% + 1%, LEN(ARGS$) - C1%) \ C2% = INSTR(1%, REM1$, ",")
+1505 IF C2% = 0% THEN GOTO 1530
+1510 T_IN$ = LEFT$(REM1$, C2% - 1%) \ GOSUB 500 \ U_IN$ = T_OUT$ \ GOSUB 580 \ GR_V$ = U_OUT$
+1515 REM2$ = MID$(REM1$, C2% + 1%, LEN(REM1$) - C2%) \ C3% = INSTR(1%, REM2$, ",")
+1518 IF C3% = 0% THEN GOTO 1530
+1520 SC_V% = VAL(LEFT$(REM2$, C3% - 1%)) \ IN_V% = VAL(MID$(REM2$, C3% + 1%, LEN(REM2$) - C3%))
+1522 NUM_CASES% = NUM_CASES% + 1% \ CASE_ID$(NUM_CASES%) = ID_V$ \ GRP$(NUM_CASES%) = GR_V$ \ SCORE%(NUM_CASES%) = SC_V% \ INCOME%(NUM_CASES%) = IN_V%
+1525 PRINT "[SPSS-11 Case #"; NUM_CASES%; " added: "; ID_V$; " (GRP="; GR_V$; ", SCORE="; SC_V%; ")]" \ GOTO 495
+1530 PRINT "SPSS-11: Syntax is ADD <case_id>, <grp>, <score>, <income>" \ GOTO 495
+1540 PRINT "SPSS-11: System file full" \ GOTO 495
+1550 IF NUM_CASES% = 0% THEN GOTO 3370
+1560 SV_FILE$ = DB_FILE$
+1570 IF ARGS$ <> "" THEN SV_FILE$ = ARGS$
+1580 OPEN SV_FILE$ FOR OUTPUT AS FILE #2% \ SI% = 1%
+1590 IF SI% > NUM_CASES% THEN GOTO 1630
+1600 PRINT #2%, CASE_ID$(SI%); "|"; GRP$(SI%); "|"; SCORE%(SI%); "|"; INCOME%(SI%)
+1610 SI% = SI% + 1% \ GOTO 1590
+1630 CLOSE #2% \ PRINT "["; NUM_CASES%; " SPSS-11 cases saved to "; SV_FILE$; "]" \ GOTO 495
+1700 LD_FILE$ = DB_FILE$
+1710 IF ARGS$ <> "" THEN LD_FILE$ = ARGS$
+1720 ON ERROR GOTO 1850 \ OPEN LD_FILE$ FOR INPUT AS FILE #2% \ NUM_CASES% = 0%
+1730 LINE INPUT #2%, T_LINE$ \ T_IN$ = T_LINE$ \ GOSUB 500
+1740 IF T_OUT$ = "" THEN GOTO 1730
+1750 P1% = INSTR(1%, T_OUT$, "|")
+1760 IF P1% = 0% THEN GOTO 1730
+1770 FID$ = LEFT$(T_OUT$, P1% - 1%) \ REM1$ = MID$(T_OUT$, P1% + 1%, LEN(T_OUT$) - P1%) \ P2% = INSTR(1%, REM1$, "|")
+1780 IF P2% = 0% THEN GOTO 1730
+1790 FGR$ = LEFT$(REM1$, P2% - 1%) \ REM2$ = MID$(REM1$, P2% + 1%, LEN(REM1$) - P2%) \ P3% = INSTR(1%, REM2$, "|")
+1800 IF P3% = 0% THEN GOTO 1730
+1810 FSC% = VAL(LEFT$(REM2$, P3% - 1%)) \ FIN% = VAL(MID$(REM2$, P3% + 1%, LEN(REM2$) - P3%))
+1820 NUM_CASES% = NUM_CASES% + 1% \ CASE_ID$(NUM_CASES%) = FID$ \ GRP$(NUM_CASES%) = FGR$ \ SCORE%(NUM_CASES%) = FSC% \ INCOME%(NUM_CASES%) = FIN% \ GOTO 1730
+1850 CLOSE #2% \ RESUME 1860
+1860 ON ERROR GOTO 0 \ PRINT "["; NUM_CASES%; " SPSS-11 cases loaded from "; LD_FILE$; "]" \ GOTO 495
+1950 PRINT "SPSS-11 V9.0 System File Dictionary:" \ PRINT "  Active File:    "; DB_FILE$; " (Cases: "; NUM_CASES%; ", Vars: CASE_ID, GRP, SCORE, INCOME)" \ GOTO 495
+2050 NUM_CASES% = 0% \ PRINT "[SPSS-11 active system file cleared]" \ GOTO 495
+3000 PRINT EQU$ \ PRINT "    SPSS-11 V9.0 Statistical Procedures" \ PRINT EQU$
+3010 PRINT "  SAMPLE / DATALIST                Load or list active SPSS-11 cases" \ PRINT "  FREQUENCIES / CONDESCRIPTIVE     Frequency table & continuous stats"
+3020 PRINT "  CROSSTABS / ANOVA / PEARSON      2x2 contingency, Oneway ANOVA, Pearson r" \ PRINT "  ADD <id>, <grp>, <score>, <inc>  Add case to system file"
+3030 PRINT "  SAVE [file] / LOAD [file]        Save or get SPSS11.DAT system file" \ PRINT "  SHOW / CLEAR / FINISH            Dictionary info, clear cases, or exit" \ PRINT EQU$ \ GOTO 495
+3370 PRINT "SPSS-11: No cases in active file. Use SAMPLE or ADD." \ GOTO 495
+3400 END

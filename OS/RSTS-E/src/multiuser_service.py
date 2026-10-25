@@ -19,6 +19,10 @@ import struct
 import subprocess
 import sys
 import termios
+import urllib.parse
+
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+import lcs_provisioning
 
 
 HTML_TEMPLATE = """<!DOCTYPE html>
@@ -147,6 +151,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <button onclick="sendKey('\\x1a')">CTRL+Z</button>
     <button onclick="clearScreen()">CLEAR</button>
     <button onclick="connectWS()">NEW SESSION</button>
+    <button onclick="window.location.href='/signup'" style="border-color:#ffb000;color:#ffb000;font-weight:bold;">SIGN UP ($10/MO)</button>
   </div>
 </header>
 <div id="term-wrap" onclick="focusTerm()">
@@ -369,6 +374,14 @@ class MultiUserTerminalServer:
         self.header_title = header_title
         self.https_port = int(https_port)
         self.cert_path, self.key_path = ensure_tls_cert(cert_dir)
+        self.os_dir = os.path.abspath(os.path.join(os.path.dirname(emu_cmd[0]), ".."))
+        self.fs_root = os.environ.get("RSTS_FS_ROOT", os.path.join(self.os_dir, "fs"))
+        self.provisioning = lcs_provisioning.LCSProvisioningEngine(
+            primary_os="RSTS",
+            os_dir=self.os_dir,
+            fs_root=self.fs_root,
+            https_port=self.https_port,
+        )
         self.html_bytes = (
             HTML_TEMPLATE.replace("__TITLE__", os_title)
             .replace("__HEADER_TITLE__", header_title)
@@ -386,13 +399,30 @@ class MultiUserTerminalServer:
         lines = req_text.split("\r\n")
         first_line = lines[0] if lines else ""
         parts = first_line.split()
-        path = parts[1] if len(parts) >= 2 else "/"
+        method = parts[0].upper() if len(parts) >= 1 else "GET"
+        raw_path = parts[1] if len(parts) >= 2 else "/"
+        parsed = urllib.parse.urlsplit(raw_path)
+        path = parsed.path
+        qs = urllib.parse.parse_qs(parsed.query)
 
         headers = {}
         for ln in lines[1:]:
             if ":" in ln:
                 k, v = ln.split(":", 1)
                 headers[k.strip().lower()] = v.strip()
+
+        content_length = 0
+        try:
+            content_length = int(headers.get("content-length", "0"))
+        except ValueError:
+            content_length = 0
+        body_bytes = b""
+        if content_length > 0:
+            try:
+                body_bytes = await asyncio.wait_for(reader.readexactly(content_length), timeout=10.0)
+            except Exception:
+                writer.close()
+                return
 
         if headers.get("upgrade", "").lower() == "websocket" or path.startswith("/ws"):
             ws_key = headers.get("sec-websocket-key", "")
@@ -407,6 +437,22 @@ class MultiUserTerminalServer:
             writer.write(resp.encode("ascii"))
             await writer.drain()
             await self._bridge_websocket_pty(reader, writer)
+            return
+
+        # Dispatch Legacy Computing Systems /signup and /api/v1/* endpoints
+        api_resp = self.provisioning.handle_http_request(method, path, qs, headers, body_bytes)
+        if api_resp is not None:
+            st_code, st_text, ctype, resp_body = api_resp
+            resp_hdr = (
+                f"HTTP/1.1 {st_code} {st_text}\r\n"
+                f"Content-Type: {ctype}\r\n"
+                f"Content-Length: {len(resp_body)}\r\n"
+                "Cache-Control: no-store\r\n"
+                "Connection: close\r\n\r\n"
+            ).encode("ascii")
+            writer.write(resp_hdr + resp_body)
+            await writer.drain()
+            writer.close()
             return
 
         # Standard HTTPS GET response serving the VT100/VT220 Web Terminal
