@@ -713,7 +713,7 @@ class LCSProvisioningEngine:
         default_plan = "LCS_RSTS_10" if self.primary_os == "RSTS" else "LCS_VMS_10"
         node_label = "PDP-11/70 RSTS/E V10.1-L (:8411)" if self.primary_os == "RSTS" else "VAX/VMS V5.5-2 & DECwindows (:8455)"
         clerk_mode = "Cloud Live" if self.clerk_publishable_key else "Standalone / Ready"
-        workos_mode = "Cloud Live" if self.workos_client_id else "Standalone / Ready"
+        workos_mode = "Cloud Live" if (self.workos_api_key or self.workos_client_id) else "Standalone / Ready"
         clerk_script = ""
         if self.clerk_publishable_key:
             clerk_script = (
@@ -872,6 +872,7 @@ class LCSProvisioningEngine:
         }
         clerk_sync = self.sync_clerk_public_metadata(clerk_user_id, clerk_metadata)
 
+        pub_host = os.environ.get("LCS_PUBLIC_HOST", "ssadvisor-ser.tail8d2674.ts.net").strip() or "localhost"
         primary_rec = rsts_res if (self.primary_os == "RSTS" and rsts_res) else (vms_res or rsts_res)
         return {
             "ok": True,
@@ -888,7 +889,7 @@ class LCSProvisioningEngine:
             "vms_account": vms_res,
             "clerk_metadata": clerk_metadata,
             "clerk_sync": clerk_sync,
-            "terminal_url": f"https://localhost:{self.https_port}/?user={clean_user}",
+            "terminal_url": f"https://{pub_host}:{self.https_port}/?user={clean_user}",
         }
 
     def update_across_targets(self, identifier, status=None, password=None, quota=None, plan=None, local_only=False):
@@ -1155,7 +1156,13 @@ class LCSProvisioningEngine:
         if method == "GET" and path == "/auth/workos/login":
             org = (query_params.get("org", ["org_enterprise_300"])[0] or "org_enterprise_300").strip()
             if self.workos_client_id:
-                redirect_uri = f"https://localhost:{self.https_port}/auth/workos/callback"
+                req_host = (headers.get("host") or "").strip()
+                pub_host = os.environ.get("LCS_PUBLIC_HOST", "ssadvisor-ser.tail8d2674.ts.net").strip()
+                if req_host and not req_host.startswith("127.0.0.1") and not req_host.startswith("localhost"):
+                    host_port = req_host if ":" in req_host else f"{req_host}:{self.https_port}"
+                else:
+                    host_port = f"{pub_host}:{self.https_port}"
+                redirect_uri = f"https://{host_port}/auth/workos/callback"
                 sso_url = (
                     "https://api.workos.com/sso/authorize?"
                     + urllib.parse.urlencode({
@@ -1171,16 +1178,52 @@ class LCSProvisioningEngine:
             return (200, "OK", "application/json; charset=utf-8", body)
 
         if method == "GET" and path == "/auth/workos/callback":
+            code = (query_params.get("code", [""])[0] or "").strip()
             org = (query_params.get("org", ["org_enterprise_300"])[0] or "org_enterprise_300").strip()
             uname = (query_params.get("user", ["ENTUSER1"])[0] or "ENTUSER1").strip().upper()
+            email = f"{uname.lower()}@enterprise.local"
+            wos_uid = f"wos_{uname.lower()}"
+            if code and code != "standalone_sso_code" and self.workos_api_key and self.workos_client_id:
+                try:
+                    token_body = urllib.parse.urlencode({
+                        "client_id": self.workos_client_id,
+                        "client_secret": self.workos_api_key,
+                        "grant_type": "authorization_code",
+                        "code": code,
+                    }).encode("utf-8")
+                    req_tok = urllib.request.Request(
+                        "https://api.workos.com/sso/token",
+                        data=token_body,
+                        method="POST",
+                        headers={
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "User-Agent": "LegacyComputingSystems/1.0",
+                        },
+                    )
+                    with urllib.request.urlopen(req_tok, timeout=5.0) as resp_tok:
+                        tok_data = json.loads(resp_tok.read().decode("utf-8"))
+                        profile = tok_data.get("profile") or {}
+                        if profile.get("email"):
+                            email = profile["email"]
+                        if profile.get("organization_id"):
+                            org = profile["organization_id"]
+                        if profile.get("id"):
+                            wos_uid = profile["id"]
+                        uname = self.derive_dec_username(
+                            raw_username=profile.get("first_name", ""),
+                            email=email,
+                            fallback_id=wos_uid,
+                        )
+                except Exception:
+                    pass
             prov = self.provision_across_targets(
                 username=uname,
                 password="SSO$300",
-                email=f"{uname.lower()}@enterprise.local",
+                email=email,
                 plan="LCS_ENTERPRISE",
                 target_os="BOTH",
                 workos_org_id=org,
-                workos_user_id=f"wos_{uname.lower()}",
+                workos_user_id=wos_uid,
                 group=300,
                 quota=100000,
             )
