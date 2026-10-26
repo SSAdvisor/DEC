@@ -496,31 +496,138 @@ class LCSProvisioningEngine:
 
     @property
     def clerk_publishable_key(self):
-        return os.environ.get("CLERK_PUBLISHABLE_KEY", "").strip()
+        if not (os.environ.get("CLERK_PUBLISHABLE_KEY") or os.environ.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY")):
+            load_dotenv_files()
+        return (
+            os.environ.get("CLERK_PUBLISHABLE_KEY")
+            or os.environ.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY")
+            or ""
+        ).strip()
 
     @property
     def clerk_secret_key(self):
+        if not os.environ.get("CLERK_SECRET_KEY"):
+            load_dotenv_files()
         return os.environ.get("CLERK_SECRET_KEY", "").strip()
 
     @property
     def clerk_webhook_secret(self):
+        if not os.environ.get("CLERK_WEBHOOK_SECRET"):
+            load_dotenv_files()
         return os.environ.get("CLERK_WEBHOOK_SECRET", "").strip()
 
     @property
     def workos_api_key(self):
+        if not os.environ.get("WORKOS_API_KEY"):
+            load_dotenv_files()
         return os.environ.get("WORKOS_API_KEY", "").strip()
 
     @property
     def workos_client_id(self):
+        if not os.environ.get("WORKOS_CLIENT_ID"):
+            load_dotenv_files()
         return os.environ.get("WORKOS_CLIENT_ID", "").strip()
 
     @property
     def workos_webhook_secret(self):
+        if not os.environ.get("WORKOS_WEBHOOK_SECRET"):
+            load_dotenv_files()
         return os.environ.get("WORKOS_WEBHOOK_SECRET", "").strip()
 
     @property
     def lcs_api_secret(self):
         return os.environ.get("LCS_API_SECRET", "lcs-dev-hmac-secret-key").strip()
+
+    def _peer_base_urls(self, peer_os):
+        if peer_os == "VMS":
+            env_url = os.environ.get("LCS_VMS_URL", "").strip()
+            urls = [env_url] if env_url else []
+            urls.extend(["https://dec-vms:8455", "https://127.0.0.1:8455"])
+            return urls
+        else:
+            env_url = os.environ.get("LCS_RSTS_URL", "").strip()
+            urls = [env_url] if env_url else []
+            urls.extend(["https://dec-rsts-e:8411", "https://127.0.0.1:8411"])
+            return urls
+
+    def _provision_peer_over_https(
+        self,
+        peer_os,
+        username,
+        password,
+        email,
+        plan,
+        clerk_user_id,
+        workos_org_id,
+        workos_user_id,
+        group,
+        quota,
+    ):
+        payload = json.dumps({
+            "username": username,
+            "password": password,
+            "email": email,
+            "plan": plan,
+            "target_os": peer_os,
+            "clerk_user_id": clerk_user_id,
+            "workos_org_id": workos_org_id,
+            "workos_user_id": workos_user_id,
+            "group": group,
+            "quota": quota,
+        }).encode("utf-8")
+        sig = self.compute_hmac_signature(payload)
+        ctx = ssl._create_unverified_context()
+        for base in self._peer_base_urls(peer_os):
+            try:
+                req = urllib.request.Request(
+                    f"{base.rstrip('/')}/api/v1/users",
+                    data=payload,
+                    method="POST",
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-LCS-Signature": sig,
+                    },
+                )
+                with urllib.request.urlopen(req, context=ctx, timeout=2.5) as r:
+                    data = json.loads(r.read().decode("utf-8"))
+                    if peer_os == "VMS" and data.get("vms_account"):
+                        return data["vms_account"]
+                    if peer_os == "RSTS" and data.get("rsts_account"):
+                        return data["rsts_account"]
+            except Exception:
+                continue
+        return None
+
+    def _update_peer_over_https(self, peer_os, identifier, status=None, password=None, quota=None, plan=None):
+        payload = json.dumps({
+            "status": status,
+            "password": password,
+            "quota": quota,
+            "plan": plan,
+            "local_only": True,
+        }).encode("utf-8")
+        sig = self.compute_hmac_signature(payload)
+        ctx = ssl._create_unverified_context()
+        for base in self._peer_base_urls(peer_os):
+            try:
+                req = urllib.request.Request(
+                    f"{base.rstrip('/')}/api/v1/users/{urllib.parse.quote(str(identifier))}",
+                    data=payload,
+                    method="PATCH",
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-LCS-Signature": sig,
+                    },
+                )
+                with urllib.request.urlopen(req, context=ctx, timeout=2.5) as r:
+                    data = json.loads(r.read().decode("utf-8"))
+                    if peer_os == "VMS" and data.get("vms_account"):
+                        return data["vms_account"]
+                    if peer_os == "RSTS" and data.get("rsts_account"):
+                        return data["rsts_account"]
+            except Exception:
+                continue
+        return None
 
     def _load_rsts_emulator(self):
         candidates = [
@@ -679,21 +786,25 @@ class LCSProvisioningEngine:
         rsts_res = None
         vms_res = None
 
-        if "RSTS" in targets or self.primary_os == "RSTS" and not ("VMS" in targets and len(targets) == 1 and self.primary_os != "RSTS"):
-            if "RSTS" in targets:
-                rsts_emu = self._load_rsts_emulator()
-                if rsts_emu:
-                    rsts_res = rsts_emu.provision_subscriber_account(
-                        username=username,
-                        password=password,
-                        email=email,
-                        plan=plan_upper,
-                        clerk_user_id=clerk_user_id,
-                        workos_org_id=workos_org_id,
-                        workos_user_id=workos_user_id,
-                        project_group=group,
-                        quota=quota,
-                    )
+        if "RSTS" in targets:
+            rsts_emu = self._load_rsts_emulator()
+            if rsts_emu:
+                rsts_res = rsts_emu.provision_subscriber_account(
+                    username=username,
+                    password=password,
+                    email=email,
+                    plan=plan_upper,
+                    clerk_user_id=clerk_user_id,
+                    workos_org_id=workos_org_id,
+                    workos_user_id=workos_user_id,
+                    project_group=group,
+                    quota=quota,
+                )
+            elif self.primary_os != "RSTS":
+                rsts_res = self._provision_peer_over_https(
+                    "RSTS", username, password, email, plan_upper,
+                    clerk_user_id, workos_org_id, workos_user_id, group, quota
+                )
 
         if "VMS" in targets:
             vms_emu = self._load_vms_emulator()
@@ -708,6 +819,11 @@ class LCSProvisioningEngine:
                     workos_user_id=workos_user_id,
                     uic_group=group,
                     quota=quota,
+                )
+            elif self.primary_os != "VMS":
+                vms_res = self._provision_peer_over_https(
+                    "VMS", username, password, email, plan_upper,
+                    clerk_user_id, workos_org_id, workos_user_id, group, quota
                 )
 
         # Ensure primary OS is always provisioned when invoked directly on that node's /api/v1/users
@@ -775,7 +891,7 @@ class LCSProvisioningEngine:
             "terminal_url": f"https://localhost:{self.https_port}/?user={clean_user}",
         }
 
-    def update_across_targets(self, identifier, status=None, password=None, quota=None, plan=None):
+    def update_across_targets(self, identifier, status=None, password=None, quota=None, plan=None, local_only=False):
         updated_rsts = None
         updated_vms = None
         errors = []
@@ -792,6 +908,8 @@ class LCSProvisioningEngine:
                 )
             except Exception as e:
                 errors.append(str(e))
+        elif not local_only and self.primary_os != "RSTS":
+            updated_rsts = self._update_peer_over_https("RSTS", identifier, status, password, quota, plan)
 
         vms_emu = self._load_vms_emulator()
         if vms_emu:
@@ -805,6 +923,8 @@ class LCSProvisioningEngine:
                 )
             except Exception as e:
                 errors.append(str(e))
+        elif not local_only and self.primary_os != "VMS":
+            updated_vms = self._update_peer_over_https("VMS", identifier, status, password, quota, plan)
 
         if not updated_rsts and not updated_vms:
             raise KeyError(f"Subscriber account '{identifier}' not found ({'; '.join(errors)})")
@@ -1174,6 +1294,7 @@ class LCSProvisioningEngine:
                         password=payload.get("password"),
                         quota=payload.get("quota"),
                         plan=payload.get("plan"),
+                        local_only=bool(payload.get("local_only")),
                     )
                     return (200, "OK", "application/json; charset=utf-8", json.dumps(res, indent=2).encode("utf-8"))
                 except KeyError as ke:

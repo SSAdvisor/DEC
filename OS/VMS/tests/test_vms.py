@@ -757,3 +757,155 @@ class TestVMSDockerContainer:
                 proc.wait(timeout=5)
             except Exception:
                 proc.kill()
+
+    def test_17_live_container_clerk_cloud_dual_bundle_and_x11_workstation(self):
+        import base64
+        import json
+        import socket
+        import ssl
+        import time
+        import urllib.request
+
+        ssl_ctx = ssl._create_unverified_context()
+        base_url = "https://127.0.0.1:8455"
+
+        try:
+            with urllib.request.urlopen(f"{base_url}/api/v1/status", context=ssl_ctx, timeout=3) as r:
+                status_data = json.loads(r.read().decode("utf-8"))
+        except Exception as exc:
+            pytest.skip(f"Live dec-vms container not reachable on :8455 ({exc})")
+
+        # 1. Verify live container status & Clerk Cloud Live configuration from .env
+        assert status_data["ok"] is True
+        assert status_data["primary_os"] == "VMS"
+        assert status_data["https_port"] == 8455
+        assert status_data["auth_providers"]["clerk"]["configured"] is True
+        assert status_data["auth_providers"]["clerk"]["mode"] == "cloud"
+
+        # 2. Verify GET / (VT220 & DECwindows X11 Workstation) and GET /signup (Clerk Cloud Live script tag)
+        with urllib.request.urlopen(f"{base_url}/", context=ssl_ctx, timeout=5) as r:
+            term_html = r.read().decode("utf-8")
+            assert r.status == 200
+            assert "SIGN UP ($10/MO)" in term_html
+            assert "x11-canvas" in term_html
+
+        with urllib.request.urlopen(f"{base_url}/signup", context=ssl_ctx, timeout=5) as r:
+            signup_html = r.read().decode("utf-8")
+            assert r.status == 200
+            assert "Clerk Auth: Cloud Live" in signup_html
+            assert "data-clerk-publishable-key=\"pk_test_" in signup_html
+
+        # 3. Provision a $15/mo DEC Dual-System Cluster Pass (LCS_BUNDLE_15 -> BOTH RSTS/E & VAX/VMS)
+        #    against the live dec-vms container (:8455) and verify cross-container provisioning to dec-rsts-e (:8411)
+        signup_payload = json.dumps({
+            "username": "LIVE_BNDL",
+            "password": "VAX$BUNDLE15",
+            "email": "live_bndl@dec.example.com",
+            "plan": "LCS_BUNDLE_15",
+            "target_os": "BOTH",
+            "clerk_user_id": "user_clerk_live_bndl",
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            f"{base_url}/api/v1/signup",
+            data=signup_payload,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, context=ssl_ctx, timeout=8) as r:
+            assert r.status == 201
+            created = json.loads(r.read().decode("utf-8"))
+            assert created["ok"] is True
+            assert created["username"] == "LIVE_BNDL"
+            assert created["uic"].startswith("[200,")
+            assert created["ppn"].startswith("[201,")
+            assert created["quota"] == 100000
+            assert "RSTS_E" in created["clerk_metadata"]["subscribed_os"]
+            assert "VAX_VMS" in created["clerk_metadata"]["subscribed_os"]
+            assigned_uic = created["uic"]
+
+        # 4. Verify LIVE_BNDL exists in both dec-vms (:8455) and dec-rsts-e (:8411)
+        with urllib.request.urlopen(f"{base_url}/api/v1/users", context=ssl_ctx, timeout=5) as r:
+            vms_users = json.loads(r.read().decode("utf-8"))["users"]
+            assert "LIVE_BNDL" in vms_users
+
+        with urllib.request.urlopen("https://127.0.0.1:8411/api/v1/users", context=ssl_ctx, timeout=5) as r:
+            rsts_users = json.loads(r.read().decode("utf-8"))["users"]
+            rsts_names = {u.get("name") for u in rsts_users.values()}
+            assert "LIVE_BNDL" in rsts_names
+
+        # 5. Exercise Clerk subscription lifecycle webhooks on the running VAX/VMS container
+        clerk_cancel = json.dumps({
+            "type": "subscription.canceled",
+            "data": {"id": "user_clerk_live_bndl", "public_metadata": {"dec_username": "LIVE_BNDL"}},
+        }).encode("utf-8")
+        req_cc = urllib.request.Request(
+            f"{base_url}/api/v1/webhooks/clerk",
+            data=clerk_cancel,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req_cc, context=ssl_ctx, timeout=8) as r:
+            cc_res = json.loads(r.read().decode("utf-8"))
+            assert cc_res["action"] == "SUSPENDED"
+            assert cc_res["account"]["status"] == "DISUSER"
+
+        clerk_paid = json.dumps({
+            "type": "invoice.paid",
+            "data": {"id": "user_clerk_live_bndl", "status": "active", "public_metadata": {"dec_username": "LIVE_BNDL"}},
+        }).encode("utf-8")
+        req_cp = urllib.request.Request(
+            f"{base_url}/api/v1/webhooks/clerk",
+            data=clerk_paid,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req_cp, context=ssl_ctx, timeout=8) as r:
+            cp_res = json.loads(r.read().decode("utf-8"))
+            assert cp_res["action"] == "REACTIVATED"
+            assert cp_res["account"]["status"] == "ACTIVE"
+
+        # 6. Connect via live WSS (wss://127.0.0.1:8455/ws) to the running container,
+        #    log in with LIVE_BNDL, and run LOGIN.COM + HELLO.BAS
+        raw_sock = socket.create_connection(("127.0.0.1", 8455), timeout=5)
+        tls_sock = ssl_ctx.wrap_socket(raw_sock, server_hostname="127.0.0.1")
+        ws_key = base64.b64encode(os.urandom(16)).decode("ascii")
+        handshake = (
+            "GET /ws?sid=live_bndl_sid HTTP/1.1\r\n"
+            "Host: 127.0.0.1:8455\r\n"
+            "Upgrade: websocket\r\n"
+            "Connection: Upgrade\r\n"
+            f"Sec-WebSocket-Key: {ws_key}\r\n"
+            "Sec-WebSocket-Version: 13\r\n\r\n"
+        )
+        tls_sock.sendall(handshake.encode("ascii"))
+        resp_hdr = tls_sock.recv(1024).decode("latin-1", errors="replace")
+        assert "101 Switching Protocols" in resp_hdr
+
+        def send_masked_ws(text):
+            payload = text.encode("utf-8")
+            mask = b"\x21\x43\x65\x87"
+            masked = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
+            frame = bytearray([0x81, 0x80 | len(payload)]) + mask + masked
+            tls_sock.sendall(bytes(frame))
+
+        send_masked_ws("LIVE_BNDL\n")
+        time.sleep(0.2)
+        send_masked_ws("VAX$BUNDLE15\n")
+        time.sleep(0.2)
+        send_masked_ws("@SYS$LOGIN:LOGIN.COM\nRUN SYS$LOGIN:HELLO.BAS\nSHOW PROCESS\nLOGOUT/DISCONNECT\n")
+
+        collected = b""
+        tls_sock.settimeout(2.5)
+        try:
+            while True:
+                chunk = tls_sock.recv(4096)
+                if not chunk:
+                    break
+                collected += chunk
+        except Exception:
+            pass
+        tls_sock.close()
+        decoded_out = collected.decode("latin-1", errors="replace")
+        assert assigned_uic in decoded_out
+        assert "HELLO LIVE_BNDL FROM LEGACY COMPUTING SYSTEMS VAX/VMS V5.5-2!" in decoded_out
+

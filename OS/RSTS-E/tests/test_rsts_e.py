@@ -626,3 +626,147 @@ class TestRSTSDockerContainer:
                 proc.wait(timeout=5)
             except Exception:
                 proc.kill()
+
+    def test_16_live_container_clerk_cloud_provisioning_and_wss_terminal(self):
+        import base64
+        import json
+        import socket
+        import ssl
+        import time
+        import urllib.request
+
+        ssl_ctx = ssl._create_unverified_context()
+        base_url = "https://127.0.0.1:8411"
+
+        try:
+            with urllib.request.urlopen(f"{base_url}/api/v1/status", context=ssl_ctx, timeout=3) as r:
+                status_data = json.loads(r.read().decode("utf-8"))
+        except Exception as exc:
+            pytest.skip(f"Live dec-rsts-e container not reachable on :8411 ({exc})")
+
+        # 1. Verify live container status & Clerk Cloud Live configuration from .env
+        assert status_data["ok"] is True
+        assert status_data["primary_os"] == "RSTS"
+        assert status_data["https_port"] == 8411
+        assert status_data["auth_providers"]["clerk"]["configured"] is True
+        assert status_data["auth_providers"]["clerk"]["mode"] == "cloud"
+
+        # 2. Verify GET / (VT100 Web Terminal) and GET /signup (Clerk Cloud Live script tag)
+        with urllib.request.urlopen(f"{base_url}/", context=ssl_ctx, timeout=5) as r:
+            term_html = r.read().decode("utf-8")
+            assert r.status == 200
+            assert "SIGN UP ($10/MO)" in term_html
+
+        with urllib.request.urlopen(f"{base_url}/signup", context=ssl_ctx, timeout=5) as r:
+            signup_html = r.read().decode("utf-8")
+            assert r.status == 200
+            assert "Clerk Auth: Cloud Live" in signup_html
+            assert "data-clerk-publishable-key=\"pk_test_" in signup_html
+
+        # 3. Provision a live subscriber account (LIVE_RSTS) on the running dec-rsts-e container
+        signup_payload = json.dumps({
+            "username": "LIVE_RSTS",
+            "password": "PDP11$LIVE",
+            "email": "live_rsts@dec.example.com",
+            "plan": "LCS_RSTS_10",
+            "clerk_user_id": "user_clerk_live_rsts",
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            f"{base_url}/api/v1/signup",
+            data=signup_payload,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, context=ssl_ctx, timeout=5) as r:
+            assert r.status == 201
+            created = json.loads(r.read().decode("utf-8"))
+            assert created["ok"] is True
+            assert created["username"] == "LIVE_RSTS"
+            assert created["ppn"].startswith("[201,")
+            assert created["quota"] == 25000
+            assert created["clerk_metadata"]["dec_username"] == "LIVE_RSTS"
+            assigned_ppn = created["ppn"]
+
+        # 4. Verify account is listed in GET /api/v1/users on the running container
+        with urllib.request.urlopen(f"{base_url}/api/v1/users", context=ssl_ctx, timeout=5) as r:
+            users_data = json.loads(r.read().decode("utf-8"))
+            assert users_data["ok"] is True
+            names = {u.get("name") for u in users_data["users"].values()}
+            assert "LIVE_RSTS" in names
+
+        # 5. Exercise Clerk subscription lifecycle webhooks on the running container
+        clerk_cancel = json.dumps({
+            "type": "subscription.canceled",
+            "data": {"id": "user_clerk_live_rsts", "public_metadata": {"dec_username": "LIVE_RSTS"}},
+        }).encode("utf-8")
+        req_cc = urllib.request.Request(
+            f"{base_url}/api/v1/webhooks/clerk",
+            data=clerk_cancel,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req_cc, context=ssl_ctx, timeout=5) as r:
+            cc_res = json.loads(r.read().decode("utf-8"))
+            assert cc_res["action"] == "SUSPENDED"
+            assert cc_res["account"]["status"] == "DISUSER"
+
+        clerk_paid = json.dumps({
+            "type": "invoice.paid",
+            "data": {"id": "user_clerk_live_rsts", "status": "active", "public_metadata": {"dec_username": "LIVE_RSTS"}},
+        }).encode("utf-8")
+        req_cp = urllib.request.Request(
+            f"{base_url}/api/v1/webhooks/clerk",
+            data=clerk_paid,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req_cp, context=ssl_ctx, timeout=5) as r:
+            cp_res = json.loads(r.read().decode("utf-8"))
+            assert cp_res["action"] == "REACTIVATED"
+            assert cp_res["account"]["status"] == "ACTIVE"
+
+        # 6. Connect via live WSS (wss://127.0.0.1:8411/ws) to the running container,
+        #    log in with LIVE_RSTS, and execute HELLO.BAS inside the container
+        raw_sock = socket.create_connection(("127.0.0.1", 8411), timeout=5)
+        tls_sock = ssl_ctx.wrap_socket(raw_sock, server_hostname="127.0.0.1")
+        ws_key = base64.b64encode(os.urandom(16)).decode("ascii")
+        handshake = (
+            "GET /ws HTTP/1.1\r\n"
+            "Host: 127.0.0.1:8411\r\n"
+            "Upgrade: websocket\r\n"
+            "Connection: Upgrade\r\n"
+            f"Sec-WebSocket-Key: {ws_key}\r\n"
+            "Sec-WebSocket-Version: 13\r\n\r\n"
+        )
+        tls_sock.sendall(handshake.encode("ascii"))
+        resp_hdr = tls_sock.recv(1024).decode("latin-1", errors="replace")
+        assert "101 Switching Protocols" in resp_hdr
+
+        def send_masked_ws(text):
+            payload = text.encode("utf-8")
+            mask = b"\x21\x43\x65\x87"
+            masked = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
+            frame = bytearray([0x81, 0x80 | len(payload)]) + mask + masked
+            tls_sock.sendall(bytes(frame))
+
+        send_masked_ws("LIVE_RSTS\n")
+        time.sleep(0.2)
+        send_masked_ws("PDP11$LIVE\n")
+        time.sleep(0.2)
+        send_masked_ws("RUN HELLO.BAS\nSHOW SYSTEM\nBYE/DISCONNECT\n")
+
+        collected = b""
+        tls_sock.settimeout(2.5)
+        try:
+            while True:
+                chunk = tls_sock.recv(4096)
+                if not chunk:
+                    break
+                collected += chunk
+        except Exception:
+            pass
+        tls_sock.close()
+        decoded_out = collected.decode("latin-1", errors="replace")
+        assert f"LIVE_RSTS {assigned_ppn}" in decoded_out
+        assert "HELLO LIVE_RSTS FROM LEGACY COMPUTING SYSTEMS PDP-11/70 RSTS/E!" in decoded_out
+

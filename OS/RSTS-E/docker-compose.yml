@@ -12,6 +12,11 @@ services:
       - "${RSTS_HTTPS_PORT:-8411}:${RSTS_HTTPS_PORT:-8411}"
     volumes:
       - rsts_dk0_data:/opt/dec-rsts/fs
+    env_file:
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
     environment:
       - TERM=${TERM:-vt100}
       - RSTS_SSH_PORT=${RSTS_SSH_PORT:-2211}

@@ -13,6 +13,11 @@ services:
     volumes:
       - vms_dka0_data:/opt/dec-vms/fs
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    env_file:
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
     environment:
       - DISPLAY=${DISPLAY:-}
       - TERM=${TERM:-vt220}
