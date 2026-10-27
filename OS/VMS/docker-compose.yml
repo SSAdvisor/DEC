@@ -23,6 +23,8 @@ services:
       - TERM=${TERM:-vt220}
       - VMS_SSH_PORT=${VMS_SSH_PORT:-2255}
       - VMS_HTTPS_PORT=${VMS_HTTPS_PORT:-8455}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   vms_dka0_data:

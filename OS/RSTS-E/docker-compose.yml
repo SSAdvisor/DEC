@@ -21,6 +21,8 @@ services:
       - TERM=${TERM:-vt100}
       - RSTS_SSH_PORT=${RSTS_SSH_PORT:-2211}
       - RSTS_HTTPS_PORT=${RSTS_HTTPS_PORT:-8411}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   rsts_dk0_data:

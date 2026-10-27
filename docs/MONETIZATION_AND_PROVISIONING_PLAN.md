@@ -9,7 +9,7 @@
   - **VAXstation 4000-90 VAX/VMS V5.5-2 & DECwindows Motif Workstation** (`HTTPS :8455` / `SSH :2255`): Full 32-bit VAX/VMS DCL environment, live browser-rendered **DECwindows XUI / OSF/Motif 1.1 X11 GUI Workstation**, 10 native VAX compilers (`VAX BASIC`, `VAX MACRO`, `VAX FORTRAN`, `VAX COBOL`, `VAX C`, `VAX PASCAL`, `VAX PL/I`, `VAX ADA`, `VAX DIBOL`, `BLISS-32`), and 52 VAX/VMS applications (`WordPerfect 5.1`, `Lotus 1-2-3`, `Oracle V6`, `INGRES`, `SAS`, `SPICE3`, `ANSYS`, `Gaussian 90`, `ASK MANMAN`, `Cerner PathNet`, etc.).
 - **Identity & Account Management Architecture**:
   1. **Primary B2C / Individual Subscriber Identity (`$10/mo` – `$15/mo`)**: Powered by **Clerk** + **Clerk Billing / Stripe** (free up to 10,000 MAUs), bridging modern web authentication (Email, Passkeys, GitHub/Google OAuth) and subscription billing to classic DEC terminal credentials (`$ACCT.SYS` on RSTS/E and `SYSUAF.DAT` on VAX/VMS).
-  2. **Enterprise, University & Museum Site Licenses (`$199/mo` – `$499/mo`, Optional Expansion)**: Powered by **WorkOS (Enterprise SAML SSO & SCIM Directory Sync)** to automatically map corporate/campus identity providers (Okta, Microsoft Entra ID, Shibboleth) to dedicated RSTS/E Project Groups (`[300,*]`) and VAX/VMS UIC Groups (`[300,*]`).
+  2. **Enterprise, University & Museum Site Licenses (`$199/mo` base w/ `15` active seats + `$10/mo` per additional active seat)**: Powered by **WorkOS (Enterprise SAML SSO & SCIM Directory Sync)** to automatically map corporate/campus identity providers (Okta, Microsoft Entra ID, Shibboleth) to dedicated RSTS/E Project Groups (`[300,*]`) and VAX/VMS UIC Groups (`[300,*]`), with automated active-seat metering.
   3. **Zero-Dependency Local Standalone Mode**: Automatically active when cloud API keys are omitted so the entire signup, checkout, and HTTPS account creation flow can be run, demonstrated, and tested locally or in Docker.
 
 ---
@@ -18,10 +18,10 @@
 
 | Plan Tier | Monthly Price | Target Audience & System(s) | Auth & Provisioned DEC Resources |
 | :--- | :--- | :--- | :--- |
-| **PDP-11 RSTS/E Timesharing** | **$10 / month** | Individual Subscriber<br>**RSTS/E V10.1-L** (`HTTPS :8411`, `SSH :2211`) | • **Clerk Auth + Stripe Billing**<br>• Dedicated PPN `[201,xxx]` & username alias in `$ACCT.SYS` (`ACCT.JSON`)<br>• Private `DK0:[201,xxx]` directory (`25,000` blocks quota)<br>• DCL (`$`), BASIC-PLUS (`Ready`), and RSX (`>`) monitors + 7 compilers & 33 apps |
-| **VAX/VMS & DECwindows Workstation** | **$10 / month** | Individual Subscriber<br>**VAX/VMS V5.5-2** (`HTTPS :8455`, `SSH :2255`) | • **Clerk Auth + Stripe Billing**<br>• Dedicated `SYSUAF` account & UIC `[200,xxx]` in `SYSUAF.DAT` (`SYSUAF.JSON`)<br>• Private ODS-2 `DKA0:[USERNAME]` directory (`50,000` blocks quota, `;version` support)<br>• VT220 Web Terminal + Live **DECwindows X11/Motif** GUI + 10 compilers & 52 apps |
+| **PDP-11 RSTS/E Timesharing** | **$10 / month** | Individual Subscriber<br>**RSTS/E V10.1-L** (`HTTPS :8411` / Funnel `:443`, `SSH :2211`) | • **Clerk Auth + Stripe Billing**<br>• Dedicated PPN `[201,xxx]` & username alias in `$ACCT.SYS` (`ACCT.JSON`)<br>• Private `DK0:[201,xxx]` directory (`25,000` blocks quota)<br>• DCL (`$`), BASIC-PLUS (`Ready`), and RSX (`>`) monitors + 7 compilers & 33 apps |
+| **VAX/VMS & DECwindows Workstation** | **$10 / month** | Individual Subscriber<br>**VAX/VMS V5.5-2** (`HTTPS :8455` / Funnel `:8443`, `SSH :2255`) | • **Clerk Auth + Stripe Billing**<br>• Dedicated `SYSUAF` account & UIC `[200,xxx]` in `SYSUAF.DAT` (`SYSUAF.JSON`)<br>• Private ODS-2 `DKA0:[USERNAME]` directory (`50,000` blocks quota, `;version` support)<br>• VT220 Web Terminal + Live **DECwindows X11/Motif** GUI + 18 compilers & 52 apps |
 | **DEC Dual-System Cluster Pass** | **$15 / month** | Power User / Historian<br>**Both RSTS/E + VAX/VMS** (`:8411` & `:8455`) | • **Clerk Auth + Stripe Billing**<br>• Simultaneous provisioning on **both** PDP-11 RSTS/E and VAX/VMS with matched credentials<br>• Expanded `100,000` blocks disk quota per system + priority batch/print queues |
-| **Enterprise / University / Museum Site License** | **$199 – $499 / month** | Universities, Museums, Aerospace/Industrial Maintainers<br>**Both Systems (Multi-Seat)** | • **WorkOS Enterprise SAML SSO + SCIM Directory Sync** (Okta, Entra ID, Campus SSO)<br>• Dedicated RSTS/E Project Group `[300,*]` & VAX/VMS UIC Group `[300,*]`<br>• Automatic seat provisioning/deprovisioning via SCIM + custom classroom/training `LOGIN.COM` |
+| **Enterprise / University / Museum Site License** | **$199 / month base**<br>*(includes 15 active seats + $10/mo per additional active seat)* | Universities, Museums, Aerospace/Industrial Maintainers<br>**Both Systems (Multi-Seat)** | • **WorkOS Enterprise SAML SSO + SCIM Directory Sync** (Okta, Entra ID, Campus SSO)<br>• Dedicated RSTS/E Project Group `[300,*]` & VAX/VMS UIC Group `[300,*]`<br>• Automated seat provisioning, suspension (`DISUSER`), and active-seat metering (`GET /api/v1/enterprise/seats`) |
 
 ---
 
@@ -100,11 +100,18 @@ flowchart LR
     Adapter -->|Assign UIC 300,N| VMS["VAX/VMS V5.5-2 (:8455)<br/>DKA0:[ORG_USER]"]
 ```
 
-- **How the WorkOS Adapter Plugs In (`POST /api/v1/webhooks/workos` & `GET /auth/workos/callback`)**:
+- **How the WorkOS Adapter Plugs In (`POST /api/v1/webhooks/workos`, `GET /auth/workos/callback`, & `GET /api/v1/enterprise/seats`)**:
   - **Organization-to-Group Mapping**: Each WorkOS `organization_id` is mapped to a dedicated **RSTS/E Project Number** (e.g., Project `300` $\rightarrow$ `[300,1]..[300,254]`) and a dedicated **VAX/VMS UIC Group** (e.g., Group `300` $\rightarrow$ `[300,1]..[300,254]`).
+  - **Enterprise Seat Metering (`$199/mo` base + `$10/mo` per additional active seat)**:
+    - Includes **`15` active seats** in the `$199/month` base fee.
+    - Each active (`NODISUSER`) seat above `15` adds **`$10/month`** (`monthly_total = 199 + max(0, active_seats - 15) * 10`).
+    - Suspended (`DISUSER`) accounts do not count toward active seat billing.
+  - **Tailscale Funnel & OAuth Callback Alignment**:
+    - RSTS/E (`:8411` local $\rightarrow$ Funnel `:443`): `https://ssadvisor-ser.tail8d2674.ts.net/auth/workos/callback`
+    - VAX/VMS (`:8455` local $\rightarrow$ Funnel `:8443`): `https://ssadvisor-ser.tail8d2674.ts.net:8443/auth/workos/callback`
   - **SCIM Automated Provisioning**:
-    - `dsync.user.created` $\rightarrow$ Automatically generates a `1–12` char DEC username from the employee/student email, creates `[300,N]` in RSTS/E and/or VAX/VMS, and emails/displays their temporary terminal password.
-    - `dsync.user.deleted` / `dsync.user.suspended` $\rightarrow$ Immediately sets `DISUSER` on their RSTS/E and VAX/VMS accounts.
+    - `dsync.user.created` $\rightarrow$ Automatically generates a `1–12` char DEC username from the employee/student email, creates `[300,N]` in RSTS/E and/or VAX/VMS, updates active seat metering, and emails/displays their temporary terminal password.
+    - `dsync.user.deleted` / `dsync.user.suspended` $\rightarrow$ Immediately sets `DISUSER` on their RSTS/E and VAX/VMS accounts and decrements the organization's active seat count.
 
 ---
 
@@ -121,7 +128,8 @@ Both [`OS/RSTS-E/src/multiuser_service.py`](file:///home/ssadvisor/AGYprojects/D
 | `PATCH /api/v1/users/<username>` | Updates account status (`ACTIVE` / `DISUSER`), quota, or rotates terminal password | `X-LCS-Signature` or Clerk JWT |
 | `POST /api/v1/webhooks/clerk` | Processes Clerk & Stripe subscription lifecycle webhooks (`user.deleted`, `subscription.canceled`, `invoice.paid`) | Clerk/Svix Webhook Secret |
 | `POST /api/v1/webhooks/workos` | *(Optional Enterprise Hook)* Processes WorkOS SCIM directory sync events (`dsync.user.created`, `dsync.user.deleted`) | WorkOS Webhook Secret |
-| `GET /api/v1/status` | Returns OS node status, active terminal count, and provisioning health | Public |
+| `GET /api/v1/enterprise/seats` | Returns real-time active enterprise seat counts and `$199/mo + $10/seat` billing breakdown per WorkOS organization | Public / Admin |
+| `GET /api/v1/status` | Returns OS node status, active terminal count, Funnel callback URL, and provisioning health | Public |
 
 ---
 

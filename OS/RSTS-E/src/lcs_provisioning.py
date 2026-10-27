@@ -7,7 +7,7 @@ Shared provisioning, webhook, and signup portal module for:
 
 Supports:
   1. Clerk Auth + Stripe Billing ($10/mo single-OS, $15/mo Dual-System Cluster Pass)
-  2. WorkOS Enterprise SAML SSO & SCIM Directory Sync ($199-$499/mo Site License -> Group [300,*])
+  2. WorkOS Enterprise SAML SSO & SCIM Directory Sync ($199/mo base w/ 15 active seats + $10/mo per additional active seat -> Group [300,*])
   3. Zero-Dependency Local Standalone Mode when cloud API keys are omitted
 """
 
@@ -63,11 +63,14 @@ PRICING_TIERS = {
         "id": "LCS_ENTERPRISE",
         "name": "Enterprise / University / Museum Site License",
         "price_monthly": 199,
-        "price_display": "$199 - $499 / month",
+        "base_price_monthly": 199,
+        "included_active_seats": 15,
+        "additional_seat_price_monthly": 10,
+        "price_display": "$199/mo (15 seats) + $10/seat",
         "target_os": ["RSTS", "VMS"],
         "quota": 100000,
         "group": 300,
-        "description": "WorkOS Enterprise SAML SSO & SCIM Directory Sync mapped to dedicated Project/UIC Group [300,*] across both systems",
+        "description": "$199/month base (includes 15 active seats) + $10/month per additional active seat; WorkOS Enterprise SAML SSO & SCIM Directory Sync mapped to Project/UIC Group [300,*]",
     },
 }
 
@@ -329,8 +332,8 @@ __CLERK_SCRIPT_TAG__
     </div>
     <div class="plan-card" id="card-LCS_ENTERPRISE" onclick="selectPlan('LCS_ENTERPRISE')">
       <div><strong>Enterprise / University Site</strong></div>
-      <div class="plan-price">$199 / month</div>
-      <div class="plan-desc">WorkOS Enterprise SAML 2.0 SSO &amp; SCIM Directory Sync mapped to dedicated Project/UIC Group <code>[300,*]</code> across both systems.</div>
+      <div class="plan-price">$199 / mo + $10 / seat</div>
+      <div class="plan-desc">Includes <strong>15 active seats</strong> (+$10/mo per additional active seat). WorkOS SAML 2.0 SSO &amp; SCIM Directory Sync mapped to Group <code>[300,*]</code>.</div>
     </div>
   </div>
 
@@ -465,6 +468,10 @@ __CLERK_SCRIPT_TAG__
         if (d.vms_account) {
           rows += '<tr><td>VAX/VMS SYSUAF UIC:</td><td><strong>' + d.vms_account.uic + '</strong> (' + d.vms_account.dir_spec + ', Quota: ' + d.vms_account.quota + ' blocks, DECW$USERS)</td></tr>';
         }
+        if (d.enterprise_billing) {
+          const eb = d.enterprise_billing;
+          rows += '<tr><td>Enterprise Seat Metering:</td><td><strong>' + eb.active_seats + ' active seat(s)</strong> (Includes ' + eb.included_active_seats + ' seats @ $' + eb.base_price_monthly + '/mo + ' + eb.additional_active_seats + ' extra @ $' + eb.additional_seat_price_monthly + '/mo = <strong>' + eb.monthly_total_display + '</strong>)</td></tr>';
+        }
         document.getElementById('cred-table').innerHTML = rows;
         document.getElementById('launch-term-btn').href = '/?user=' + encodeURIComponent(d.username);
         resBox.style.display = 'block';
@@ -538,16 +545,119 @@ class LCSProvisioningEngine:
     def lcs_api_secret(self):
         return os.environ.get("LCS_API_SECRET", "lcs-dev-hmac-secret-key").strip()
 
+    def get_public_base_url(self, headers=None):
+        """
+        Determine the external HTTPS base URL for this node (supporting Tailscale Funnel
+        where RSTS/E :8411 is served on public port 443 and VAX/VMS :8455 is served on :8443).
+        """
+        env_key = "LCS_RSTS_PUBLIC_URL" if self.primary_os == "RSTS" else "LCS_VMS_PUBLIC_URL"
+        explicit_url = os.environ.get(env_key, "").strip()
+        if headers:
+            req_host = (headers.get("x-forwarded-host") or headers.get("host") or "").strip()
+            if req_host and not req_host.startswith("127.0.0.1") and not req_host.startswith("localhost"):
+                # Preserve exact Host header sent by browser/Funnel (e.g. ssadvisor-ser.tail8d2674.ts.net or :8443)
+                return f"https://{req_host}"
+        if explicit_url:
+            return explicit_url.rstrip("/")
+        pub_host = os.environ.get("LCS_PUBLIC_HOST", "ssadvisor-ser.tail8d2674.ts.net").strip() or "localhost"
+        if pub_host.endswith(".ts.net"):
+            if self.primary_os == "RSTS":
+                return f"https://{pub_host}"
+            else:
+                funnel_port = os.environ.get("LCS_VMS_FUNNEL_PORT", "8443").strip() or "8443"
+                return f"https://{pub_host}:{funnel_port}"
+        return f"https://{pub_host}:{self.https_port}"
+
+    def compute_enterprise_seat_Summary(self, org_id=None):
+        """
+        Compute active enterprise seat count and metered monthly billing across RSTS/E and VAX/VMS.
+        Pricing model: $199/mo base (includes 15 active seats) + $10/mo per additional active seat.
+        """
+        ent_tier = PRICING_TIERS["LCS_ENTERPRISE"]
+        base_price = int(ent_tier.get("base_price_monthly", 199))
+        included_seats = int(ent_tier.get("included_active_seats", 15))
+        extra_seat_price = int(ent_tier.get("additional_seat_price_monthly", 10))
+
+        org_users = {}  # org_id -> {"active_users": set(), "suspended_users": set()}
+
+        def _scan_record(uname, rec, is_rsts=False):
+            if not isinstance(rec, dict):
+                return
+            w_org = str(rec.get("workos_org_id") or "").strip()
+            plan_val = str(rec.get("plan") or "").strip().upper()
+            ppn_or_uic = str(rec.get("ppn" if is_rsts else "uic") or "").strip("[]")
+            grp_prefix = ppn_or_uic.split(",", 1)[0].strip() if "," in ppn_or_uic else ""
+            is_ent = bool(w_org or "ENTERPRISE" in plan_val or grp_prefix == "300")
+            if not is_ent:
+                return
+            org_key = w_org or "org_enterprise_300"
+            bucket = org_users.setdefault(org_key, {"active_users": set(), "suspended_users": set()})
+            flags_str = str(rec.get("flags") or "").upper()
+            status_str = str(rec.get("status") or "ACTIVE").upper()
+            is_disabled = (
+                ("DISUSER" in flags_str and "NODISUSER" not in flags_str)
+                or status_str in ("DISUSER", "SUSPENDED", "DISABLED")
+            )
+            clean_u = (uname or rec.get("username") or rec.get("name") or "").strip().upper()
+            if not clean_u:
+                return
+            if is_disabled:
+                bucket["suspended_users"].add(clean_u)
+            else:
+                bucket["active_users"].add(clean_u)
+
+        rsts_emu = self._load_rsts_emulator()
+        if rsts_emu:
+            for _, acct in rsts_emu.accounts.items():
+                _scan_record(acct.get("username") or acct.get("name"), acct, is_rsts=True)
+
+        vms_emu = self._load_vms_emulator()
+        if vms_emu:
+            for uname, uinfo in vms_emu.users.items():
+                _scan_record(uname, uinfo, is_rsts=False)
+
+        def _build_org_billing(o_key):
+            b = org_users.get(o_key, {"active_users": set(), "suspended_users": set()})
+            active_list = sorted(b["active_users"])
+            suspended_list = sorted(b["suspended_users"] - b["active_users"])
+            active_count = len(active_list)
+            extra_seats = max(0, active_count - included_seats)
+            monthly_total = base_price + (extra_seats * extra_seat_price)
+            return {
+                "organization_id": o_key,
+                "base_price_monthly": base_price,
+                "included_active_seats": included_seats,
+                "additional_seat_price_monthly": extra_seat_price,
+                "active_seats": active_count,
+                "suspended_seats": len(suspended_list),
+                "remaining_included_seats": max(0, included_seats - active_count),
+                "additional_active_seats": extra_seats,
+                "monthly_total_usd": monthly_total,
+                "monthly_total_display": f"${monthly_total} / month",
+                "active_usernames": active_list,
+            }
+
+        if org_id:
+            return _build_org_billing(str(org_id).strip() or "org_enterprise_300")
+
+        all_orgs = {k: _build_org_billing(k) for k in sorted(org_users.keys())}
+        return {
+            "base_price_monthly": base_price,
+            "included_active_seats": included_seats,
+            "additional_seat_price_monthly": extra_seat_price,
+            "organizations": all_orgs,
+        }
+
     def _peer_base_urls(self, peer_os):
         if peer_os == "VMS":
             env_url = os.environ.get("LCS_VMS_URL", "").strip()
             urls = [env_url] if env_url else []
-            urls.extend(["https://dec-vms:8455", "https://127.0.0.1:8455"])
+            urls.extend(["https://dec-vms:8455", "https://host.docker.internal:8455", "https://127.0.0.1:8455"])
             return urls
         else:
             env_url = os.environ.get("LCS_RSTS_URL", "").strip()
             urls = [env_url] if env_url else []
-            urls.extend(["https://dec-rsts-e:8411", "https://127.0.0.1:8411"])
+            urls.extend(["https://dec-rsts-e:8411", "https://host.docker.internal:8411", "https://127.0.0.1:8411"])
             return urls
 
     def _provision_peer_over_https(
@@ -668,19 +778,29 @@ class LCSProvisioningEngine:
         if not signature_header:
             return False
         sig_clean = signature_header.strip()
+        ts_val = ""
         if "v1=" in sig_clean and "," in sig_clean:
-            # WorkOS or Svix style header: t=...,v1=hex_or_b64
+            # WorkOS header: t=<timestamp>, v1=<hex_hmac_of_"{timestamp}.{raw_body}">
             for part in sig_clean.split(","):
                 p = part.strip()
-                if p.startswith("v1="):
+                if p.startswith("t="):
+                    ts_val = p[2:].strip()
+                elif p.startswith("v1="):
                     sig_clean = p[3:].strip()
-                    break
         elif sig_clean.lower().startswith("sha256="):
             sig_clean = sig_clean.split("=", 1)[1].strip()
 
-        expected_hex = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+        sec_bytes = secret.encode("utf-8")
+        # 1. Standard raw_body HMAC
+        expected_hex = hmac.new(sec_bytes, raw_body, hashlib.sha256).hexdigest()
         if hmac.compare_digest(expected_hex.lower(), sig_clean.lower()):
             return True
+        # 2. WorkOS timestamped payload format: "{timestamp}.{raw_body}"
+        if ts_val:
+            signed_payload = ts_val.encode("utf-8") + b"." + raw_body
+            expected_wos = hmac.new(sec_bytes, signed_payload, hashlib.sha256).hexdigest()
+            if hmac.compare_digest(expected_wos.lower(), sig_clean.lower()):
+                return True
         return False
 
     def compute_hmac_signature(self, raw_body, secret=None):
@@ -872,13 +992,23 @@ class LCSProvisioningEngine:
         }
         clerk_sync = self.sync_clerk_public_metadata(clerk_user_id, clerk_metadata)
 
-        pub_host = os.environ.get("LCS_PUBLIC_HOST", "ssadvisor-ser.tail8d2674.ts.net").strip() or "localhost"
+        base_url = self.get_public_base_url()
         primary_rec = rsts_res if (self.primary_os == "RSTS" and rsts_res) else (vms_res or rsts_res)
+        is_ent = bool(workos_org_id or workos_user_id or "ENTERPRISE" in plan_upper)
+        enterprise_billing = (
+            self.compute_enterprise_seat_Summary(workos_org_id or "org_enterprise_300")
+            if is_ent
+            else None
+        )
         return {
             "ok": True,
             "dba": DBA_NAME,
             "plan": plan_upper,
-            "price_display": tier_info["price_display"],
+            "price_display": (
+                enterprise_billing["monthly_total_display"]
+                if enterprise_billing
+                else tier_info["price_display"]
+            ),
             "username": clean_user,
             "ppn": rsts_res["ppn"] if rsts_res else None,
             "uic": vms_res["uic"] if vms_res else None,
@@ -887,9 +1017,10 @@ class LCSProvisioningEngine:
             "flags": "NODISUSER",
             "rsts_account": rsts_res,
             "vms_account": vms_res,
+            "enterprise_billing": enterprise_billing,
             "clerk_metadata": clerk_metadata,
             "clerk_sync": clerk_sync,
-            "terminal_url": f"https://{pub_host}:{self.https_port}/?user={clean_user}",
+            "terminal_url": f"{base_url}/?user={clean_user}",
         }
 
     def update_across_targets(self, identifier, status=None, password=None, quota=None, plan=None, local_only=False):
@@ -1078,12 +1209,14 @@ class LCSProvisioningEngine:
                 updated = self.update_across_targets(ident, status="DISUSER")
             except KeyError:
                 updated = self.update_across_targets(dec_user, status="DISUSER")
+            ent_billing = self.compute_enterprise_seat_Summary(workos_org_id)
             return {
                 "ok": True,
                 "webhook": "workos",
                 "event": event_type,
                 "action": "SUSPENDED",
                 "organization_id": workos_org_id,
+                "enterprise_billing": ent_billing,
                 "account": updated,
             }
 
@@ -1106,6 +1239,7 @@ class LCSProvisioningEngine:
             "action": "PROVISIONED",
             "organization_id": workos_org_id,
             "temporary_password": temp_password,
+            "enterprise_billing": prov.get("enterprise_billing") or self.compute_enterprise_seat_Summary(workos_org_id),
             "account": prov,
         }
 
@@ -1121,6 +1255,7 @@ class LCSProvisioningEngine:
             sessions_count = len(emu._load_live_sessions()) if emu else 0
             os_version = "DEC VAX/VMS V5.5-2 (VAXstation 4000-90)"
 
+        pub_base = self.get_public_base_url()
         return {
             "ok": True,
             "dba": DBA_NAME,
@@ -1128,6 +1263,8 @@ class LCSProvisioningEngine:
             "primary_os": self.primary_os,
             "os_version": os_version,
             "https_port": self.https_port,
+            "public_base_url": pub_base,
+            "workos_callback_url": f"{pub_base}/auth/workos/callback",
             "accounts_total": accounts_count,
             "active_sessions": sessions_count,
             "auth_providers": {
@@ -1141,6 +1278,7 @@ class LCSProvisioningEngine:
                 },
             },
             "pricing_tiers": PRICING_TIERS,
+            "enterprise_seat_metering": self.compute_enterprise_seat_Summary(),
         }
 
     def handle_http_request(self, method, path, query_params, headers, body_bytes):
@@ -1155,14 +1293,9 @@ class LCSProvisioningEngine:
 
         if method == "GET" and path == "/auth/workos/login":
             org = (query_params.get("org", ["org_enterprise_300"])[0] or "org_enterprise_300").strip()
+            pub_base = self.get_public_base_url(headers=headers)
+            redirect_uri = f"{pub_base}/auth/workos/callback"
             if self.workos_client_id:
-                req_host = (headers.get("host") or "").strip()
-                pub_host = os.environ.get("LCS_PUBLIC_HOST", "ssadvisor-ser.tail8d2674.ts.net").strip()
-                if req_host and not req_host.startswith("127.0.0.1") and not req_host.startswith("localhost"):
-                    host_port = req_host if ":" in req_host else f"{req_host}:{self.https_port}"
-                else:
-                    host_port = f"{pub_host}:{self.https_port}"
-                redirect_uri = f"https://{host_port}/auth/workos/callback"
                 sso_url = (
                     "https://api.workos.com/sso/authorize?"
                     + urllib.parse.urlencode({
@@ -1174,7 +1307,12 @@ class LCSProvisioningEngine:
                 )
             else:
                 sso_url = f"/auth/workos/callback?code=standalone_sso_code&org={urllib.parse.quote(org)}&user=ENTUSER1"
-            body = json.dumps({"ok": True, "redirect_url": sso_url, "organization_id": org}).encode("utf-8")
+            body = json.dumps({
+                "ok": True,
+                "redirect_url": sso_url,
+                "redirect_uri": redirect_uri,
+                "organization_id": org,
+            }).encode("utf-8")
             return (200, "OK", "application/json; charset=utf-8", body)
 
         if method == "GET" and path == "/auth/workos/callback":
@@ -1183,6 +1321,8 @@ class LCSProvisioningEngine:
             uname = (query_params.get("user", ["ENTUSER1"])[0] or "ENTUSER1").strip().upper()
             email = f"{uname.lower()}@enterprise.local"
             wos_uid = f"wos_{uname.lower()}"
+            pub_base = self.get_public_base_url(headers=headers)
+            redirect_uri = f"{pub_base}/auth/workos/callback"
             if code and code != "standalone_sso_code" and self.workos_api_key and self.workos_client_id:
                 try:
                     token_body = urllib.parse.urlencode({
@@ -1190,6 +1330,7 @@ class LCSProvisioningEngine:
                         "client_secret": self.workos_api_key,
                         "grant_type": "authorization_code",
                         "code": code,
+                        "redirect_uri": redirect_uri,
                     }).encode("utf-8")
                     req_tok = urllib.request.Request(
                         "https://api.workos.com/sso/token",
@@ -1232,6 +1373,16 @@ class LCSProvisioningEngine:
         if method == "GET" and path == "/api/v1/status":
             data = self.get_status_summary()
             return (200, "OK", "application/json; charset=utf-8", json.dumps(data, indent=2).encode("utf-8"))
+
+        if method == "GET" and path == "/api/v1/enterprise/seats":
+            org = (query_params.get("org", [""])[0] or "").strip() or None
+            seat_data = self.compute_enterprise_seat_Summary(org_id=org)
+            return (
+                200,
+                "OK",
+                "application/json; charset=utf-8",
+                json.dumps({"ok": True, "dba": DBA_NAME, "seat_metering": seat_data}, indent=2).encode("utf-8"),
+            )
 
         if method == "GET" and path == "/api/v1/users/check":
             uname = (query_params.get("username", [""])[0] or "").strip()
@@ -1357,7 +1508,7 @@ class LCSProvisioningEngine:
 
         if path == "/api/v1/webhooks/clerk" and method == "POST":
             sig_hdr = headers.get("svix-signature") or headers.get("x-clerk-signature") or ""
-            if self.clerk_webhook_secret or sig_hdr:
+            if self.clerk_webhook_secret or headers.get("x-clerk-signature"):
                 secret = self.clerk_webhook_secret or self.lcs_api_secret
                 if not self.verify_hmac_signature(body_bytes, sig_hdr, secret):
                     return (
@@ -1380,7 +1531,7 @@ class LCSProvisioningEngine:
 
         if path == "/api/v1/webhooks/workos" and method == "POST":
             sig_hdr = headers.get("workos-signature") or headers.get("x-workos-signature") or ""
-            if self.workos_webhook_secret or sig_hdr:
+            if self.workos_webhook_secret or headers.get("x-workos-signature"):
                 secret = self.workos_webhook_secret or self.lcs_api_secret
                 if not self.verify_hmac_signature(body_bytes, sig_hdr, secret):
                     return (

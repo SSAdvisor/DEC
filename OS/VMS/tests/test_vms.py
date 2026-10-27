@@ -693,6 +693,18 @@ class TestVMSDockerContainer:
                 assert wc_res["action"] == "PROVISIONED"
                 assert wc_res["account"]["uic"] == "[300,1]"
                 assert wc_res["account"]["quota"] == 100000
+                assert wc_res["enterprise_billing"]["base_price_monthly"] == 199
+                assert wc_res["enterprise_billing"]["included_active_seats"] == 15
+                assert wc_res["enterprise_billing"]["additional_seat_price_monthly"] == 10
+                assert wc_res["enterprise_billing"]["active_seats"] >= 1
+                assert wc_res["enterprise_billing"]["monthly_total_usd"] == 199
+
+            # Verify GET /api/v1/enterprise/seats?org=org_cern_lab reports active seat metering
+            with urllib.request.urlopen(f"{base_url}/api/v1/enterprise/seats?org=org_cern_lab", context=ssl_ctx, timeout=5) as r:
+                sm = json.loads(r.read().decode("utf-8"))["seat_metering"]
+                assert sm["active_seats"] >= 1
+                assert sm["base_price_monthly"] == 199
+                assert sm["included_active_seats"] == 15
 
             wos_susp = json.dumps({
                 "event": "dsync.user.suspended",
@@ -708,6 +720,7 @@ class TestVMSDockerContainer:
                 ws_res = json.loads(r.read().decode("utf-8"))
                 assert ws_res["action"] == "SUSPENDED"
                 assert ws_res["account"]["status"] == "DISUSER"
+                assert ws_res["enterprise_billing"]["suspended_seats"] >= 1
 
             # 6. Connect via live WSS (/ws) and log in with newly provisioned VAXUSER1 account
             raw_sock = socket.create_connection(("127.0.0.1", port), timeout=5)
