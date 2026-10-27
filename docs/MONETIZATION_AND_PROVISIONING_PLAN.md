@@ -128,8 +128,22 @@ Both [`OS/RSTS-E/src/multiuser_service.py`](file:///home/ssadvisor/AGYprojects/D
 | `PATCH /api/v1/users/<username>` | Updates account status (`ACTIVE` / `DISUSER`), quota, or rotates terminal password | `X-LCS-Signature` or Clerk JWT |
 | `POST /api/v1/webhooks/clerk` | Processes Clerk & Stripe subscription lifecycle webhooks (`user.deleted`, `subscription.canceled`, `invoice.paid`) | Clerk/Svix Webhook Secret |
 | `POST /api/v1/webhooks/workos` | *(Optional Enterprise Hook)* Processes WorkOS SCIM directory sync events (`dsync.user.created`, `dsync.user.deleted`) | WorkOS Webhook Secret |
+| `POST /api/v1/coupons` | Generates a **6-digit random discount coupon code** (`000000`–`999999`) with percentage discount up to **100ths place** (`0.01%`–`100.00%`) and expiration of `never`, `days` (`1..365`), or `months` (`1..12`, max 1 year) | Admin / `X-LCS-Signature` |
+| `GET /api/v1/coupons` | Lists active and expired promotional discount coupons stored on the node | Public / Admin |
+| `GET /api/v1/coupons/validate?code=<6-DIGIT>&plan=<PLAN>` | Validates a 6-digit coupon code, checks expiration, and computes `discount_amount_usd` & `discounted_price_usd` to the 100ths place (`$0.01`) | Public |
 | `GET /api/v1/enterprise/seats` | Returns real-time active enterprise seat counts and `$199/mo + $10/seat` billing breakdown per WorkOS organization | Public / Admin |
 | `GET /api/v1/status` | Returns OS node status, active terminal count, Funnel callback URL, and provisioning health | Public |
+
+---
+
+### 4.3.1. Promotional Discount Coupon System (`6-Digit Random Code` & `100ths Percentage Precision`)
+- **Code Format**: Every generated coupon code is a cryptographically random **6-digit numeric string** (`000000`–`999999`), automatically checked for collisions and synchronized across both `dec-rsts-e` (`:8411`) and `dec-vms` (`:8455`).
+- **Percentage Discount Precision**: Expressed in percentages (`> 0%` up to `100.00%`). All percentage amounts up to the **fractional 100ths place** (`0.01%`, e.g., `12.75%`, `33.33%`, `50%`, `100.00%`) are valid; values with finer precision (e.g., `12.345%`) or out of range (`<= 0%` or `> 100%`) are rejected with `400 Bad Request`.
+- **Coupon Age / Expiration Policy**:
+  - `duration_unit: "never"` — Non-expiring coupon (`never_expires: true`, `expires_at: null`).
+  - `duration_unit: "days"` — Expires after `duration_value` days (`1 <= duration_value <= 365`).
+  - `duration_unit: "months"` — Expires after `duration_value` months (`1 <= duration_value <= 12`).
+  - **1-Year Maximum Age Enforcement**: Any expiring coupon with a duration exceeding **1 year** (`> 365` days or `> 12` months) is rejected with `400 Bad Request`.
 
 ---
 

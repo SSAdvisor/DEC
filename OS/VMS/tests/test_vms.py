@@ -619,13 +619,45 @@ class TestVMSDockerContainer:
                 chk = json.loads(r.read().decode("utf-8"))
                 assert chk["available"] is True
 
-            # 3. POST /api/v1/signup ($10/mo VAX/VMS subscriber)
+            # 2b. Create & validate 6-digit percentage discount coupons (100ths precision, never/days/months <= 1 yr)
+            import urllib.error
+            cpn_req = urllib.request.Request(
+                f"{base_url}/api/v1/coupons",
+                data=json.dumps({"discount_percent": 12.75, "duration_unit": "months", "duration_value": 6}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(cpn_req, context=ssl_ctx, timeout=5) as r:
+                assert r.status == 201
+                cpn = json.loads(r.read().decode("utf-8"))["coupon"]
+                assert len(cpn["code"]) == 6 and cpn["code"].isdigit()
+                assert cpn["discount_percent"] == 12.75
+                assert cpn["duration_unit"] == "months" and cpn["duration_value"] == 6
+                vms_coupon_code = cpn["code"]
+
+            # Reject > 1 year (366 days, 13 months)
+            for bad_payload in (
+                {"discount_percent": 50.0, "duration_unit": "days", "duration_value": 366},
+                {"discount_percent": 50.0, "duration_unit": "months", "duration_value": 13},
+            ):
+                bad_req = urllib.request.Request(
+                    f"{base_url}/api/v1/coupons",
+                    data=json.dumps(bad_payload).encode("utf-8"),
+                    method="POST",
+                    headers={"Content-Type": "application/json"},
+                )
+                with pytest.raises(urllib.error.HTTPError) as exc_info:
+                    urllib.request.urlopen(bad_req, context=ssl_ctx, timeout=5)
+                assert exc_info.value.code == 400
+
+            # 3. POST /api/v1/signup ($10/mo VAX/VMS subscriber with 12.75% 6-digit coupon -> $8.72)
             signup_payload = json.dumps({
                 "username": "VAXUSER1",
                 "password": "VAX$1991",
                 "email": "vaxuser1@dec.example.com",
                 "plan": "LCS_VMS_10",
                 "clerk_user_id": "user_clerk_vax1",
+                "coupon_code": vms_coupon_code,
             }).encode("utf-8")
             req = urllib.request.Request(
                 f"{base_url}/api/v1/signup",
@@ -639,6 +671,8 @@ class TestVMSDockerContainer:
                 assert created["ok"] is True
                 assert created["uic"] == "[200,201]"
                 assert created["clerk_metadata"]["dec_username"] == "VAXUSER1"
+                assert created["coupon_applied"]["code"] == vms_coupon_code
+                assert created["discounted_price_usd"] == 8.72
 
             # 4. Clerk webhook: subscription.canceled -> DISUSER, then invoice.paid -> ACTIVE
             clerk_cancel = json.dumps({

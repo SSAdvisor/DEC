@@ -22,7 +22,8 @@ import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 
 DBA_NAME = "Legacy Computing Systems"
@@ -363,6 +364,13 @@ __CLERK_SCRIPT_TAG__
           <div class="hint">Assigned directly to <code>$ACCT.SYS</code> and/or <code>SYSUAF.DAT</code> for interactive terminal login.</div>
         </div>
       </div>
+      <div class="form-row">
+        <label for="coupon-input">Discount Coupon (Optional):</label>
+        <div>
+          <input id="coupon-input" type="text" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit code (e.g. 482915)" oninput="checkCoupon(this.value)" />
+          <div id="coupon-hint" class="hint">Enter a 6-digit promotional discount code (supports fractional percentages up to 100.00%).</div>
+        </div>
+      </div>
       <div class="form-row" id="enterprise-row" style="display:none;">
         <label for="workos-org-input">WorkOS Organization ID:</label>
         <div style="display:flex; gap:8px;">
@@ -390,6 +398,7 @@ __CLERK_SCRIPT_TAG__
 <script>
   let selectedPlan = "__DEFAULT_PLAN__";
   let checkTimer = null;
+  let couponTimer = null;
 
   function selectPlan(planId) {
     selectedPlan = planId;
@@ -400,6 +409,38 @@ __CLERK_SCRIPT_TAG__
       if (el) el.classList.toggle('selected', id === planId);
     });
     document.getElementById('enterprise-row').style.display = (planId === 'LCS_ENTERPRISE') ? 'grid' : 'none';
+    const cVal = document.getElementById('coupon-input').value;
+    if (cVal) checkCoupon(cVal);
+  }
+
+  function checkCoupon(val) {
+    clearTimeout(couponTimer);
+    const hint = document.getElementById('coupon-hint');
+    const clean = (val || '').trim();
+    if (!clean) {
+      hint.style.color = '#8ce6a3';
+      hint.textContent = 'Enter a 6-digit promotional discount code (supports fractional percentages up to 100.00%).';
+      return;
+    }
+    if (!/^[0-9]{6}$/.test(clean)) {
+      hint.style.color = '#ffb000';
+      hint.textContent = 'Discount coupon code must be 6 digits (000000-999999).';
+      return;
+    }
+    couponTimer = setTimeout(function() {
+      fetch('/api/v1/coupons/validate?code=' + encodeURIComponent(clean) + '&plan=' + encodeURIComponent(selectedPlan))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.valid) {
+            hint.style.color = '#33ff66';
+            hint.textContent = '✓ Coupon ' + data.code + ' applied: ' + data.discount_percent_display + ' off (' + data.discounted_price_display + ')!';
+          } else {
+            hint.style.color = '#ff8080';
+            hint.textContent = '✗ ' + (data.reason || 'Invalid or expired coupon code');
+          }
+        })
+        .catch(function() {});
+    }, 180);
   }
 
   function checkAvailability(val) {
@@ -441,6 +482,7 @@ __CLERK_SCRIPT_TAG__
       email: document.getElementById('email-input').value.trim(),
       username: document.getElementById('username-input').value.trim().toUpperCase(),
       password: document.getElementById('password-input').value,
+      coupon_code: document.getElementById('coupon-input').value.trim(),
       workos_org_id: document.getElementById('workos-org-input').value.trim()
     };
 
@@ -461,6 +503,9 @@ __CLERK_SCRIPT_TAG__
         let rows = '';
         rows += '<tr><td>DBA / Provider:</td><td><strong>' + (d.dba || 'Legacy Computing Systems') + '</strong></td></tr>';
         rows += '<tr><td>Subscription Plan:</td><td>' + d.plan + ' (' + (d.price_display || '$10/mo') + ')</td></tr>';
+        if (d.coupon_applied) {
+          rows += '<tr><td>Discount Coupon:</td><td><strong>' + d.coupon_applied.code + '</strong> (' + d.coupon_applied.discount_percent_display + ' off &rarr; <strong>' + d.coupon_applied.discounted_price_display + '</strong>)</td></tr>';
+        }
         rows += '<tr><td>DEC Username:</td><td><strong>' + d.username + '</strong></td></tr>';
         if (d.rsts_account) {
           rows += '<tr><td>PDP-11 RSTS/E PPN:</td><td><strong>' + d.rsts_account.ppn + '</strong> (' + d.rsts_account.dir_spec + ', Quota: ' + d.rsts_account.quota + ' blocks)</td></tr>';
@@ -646,6 +691,257 @@ class LCSProvisioningEngine:
             "included_active_seats": included_seats,
             "additional_seat_price_monthly": extra_seat_price,
             "organizations": all_orgs,
+        }
+
+    # ------------------------------------------------------------------
+    # Discount Coupon Engine (6-digit random code, 0.01% - 100.00%,
+    # expiry: 'never', or days <= 365, or months <= 12)
+    # ------------------------------------------------------------------
+    def _coupons_file_paths(self):
+        paths = [os.path.join(self.fs_root, ".lcs_coupons.json")]
+        rsts_fs = os.path.join(self.dec_root, "OS", "RSTS-E", "fs", ".lcs_coupons.json")
+        vms_fs = os.path.join(self.dec_root, "OS", "VMS", "fs", ".lcs_coupons.json")
+        for p in (rsts_fs, vms_fs, "/opt/dec-rsts/fs/.lcs_coupons.json", "/opt/dec-vms/fs/.lcs_coupons.json"):
+            if p not in paths and os.path.isdir(os.path.dirname(p)):
+                paths.append(p)
+        return paths
+
+    def load_coupons(self):
+        merged = {}
+        for p in self._coupons_file_paths():
+            if os.path.isfile(p):
+                try:
+                    with open(p, "r") as f:
+                        data = json.load(f)
+                    if isinstance(data, dict):
+                        merged.update(data)
+                except Exception:
+                    pass
+        return merged
+
+    def save_coupons(self, coupons_dict):
+        for p in self._coupons_file_paths():
+            try:
+                os.makedirs(os.path.dirname(p), exist_ok=True)
+                with open(p, "w") as f:
+                    json.dump(coupons_dict, f, indent=2)
+            except Exception:
+                pass
+
+    def _sync_coupon_to_peer(self, coupon_record):
+        peer_os = "RSTS" if self.primary_os == "VMS" else "VMS"
+        payload = json.dumps({
+            "code": coupon_record["code"],
+            "discount_percent": coupon_record["discount_percent"],
+            "duration_unit": coupon_record["duration_unit"],
+            "duration_value": coupon_record.get("duration_value"),
+            "description": coupon_record.get("description", ""),
+            "created_at": coupon_record.get("created_at"),
+            "expires_at": coupon_record.get("expires_at"),
+            "local_only": True,
+        }).encode("utf-8")
+        sig = self.compute_hmac_signature(payload)
+        ctx = ssl._create_unverified_context()
+        for base in self._peer_base_urls(peer_os):
+            try:
+                req = urllib.request.Request(
+                    f"{base.rstrip('/')}/api/v1/coupons",
+                    data=payload,
+                    method="POST",
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-LCS-Signature": sig,
+                    },
+                )
+                with urllib.request.urlopen(req, context=ctx, timeout=2.0) as _:
+                    return True
+            except Exception:
+                continue
+        return False
+
+    def create_discount_coupon(
+        self,
+        discount_percent,
+        duration_unit="never",
+        duration_value=None,
+        description="",
+        code=None,
+        created_at=None,
+        expires_at=None,
+        local_only=False,
+    ):
+        """
+        Generate or register a 6-digit discount coupon code.
+        - code: 6 random digits (000000 - 999999)
+        - discount_percent: percentage > 0 and <= 100.00 (up to 100ths place, e.g. 12.75, 33.33, 100.00)
+        - duration_unit: 'never' (non-expiring), 'days' (1..365), or 'months' (1..12)
+        """
+        if discount_percent is None or str(discount_percent).strip() == "":
+            raise ValueError("discount_percent is required")
+        raw_pct = str(discount_percent).strip().rstrip("%").strip()
+        try:
+            dec_pct = Decimal(raw_pct)
+        except InvalidOperation:
+            raise ValueError(f"Invalid discount_percent '{discount_percent}': must be a valid percentage number")
+
+        if dec_pct <= Decimal("0") or dec_pct > Decimal("100"):
+            raise ValueError("discount_percent must be greater than 0% and at most 100.00%")
+
+        # Check at most 2 decimal places (100ths place)
+        quant_pct = dec_pct.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        if dec_pct != quant_pct:
+            raise ValueError("discount_percent supports up to the 100ths place (at most 2 decimal places, e.g. 25.75)")
+
+        unit = str(duration_unit or "never").strip().lower()
+        if unit in ("never", "none", "forever", "non-expiring", "non_expiring", "no_expiration", "permanent"):
+            norm_unit = "never"
+            norm_val = None
+            exp_iso = None
+        elif unit in ("day", "days", "d"):
+            norm_unit = "days"
+            if duration_value is None or str(duration_value).strip() == "":
+                raise ValueError("duration_value is required when duration_unit is 'days'")
+            try:
+                days_val = int(duration_value)
+            except ValueError:
+                raise ValueError("duration_value for 'days' must be an integer between 1 and 365")
+            if days_val < 1 or days_val > 365:
+                raise ValueError("Coupon age in days cannot exceed 1 year (must be between 1 and 365 days)")
+            norm_val = days_val
+            now_dt = datetime.now(timezone.utc)
+            exp_iso = expires_at or (now_dt + timedelta(days=days_val)).isoformat()
+        elif unit in ("month", "months", "mo", "m"):
+            norm_unit = "months"
+            if duration_value is None or str(duration_value).strip() == "":
+                raise ValueError("duration_value is required when duration_unit is 'months'")
+            try:
+                months_val = int(duration_value)
+            except ValueError:
+                raise ValueError("duration_value for 'months' must be an integer between 1 and 12")
+            if months_val < 1 or months_val > 12:
+                raise ValueError("Coupon age in months cannot exceed 1 year (must be between 1 and 12 months)")
+            norm_val = months_val
+            now_dt = datetime.now(timezone.utc)
+            # 12 months == 365 days max
+            days_equiv = 365 if months_val == 12 else months_val * 30
+            exp_iso = expires_at or (now_dt + timedelta(days=days_equiv)).isoformat()
+        else:
+            raise ValueError("duration_unit must be 'never', 'days' (1-365), or 'months' (1-12)")
+
+        coupons = self.load_coupons()
+        if code is not None and str(code).strip() != "":
+            clean_code = str(code).strip()
+            if not re.match(r"^[0-9]{6}$", clean_code):
+                raise ValueError("Coupon code must be exactly 6 digits (000000-999999)")
+        else:
+            clean_code = f"{secrets.randbelow(1000000):06d}"
+            attempts = 0
+            while clean_code in coupons and attempts < 50:
+                clean_code = f"{secrets.randbelow(1000000):06d}"
+                attempts += 1
+
+        pct_float = float(quant_pct)
+        pct_str = f"{quant_pct:.2f}".rstrip("0").rstrip(".") if "." in f"{quant_pct:.2f}" else f"{quant_pct}"
+        now_iso = created_at or datetime.now(timezone.utc).isoformat()
+
+        rec = {
+            "code": clean_code,
+            "discount_percent": pct_float,
+            "discount_percent_exact": f"{quant_pct:.2f}",
+            "discount_percent_display": f"{pct_str}%",
+            "duration_unit": norm_unit,
+            "duration_value": norm_val,
+            "never_expires": norm_unit == "never",
+            "created_at": now_iso,
+            "expires_at": exp_iso,
+            "status": "ACTIVE",
+            "description": str(description or f"{pct_str}% off Legacy Computing Systems subscription"),
+        }
+        coupons[clean_code] = rec
+        self.save_coupons(coupons)
+        if not local_only:
+            self._sync_coupon_to_peer(rec)
+        return rec
+
+    def validate_and_apply_coupon(self, code, plan=None, base_price_usd=None):
+        """
+        Validate a 6-digit coupon code, check expiration, and compute the discounted price
+        accurate to the 100ths place ($0.01).
+        """
+        clean_code = str(code or "").strip()
+        if not re.match(r"^[0-9]{6}$", clean_code):
+            return {
+                "ok": True,
+                "valid": False,
+                "code": clean_code,
+                "reason": "Coupon code must be 6 digits (000000-999999)",
+            }
+
+        coupons = self.load_coupons()
+        rec = coupons.get(clean_code)
+        if not rec:
+            return {
+                "ok": True,
+                "valid": False,
+                "code": clean_code,
+                "reason": f"Coupon code '{clean_code}' not found",
+            }
+
+        if str(rec.get("status", "ACTIVE")).upper() != "ACTIVE":
+            return {
+                "ok": True,
+                "valid": False,
+                "code": clean_code,
+                "reason": f"Coupon code '{clean_code}' is disabled",
+            }
+
+        exp_at = rec.get("expires_at")
+        if exp_at and not rec.get("never_expires", False):
+            try:
+                exp_dt = datetime.fromisoformat(exp_at)
+                if exp_dt.tzinfo is None:
+                    exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) > exp_dt:
+                    return {
+                        "ok": True,
+                        "valid": False,
+                        "code": clean_code,
+                        "expired": True,
+                        "expires_at": exp_at,
+                        "reason": f"Coupon code '{clean_code}' expired on {exp_at}",
+                    }
+            except Exception:
+                pass
+
+        plan_upper = (plan or ("LCS_RSTS_10" if self.primary_os == "RSTS" else "LCS_VMS_10")).strip().upper()
+        tier = PRICING_TIERS.get(plan_upper, PRICING_TIERS["LCS_RSTS_10" if self.primary_os == "RSTS" else "LCS_VMS_10"])
+        orig_dec = Decimal(str(base_price_usd if base_price_usd is not None else tier["price_monthly"])).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        pct_dec = Decimal(str(rec.get("discount_percent_exact") or rec["discount_percent"])).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        discount_amt = (orig_dec * (pct_dec / Decimal("100"))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        final_dec = max(Decimal("0.00"), orig_dec - discount_amt).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        return {
+            "ok": True,
+            "valid": True,
+            "code": clean_code,
+            "discount_percent": float(pct_dec),
+            "discount_percent_exact": f"{pct_dec:.2f}",
+            "discount_percent_display": rec.get("discount_percent_display", f"{pct_dec}%"),
+            "duration_unit": rec.get("duration_unit", "never"),
+            "duration_value": rec.get("duration_value"),
+            "never_expires": bool(rec.get("never_expires", rec.get("duration_unit") == "never")),
+            "created_at": rec.get("created_at"),
+            "expires_at": exp_at,
+            "plan": plan_upper,
+            "original_price_usd": float(orig_dec),
+            "discount_amount_usd": float(discount_amt),
+            "discounted_price_usd": float(final_dec),
+            "discounted_price_exact": f"{final_dec:.2f}",
+            "discounted_price_display": f"${final_dec:.2f} / month",
         }
 
     def _peer_base_urls(self, peer_os):
@@ -879,9 +1175,18 @@ class LCSProvisioningEngine:
         workos_user_id="",
         group=None,
         quota=None,
+        coupon_code="",
     ):
         plan_upper = (plan or ("LCS_RSTS_10" if self.primary_os == "RSTS" else "LCS_VMS_10")).strip().upper()
         tier_info = PRICING_TIERS.get(plan_upper, PRICING_TIERS["LCS_RSTS_10" if self.primary_os == "RSTS" else "LCS_VMS_10"])
+
+        coupon_applied = None
+        clean_coupon = (coupon_code or "").strip()
+        if clean_coupon:
+            c_res = self.validate_and_apply_coupon(clean_coupon, plan=plan_upper)
+            if not c_res.get("valid"):
+                raise ValueError(c_res.get("reason") or f"Invalid coupon code '{clean_coupon}'")
+            coupon_applied = c_res
 
         if target_os:
             if isinstance(target_os, str):
@@ -988,6 +1293,8 @@ class LCSProvisioningEngine:
             "dec_username": clean_user,
             "rsts_ppn": rsts_res["ppn"] if rsts_res else None,
             "vms_uic": vms_res["uic"] if vms_res else None,
+            "coupon_code": coupon_applied["code"] if coupon_applied else None,
+            "discount_percent": coupon_applied["discount_percent"] if coupon_applied else None,
             "account_status": "ACTIVE",
         }
         clerk_sync = self.sync_clerk_public_metadata(clerk_user_id, clerk_metadata)
@@ -1000,15 +1307,36 @@ class LCSProvisioningEngine:
             if is_ent
             else None
         )
+        if enterprise_billing and coupon_applied:
+            coupon_applied = self.validate_and_apply_coupon(
+                coupon_applied["code"],
+                plan=plan_upper,
+                base_price_usd=enterprise_billing["monthly_total_usd"],
+            )
+            enterprise_billing["coupon_applied"] = coupon_applied
+            enterprise_billing["discounted_monthly_total_usd"] = coupon_applied["discounted_price_usd"]
+            enterprise_billing["discounted_monthly_total_display"] = coupon_applied["discounted_price_display"]
+
+        if coupon_applied:
+            effective_price_display = coupon_applied["discounted_price_display"]
+        elif enterprise_billing:
+            effective_price_display = enterprise_billing["monthly_total_display"]
+        else:
+            effective_price_display = tier_info["price_display"]
+
         return {
             "ok": True,
             "dba": DBA_NAME,
             "plan": plan_upper,
-            "price_display": (
+            "price_display": effective_price_display,
+            "original_price_display": (
                 enterprise_billing["monthly_total_display"]
                 if enterprise_billing
                 else tier_info["price_display"]
             ),
+            "coupon_applied": coupon_applied,
+            "discount_amount_usd": coupon_applied["discount_amount_usd"] if coupon_applied else None,
+            "discounted_price_usd": coupon_applied["discounted_price_usd"] if coupon_applied else None,
             "username": clean_user,
             "ppn": rsts_res["ppn"] if rsts_res else None,
             "uic": vms_res["uic"] if vms_res else None,
@@ -1384,6 +1712,66 @@ class LCSProvisioningEngine:
                 json.dumps({"ok": True, "dba": DBA_NAME, "seat_metering": seat_data}, indent=2).encode("utf-8"),
             )
 
+        if method == "GET" and path == "/api/v1/coupons":
+            coupons = self.load_coupons()
+            return (
+                200,
+                "OK",
+                "application/json; charset=utf-8",
+                json.dumps({"ok": True, "dba": DBA_NAME, "coupons": coupons}, indent=2).encode("utf-8"),
+            )
+
+        if method == "GET" and path == "/api/v1/coupons/validate":
+            c_code = (query_params.get("code", [""])[0] or "").strip()
+            c_plan = (query_params.get("plan", [""])[0] or "").strip() or None
+            v_res = self.validate_and_apply_coupon(c_code, plan=c_plan)
+            return (
+                200,
+                "OK",
+                "application/json; charset=utf-8",
+                json.dumps(v_res, indent=2).encode("utf-8"),
+            )
+
+        if method == "POST" and path == "/api/v1/coupons":
+            sig_hdr = headers.get("x-lcs-signature", "")
+            if sig_hdr or os.environ.get("LCS_REQUIRE_SIGNATURE") == "1":
+                if not self.verify_hmac_signature(body_bytes, sig_hdr, self.lcs_api_secret):
+                    err = {"ok": False, "error": "Invalid X-LCS-Signature HMAC-SHA256 signature"}
+                    return (401, "Unauthorized", "application/json; charset=utf-8", json.dumps(err).encode("utf-8"))
+            try:
+                payload = json.loads(body_bytes.decode("utf-8") if body_bytes else "{}")
+            except Exception:
+                return (
+                    400,
+                    "Bad Request",
+                    "application/json; charset=utf-8",
+                    json.dumps({"ok": False, "error": "Invalid JSON body"}).encode("utf-8"),
+                )
+            try:
+                created_c = self.create_discount_coupon(
+                    discount_percent=payload.get("discount_percent"),
+                    duration_unit=payload.get("duration_unit", "never"),
+                    duration_value=payload.get("duration_value"),
+                    description=payload.get("description", ""),
+                    code=payload.get("code"),
+                    created_at=payload.get("created_at"),
+                    expires_at=payload.get("expires_at"),
+                    local_only=bool(payload.get("local_only")),
+                )
+                return (
+                    201,
+                    "Created",
+                    "application/json; charset=utf-8",
+                    json.dumps({"ok": True, "dba": DBA_NAME, "coupon": created_c}, indent=2).encode("utf-8"),
+                )
+            except ValueError as ve:
+                return (
+                    400,
+                    "Bad Request",
+                    "application/json; charset=utf-8",
+                    json.dumps({"ok": False, "error": str(ve)}).encode("utf-8"),
+                )
+
         if method == "GET" and path == "/api/v1/users/check":
             uname = (query_params.get("username", [""])[0] or "").strip()
             res = self.check_username(uname)
@@ -1439,6 +1827,7 @@ class LCSProvisioningEngine:
             workos_user_id = payload.get("workos_user_id") or ""
             group = payload.get("group")
             quota = payload.get("quota")
+            coupon_code = payload.get("coupon_code") or payload.get("coupon") or ""
 
             try:
                 res = self.provision_across_targets(
@@ -1452,6 +1841,7 @@ class LCSProvisioningEngine:
                     workos_user_id=workos_user_id,
                     group=group,
                     quota=quota,
+                    coupon_code=coupon_code,
                 )
                 return (201, "Created", "application/json; charset=utf-8", json.dumps(res, indent=2).encode("utf-8"))
             except ValueError as ve:

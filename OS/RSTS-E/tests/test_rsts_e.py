@@ -488,13 +488,81 @@ class TestRSTSDockerContainer:
                 chk = json.loads(r.read().decode("utf-8"))
                 assert chk["available"] is True
 
-            # 3. POST /api/v1/signup ($10/mo RSTS/E subscriber)
+            # 2b. Create & validate 6-digit percentage discount coupons (100ths precision, never/days/months <= 1 yr)
+            import urllib.error
+            cpn_never_req = urllib.request.Request(
+                f"{base_url}/api/v1/coupons",
+                data=json.dumps({"discount_percent": 33.33, "duration_unit": "never"}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(cpn_never_req, context=ssl_ctx, timeout=5) as r:
+                assert r.status == 201
+                cpn_never = json.loads(r.read().decode("utf-8"))["coupon"]
+                assert len(cpn_never["code"]) == 6 and cpn_never["code"].isdigit()
+                assert cpn_never["discount_percent"] == 33.33
+                assert cpn_never["never_expires"] is True
+                assert cpn_never["expires_at"] is None
+                coupon_code_6 = cpn_never["code"]
+
+            cpn_days_req = urllib.request.Request(
+                f"{base_url}/api/v1/coupons",
+                data=json.dumps({"discount_percent": 12.75, "duration_unit": "days", "duration_value": 90}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(cpn_days_req, context=ssl_ctx, timeout=5) as r:
+                cpn_days = json.loads(r.read().decode("utf-8"))["coupon"]
+                assert len(cpn_days["code"]) == 6 and cpn_days["code"].isdigit()
+                assert cpn_days["discount_percent"] == 12.75
+                assert cpn_days["duration_unit"] == "days" and cpn_days["duration_value"] == 90
+
+            cpn_months_req = urllib.request.Request(
+                f"{base_url}/api/v1/coupons",
+                data=json.dumps({"discount_percent": 100.00, "duration_unit": "months", "duration_value": 12}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(cpn_months_req, context=ssl_ctx, timeout=5) as r:
+                cpn_months = json.loads(r.read().decode("utf-8"))["coupon"]
+                assert len(cpn_months["code"]) == 6 and cpn_months["code"].isdigit()
+                assert cpn_months["discount_percent"] == 100.0
+                assert cpn_months["duration_unit"] == "months" and cpn_months["duration_value"] == 12
+
+            # Reject > 1 year (366 days, 13 months) and > 100ths fractional place (12.345%)
+            for bad_payload in (
+                {"discount_percent": 25.0, "duration_unit": "days", "duration_value": 366},
+                {"discount_percent": 25.0, "duration_unit": "months", "duration_value": 13},
+                {"discount_percent": 12.345, "duration_unit": "never"},
+            ):
+                bad_req = urllib.request.Request(
+                    f"{base_url}/api/v1/coupons",
+                    data=json.dumps(bad_payload).encode("utf-8"),
+                    method="POST",
+                    headers={"Content-Type": "application/json"},
+                )
+                with pytest.raises(urllib.error.HTTPError) as exc_info:
+                    urllib.request.urlopen(bad_req, context=ssl_ctx, timeout=5)
+                assert exc_info.value.code == 400
+
+            with urllib.request.urlopen(
+                f"{base_url}/api/v1/coupons/validate?code={coupon_code_6}&plan=LCS_RSTS_10",
+                context=ssl_ctx,
+                timeout=5,
+            ) as r:
+                val_res = json.loads(r.read().decode("utf-8"))
+                assert val_res["ok"] is True
+                assert val_res["discount_amount_usd"] == 3.33
+                assert val_res["discounted_price_usd"] == 6.67
+
+            # 3. POST /api/v1/signup ($10/mo RSTS/E subscriber with 33.33% 6-digit coupon)
             signup_payload = json.dumps({
                 "username": "BELL11",
                 "password": "DEC$1970",
                 "email": "bell@dec.example.com",
                 "plan": "LCS_RSTS_10",
                 "clerk_user_id": "user_clerk_bell11",
+                "coupon_code": coupon_code_6,
             }).encode("utf-8")
             req = urllib.request.Request(
                 f"{base_url}/api/v1/signup",
@@ -508,6 +576,8 @@ class TestRSTSDockerContainer:
                 assert created["ok"] is True
                 assert created["ppn"] == "[201,1]"
                 assert created["clerk_metadata"]["dec_username"] == "BELL11"
+                assert created["coupon_applied"]["code"] == coupon_code_6
+                assert created["discounted_price_usd"] == 6.67
 
             # 4. Clerk webhook: subscription.canceled -> DISUSER, then invoice.paid -> ACTIVE
             clerk_cancel = json.dumps({
