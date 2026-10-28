@@ -619,7 +619,7 @@ class TestVMSDockerContainer:
                 chk = json.loads(r.read().decode("utf-8"))
                 assert chk["available"] is True
 
-            # 2b. Create & validate 6-digit percentage discount coupons (100ths precision, never/days/months <= 1 yr)
+            # 2b. Create & validate 6-character alphanumeric + special char percentage discount coupons (100ths precision, never/days/months <= 1 yr)
             import urllib.error
             cpn_req = urllib.request.Request(
                 f"{base_url}/api/v1/coupons",
@@ -630,7 +630,12 @@ class TestVMSDockerContainer:
             with urllib.request.urlopen(cpn_req, context=ssl_ctx, timeout=5) as r:
                 assert r.status == 201
                 cpn = json.loads(r.read().decode("utf-8"))["coupon"]
-                assert len(cpn["code"]) == 6 and cpn["code"].isdigit()
+                assert (
+                    len(cpn["code"]) == 6
+                    and any(c.isalpha() for c in cpn["code"])
+                    and any(c.isdigit() for c in cpn["code"])
+                    and any(not c.isalnum() for c in cpn["code"])
+                )
                 assert cpn["discount_percent"] == 12.75
                 assert cpn["duration_unit"] == "months" and cpn["duration_value"] == 6
                 vms_coupon_code = cpn["code"]

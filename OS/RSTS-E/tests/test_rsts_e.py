@@ -488,8 +488,17 @@ class TestRSTSDockerContainer:
                 chk = json.loads(r.read().decode("utf-8"))
                 assert chk["available"] is True
 
-            # 2b. Create & validate 6-digit percentage discount coupons (100ths precision, never/days/months <= 1 yr)
+            # 2b. Create & validate 6-character alphanumeric + special char percentage discount coupons (100ths precision, never/days/months <= 1 yr)
             import urllib.error
+            import urllib.parse
+            def _is_alnum_special_6(code_str):
+                return (
+                    len(code_str) == 6
+                    and any(c.isalpha() for c in code_str)
+                    and any(c.isdigit() for c in code_str)
+                    and any(not c.isalnum() for c in code_str)
+                )
+
             cpn_never_req = urllib.request.Request(
                 f"{base_url}/api/v1/coupons",
                 data=json.dumps({"discount_percent": 33.33, "duration_unit": "never"}).encode("utf-8"),
@@ -499,7 +508,7 @@ class TestRSTSDockerContainer:
             with urllib.request.urlopen(cpn_never_req, context=ssl_ctx, timeout=5) as r:
                 assert r.status == 201
                 cpn_never = json.loads(r.read().decode("utf-8"))["coupon"]
-                assert len(cpn_never["code"]) == 6 and cpn_never["code"].isdigit()
+                assert _is_alnum_special_6(cpn_never["code"])
                 assert cpn_never["discount_percent"] == 33.33
                 assert cpn_never["never_expires"] is True
                 assert cpn_never["expires_at"] is None
@@ -513,7 +522,7 @@ class TestRSTSDockerContainer:
             )
             with urllib.request.urlopen(cpn_days_req, context=ssl_ctx, timeout=5) as r:
                 cpn_days = json.loads(r.read().decode("utf-8"))["coupon"]
-                assert len(cpn_days["code"]) == 6 and cpn_days["code"].isdigit()
+                assert _is_alnum_special_6(cpn_days["code"])
                 assert cpn_days["discount_percent"] == 12.75
                 assert cpn_days["duration_unit"] == "days" and cpn_days["duration_value"] == 90
 
@@ -525,7 +534,7 @@ class TestRSTSDockerContainer:
             )
             with urllib.request.urlopen(cpn_months_req, context=ssl_ctx, timeout=5) as r:
                 cpn_months = json.loads(r.read().decode("utf-8"))["coupon"]
-                assert len(cpn_months["code"]) == 6 and cpn_months["code"].isdigit()
+                assert _is_alnum_special_6(cpn_months["code"])
                 assert cpn_months["discount_percent"] == 100.0
                 assert cpn_months["duration_unit"] == "months" and cpn_months["duration_value"] == 12
 
@@ -546,12 +555,13 @@ class TestRSTSDockerContainer:
                 assert exc_info.value.code == 400
 
             with urllib.request.urlopen(
-                f"{base_url}/api/v1/coupons/validate?code={coupon_code_6}&plan=LCS_RSTS_10",
+                f"{base_url}/api/v1/coupons/validate?code={urllib.parse.quote(coupon_code_6, safe='')}&plan=LCS_RSTS_10",
                 context=ssl_ctx,
                 timeout=5,
             ) as r:
                 val_res = json.loads(r.read().decode("utf-8"))
                 assert val_res["ok"] is True
+                assert val_res["valid"] is True
                 assert val_res["discount_amount_usd"] == 3.33
                 assert val_res["discounted_price_usd"] == 6.67
 

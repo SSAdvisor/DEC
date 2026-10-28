@@ -29,6 +29,11 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 DBA_NAME = "Legacy Computing Systems"
 TAGLINE = "Authentic DEC Timesharing & Workstation Computing in the Cloud"
 
+COUPON_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+COUPON_DIGITS = "0123456789"
+COUPON_SPECIALS = "!@#$%*-_+=~?"
+COUPON_ALPHABET = COUPON_LETTERS + COUPON_DIGITS + COUPON_SPECIALS
+
 PRICING_TIERS = {
     "LCS_RSTS_10": {
         "id": "LCS_RSTS_10",
@@ -367,8 +372,8 @@ __CLERK_SCRIPT_TAG__
       <div class="form-row">
         <label for="coupon-input">Discount Coupon (Optional):</label>
         <div>
-          <input id="coupon-input" type="text" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit code (e.g. 482915)" oninput="checkCoupon(this.value)" />
-          <div id="coupon-hint" class="hint">Enter a 6-digit promotional discount code (supports fractional percentages up to 100.00%).</div>
+          <input id="coupon-input" type="text" maxlength="6" minlength="6" placeholder="6-char code (e.g. K9$m#2)" oninput="checkCoupon(this.value)" />
+          <div id="coupon-hint" class="hint">Enter a 6-character promotional discount code (alphanumeric + special characters, up to 100.00%).</div>
         </div>
       </div>
       <div class="form-row" id="enterprise-row" style="display:none;">
@@ -413,18 +418,22 @@ __CLERK_SCRIPT_TAG__
     if (cVal) checkCoupon(cVal);
   }
 
+  function escHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   function checkCoupon(val) {
     clearTimeout(couponTimer);
     const hint = document.getElementById('coupon-hint');
     const clean = (val || '').trim();
     if (!clean) {
       hint.style.color = '#8ce6a3';
-      hint.textContent = 'Enter a 6-digit promotional discount code (supports fractional percentages up to 100.00%).';
+      hint.textContent = 'Enter a 6-character promotional discount code (alphanumeric + special characters, up to 100.00%).';
       return;
     }
-    if (!/^[0-9]{6}$/.test(clean)) {
+    if (!/^[\x21-\x7E]{6}$/.test(clean)) {
       hint.style.color = '#ffb000';
-      hint.textContent = 'Discount coupon code must be 6 digits (000000-999999).';
+      hint.textContent = 'Discount coupon code must be 6 characters (alphanumeric & special characters).';
       return;
     }
     couponTimer = setTimeout(function() {
@@ -504,7 +513,7 @@ __CLERK_SCRIPT_TAG__
         rows += '<tr><td>DBA / Provider:</td><td><strong>' + (d.dba || 'Legacy Computing Systems') + '</strong></td></tr>';
         rows += '<tr><td>Subscription Plan:</td><td>' + d.plan + ' (' + (d.price_display || '$10/mo') + ')</td></tr>';
         if (d.coupon_applied) {
-          rows += '<tr><td>Discount Coupon:</td><td><strong>' + d.coupon_applied.code + '</strong> (' + d.coupon_applied.discount_percent_display + ' off &rarr; <strong>' + d.coupon_applied.discounted_price_display + '</strong>)</td></tr>';
+          rows += '<tr><td>Discount Coupon:</td><td><strong>' + escHtml(d.coupon_applied.code) + '</strong> (' + d.coupon_applied.discount_percent_display + ' off &rarr; <strong>' + d.coupon_applied.discounted_price_display + '</strong>)</td></tr>';
         }
         rows += '<tr><td>DEC Username:</td><td><strong>' + d.username + '</strong></td></tr>';
         if (d.rsts_account) {
@@ -694,17 +703,34 @@ class LCSProvisioningEngine:
         }
 
     # ------------------------------------------------------------------
-    # Discount Coupon Engine (6-digit random code, 0.01% - 100.00%,
-    # expiry: 'never', or days <= 365, or months <= 12)
+    # Discount Coupon Engine (6-character alphanumeric + special char code,
+    # 0.01% - 100.00%, expiry: 'never', or days <= 365, or months <= 12)
     # ------------------------------------------------------------------
     def _coupons_file_paths(self):
         paths = [os.path.join(self.fs_root, ".lcs_coupons.json")]
-        rsts_fs = os.path.join(self.dec_root, "OS", "RSTS-E", "fs", ".lcs_coupons.json")
-        vms_fs = os.path.join(self.dec_root, "OS", "VMS", "fs", ".lcs_coupons.json")
-        for p in (rsts_fs, vms_fs, "/opt/dec-rsts/fs/.lcs_coupons.json", "/opt/dec-vms/fs/.lcs_coupons.json"):
-            if p not in paths and os.path.isdir(os.path.dirname(p)):
-                paths.append(p)
+        if self.fs_root.startswith(self.dec_root) or self.fs_root.startswith("/opt/dec-"):
+            rsts_fs = os.path.join(self.dec_root, "OS", "RSTS-E", "fs", ".lcs_coupons.json")
+            vms_fs = os.path.join(self.dec_root, "OS", "VMS", "fs", ".lcs_coupons.json")
+            for p in (rsts_fs, vms_fs, "/opt/dec-rsts/fs/.lcs_coupons.json", "/opt/dec-vms/fs/.lcs_coupons.json"):
+                if p not in paths and os.path.isdir(os.path.dirname(p)):
+                    paths.append(p)
         return paths
+
+    def _generate_random_coupon_code(self):
+        """
+        Generate a cryptographically random 6-character coupon code containing
+        alphanumeric characters (uppercase/lowercase letters + digits) and special characters.
+        """
+        chars = [
+            secrets.choice(COUPON_LETTERS),
+            secrets.choice(COUPON_DIGITS),
+            secrets.choice(COUPON_SPECIALS),
+            secrets.choice(COUPON_ALPHABET),
+            secrets.choice(COUPON_ALPHABET),
+            secrets.choice(COUPON_ALPHABET),
+        ]
+        secrets.SystemRandom().shuffle(chars)
+        return "".join(chars)
 
     def load_coupons(self):
         merged = {}
@@ -831,13 +857,13 @@ class LCSProvisioningEngine:
         coupons = self.load_coupons()
         if code is not None and str(code).strip() != "":
             clean_code = str(code).strip()
-            if not re.match(r"^[0-9]{6}$", clean_code):
-                raise ValueError("Coupon code must be exactly 6 digits (000000-999999)")
+            if not re.match(r"^[\x21-\x7E]{6}$", clean_code):
+                raise ValueError("Coupon code must be 6 characters (alphanumeric and special characters)")
         else:
-            clean_code = f"{secrets.randbelow(1000000):06d}"
+            clean_code = self._generate_random_coupon_code()
             attempts = 0
             while clean_code in coupons and attempts < 50:
-                clean_code = f"{secrets.randbelow(1000000):06d}"
+                clean_code = self._generate_random_coupon_code()
                 attempts += 1
 
         pct_float = float(quant_pct)
@@ -865,16 +891,16 @@ class LCSProvisioningEngine:
 
     def validate_and_apply_coupon(self, code, plan=None, base_price_usd=None):
         """
-        Validate a 6-digit coupon code, check expiration, and compute the discounted price
-        accurate to the 100ths place ($0.01).
+        Validate a 6-character alphanumeric + special character coupon code, check expiration,
+        and compute the discounted price accurate to the 100ths place ($0.01).
         """
         clean_code = str(code or "").strip()
-        if not re.match(r"^[0-9]{6}$", clean_code):
+        if not re.match(r"^[\x21-\x7E]{6}$", clean_code):
             return {
                 "ok": True,
                 "valid": False,
                 "code": clean_code,
-                "reason": "Coupon code must be 6 digits (000000-999999)",
+                "reason": "Coupon code must be 6 characters (alphanumeric and special characters)",
             }
 
         coupons = self.load_coupons()
@@ -1722,7 +1748,7 @@ class LCSProvisioningEngine:
             )
 
         if method == "GET" and path == "/api/v1/coupons/validate":
-            c_code = (query_params.get("code", [""])[0] or "").strip()
+            c_code = (query_params.get("code", [""])[0] or "").strip().replace(" ", "+")
             c_plan = (query_params.get("plan", [""])[0] or "").strip() or None
             v_res = self.validate_and_apply_coupon(c_code, plan=c_plan)
             return (

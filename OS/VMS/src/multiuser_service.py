@@ -1543,9 +1543,9 @@ class MultiUserTerminalServer:
         parts = first_line.split()
         method = parts[0].upper() if len(parts) >= 1 else "GET"
         raw_path = parts[1] if len(parts) >= 2 else "/"
-        parsed = urllib.parse.urlsplit(raw_path)
-        path = parsed.path
-        qs = urllib.parse.parse_qs(parsed.query)
+        parsed = urllib.parse.urlsplit(raw_path.replace("#", "%23"))
+        path = urllib.parse.unquote(parsed.path)
+        qs = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
         sid = (qs.get("sid", ["default"])[0] or "default").strip()
 
         headers = {}
