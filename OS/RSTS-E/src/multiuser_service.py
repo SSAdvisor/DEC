@@ -11,6 +11,7 @@ import asyncio
 import base64
 import fcntl
 import hashlib
+import json
 import os
 import pty
 import signal
@@ -150,8 +151,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <button onclick="sendKey('\\x03')">CTRL+C</button>
     <button onclick="sendKey('\\x1a')">CTRL+Z</button>
     <button onclick="clearScreen()">CLEAR</button>
-    <button onclick="connectWS()">NEW SESSION</button>
+    <button onclick="newSession()">NEW SESSION</button>
     <button onclick="window.location.href='/signup'" style="border-color:#ffb000;color:#ffb000;font-weight:bold;">SIGN UP ($10/MO)</button>
+    <button id="btn-sys-admin" onclick="openSystemAdmin()" style="display:none;border-color:#33ff66;color:#33ff66;font-weight:bold;">SYSTEM ADMIN</button>
   </div>
 </header>
 <div id="term-wrap" onclick="focusTerm()">
@@ -163,8 +165,50 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const wrapEl = document.getElementById('term-wrap');
   const statusEl = document.getElementById('status');
   const inputEl = document.getElementById('hidden-input');
+  const sysAdminBtnEl = document.getElementById('btn-sys-admin');
+  let sessionId = sessionStorage.getItem('lcs_terminal_sid') || (Math.random().toString(36).slice(2) + Date.now().toString(36));
+  sessionStorage.setItem('lcs_terminal_sid', sessionId);
   let ws = null;
   let textBuf = "";
+  let authPollTimer = null;
+
+  function updateSysAdminMenu(isSystemLoggedIn, token) {
+    if (!sysAdminBtnEl) return;
+    if (isSystemLoggedIn) {
+      sysAdminBtnEl.style.display = 'inline-block';
+      if (token) {
+        sessionStorage.setItem('lcs_admin_token', token);
+      }
+    } else {
+      sysAdminBtnEl.style.display = 'none';
+      sessionStorage.removeItem('lcs_admin_token');
+    }
+  }
+
+  function syncTerminalSystemAuth() {
+    fetch('/api/v1/admin/session?sid=' + encodeURIComponent(sessionId))
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        updateSysAdminMenu(Boolean(d && d.authenticated), d ? d.admin_token : '');
+      })
+      .catch(function() {});
+  }
+
+  function scheduleAuthCheck() {
+    if (authPollTimer) clearTimeout(authPollTimer);
+    authPollTimer = setTimeout(syncTerminalSystemAuth, 200);
+  }
+
+  function openSystemAdmin() {
+    window.location.href = '/admin?sid=' + encodeURIComponent(sessionId);
+  }
+
+  function newSession() {
+    sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem('lcs_terminal_sid', sessionId);
+    updateSysAdminMenu(false, '');
+    connectWS();
+  }
 
   function setTheme(t) {
     document.body.className = (t === 'green') ? '' : t;
@@ -219,24 +263,29 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       try { ws.close(); } catch (e) {}
     }
     const proto = (location.protocol === 'https:') ? 'wss:' : 'ws:';
-    ws = new WebSocket(proto + '//' + location.host + '/ws');
+    ws = new WebSocket(proto + '//' + location.host + '/ws?sid=' + encodeURIComponent(sessionId));
     statusEl.textContent = 'CONNECTING...';
 
     ws.onopen = function() {
       statusEl.textContent = 'ONLINE (WSS PTY)';
+      scheduleAuthCheck();
       focusTerm();
     };
     ws.onmessage = function(ev) {
       appendOutput(typeof ev.data === 'string' ? ev.data : '');
+      scheduleAuthCheck();
     };
     ws.onclose = function() {
       statusEl.textContent = 'DISCONNECTED';
+      updateSysAdminMenu(false, '');
       appendOutput('\\n[Terminal carrier dropped - click NEW SESSION to reconnect]\\n');
     };
     ws.onerror = function() {
       statusEl.textContent = 'LINK ERROR';
     };
   }
+
+  setInterval(syncTerminalSystemAuth, 1500);
 
   window.addEventListener('keydown', function(e) {
     if (document.activeElement && document.activeElement.tagName === 'SELECT') return;
@@ -376,17 +425,42 @@ class MultiUserTerminalServer:
         self.cert_path, self.key_path = ensure_tls_cert(cert_dir)
         self.os_dir = os.path.abspath(os.path.join(os.path.dirname(emu_cmd[0]), ".."))
         self.fs_root = os.environ.get("RSTS_FS_ROOT", os.path.join(self.os_dir, "fs"))
+        self.sessions_path = os.path.join(self.fs_root, ".rsts_sessions.json")
+        self.sid_procs = {}
         self.provisioning = lcs_provisioning.LCSProvisioningEngine(
             primary_os="RSTS",
             os_dir=self.os_dir,
             fs_root=self.fs_root,
             https_port=self.https_port,
         )
+        self.provisioning.terminal_server = self
         self.html_bytes = (
             HTML_TEMPLATE.replace("__TITLE__", os_title)
             .replace("__HEADER_TITLE__", header_title)
             .encode("utf-8")
         )
+
+    def get_session_auth_user(self, sid):
+        """Return authenticated RSTS/E username ('SYSTEM' for [1,2]) for sid, syncing with VT100 PTY login state."""
+        proc_entry = self.sid_procs.get(sid)
+        if proc_entry:
+            proc, _ = proc_entry
+            if proc.poll() is None and os.path.isfile(self.sessions_path):
+                try:
+                    with open(self.sessions_path, "r") as f:
+                        sessions = json.load(f)
+                    s_info = sessions.get(str(proc.pid))
+                    if isinstance(s_info, dict) and s_info.get("logged_in"):
+                        if (
+                            s_info.get("ppn_key") == "1,2"
+                            or s_info.get("ppn") == "[1,2]"
+                            or str(s_info.get("user", "")).upper() == "SYSTEM"
+                        ):
+                            return "SYSTEM"
+                        return str(s_info.get("user") or s_info.get("ppn") or "")
+                except Exception:
+                    pass
+        return None
 
     async def handle_client(self, reader, writer):
         try:
@@ -404,6 +478,7 @@ class MultiUserTerminalServer:
         parsed = urllib.parse.urlsplit(raw_path.replace("#", "%23"))
         path = urllib.parse.unquote(parsed.path)
         qs = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
+        sid = (qs.get("sid", ["default"])[0] or "default").strip()
 
         headers = {}
         for ln in lines[1:]:
@@ -436,7 +511,7 @@ class MultiUserTerminalServer:
             )
             writer.write(resp.encode("ascii"))
             await writer.drain()
-            await self._bridge_websocket_pty(reader, writer)
+            await self._bridge_websocket_pty(reader, writer, sid)
             return
 
         # Dispatch Legacy Computing Systems /signup and /api/v1/* endpoints
@@ -467,7 +542,7 @@ class MultiUserTerminalServer:
         await writer.drain()
         writer.close()
 
-    async def _bridge_websocket_pty(self, reader, writer):
+    async def _bridge_websocket_pty(self, reader, writer, sid="default"):
         master_fd, slave_fd = pty.openpty()
         # Disable duplicate ECHO on the PTY slave so WebSocket terminal controls echoing cleanly
         try:
@@ -491,6 +566,9 @@ class MultiUserTerminalServer:
             close_fds=True,
         )
         os.close(slave_fd)
+
+        self.sid_procs[sid] = (proc, master_fd)
+        self.provisioning.sid_system_auth[sid] = False
 
         fl = fcntl.fcntl(master_fd, fcntl.F_GETFL)
         fcntl.fcntl(master_fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
@@ -538,6 +616,9 @@ class MultiUserTerminalServer:
         finally:
             t1.cancel()
             t2.cancel()
+            was_sys = (self.get_session_auth_user(sid) == "SYSTEM")
+            self.provisioning.sid_system_auth[sid] = was_sys
+            self.sid_procs.pop(sid, None)
             loop.remove_reader(master_fd)
             try:
                 os.close(master_fd)

@@ -679,6 +679,43 @@ class TestVMSDockerContainer:
                 assert created["coupon_applied"]["code"] == vms_coupon_code
                 assert created["discounted_price_usd"] == 8.72
 
+            # 3c. Verify /admin Web Admin page, SYSTEM user authentication, and BASIC-PLUS-2 COUPON CLI integration
+            with urllib.request.urlopen(f"{base_url}/admin", context=ssl_ctx, timeout=5) as r:
+                admin_html = r.read().decode("utf-8")
+                assert r.status == 200
+                assert "LEGACY COMPUTING SYSTEMS — SYSTEM ADMIN" in admin_html
+                assert "COUPON.BAS" in admin_html
+
+            req_sys = urllib.request.Request(
+                f"{base_url}/api/v1/admin/login",
+                data=json.dumps({"username": "SYSTEM", "password": "MANAGER"}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_sys, context=ssl_ctx, timeout=5) as r:
+                auth_data = json.loads(r.read().decode("utf-8"))
+                assert auth_data["ok"] is True
+                assert auth_data["authenticated"] is True
+                admin_token = auth_data["admin_token"]
+
+            req_bp2 = urllib.request.Request(
+                f"{base_url}/api/v1/admin/coupon-cli",
+                data=json.dumps({"command": "CREATE V9$k!2, 50.00, MONTHS, 6, VMS BP2 Admin Promo; LIST"}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json", "X-LCS-Admin-Token": admin_token},
+            )
+            with urllib.request.urlopen(req_bp2, context=ssl_ctx, timeout=5) as r:
+                bp2_res = json.loads(r.read().decode("utf-8"))
+                assert bp2_res["ok"] is True
+                assert "[Coupon Created: V9$k!2 | 50.00% OFF" in bp2_res["output"]
+                assert "V9$k!2" in bp2_res["coupons"]
+                assert bp2_res["coupons"]["V9$k!2"]["discount_percent"] == 50.0
+
+            # Also verify VAX/VMS DCL privilege check on COUPON (blocked for GUEST)
+            res_guest = run_vms(["-u", "GUEST", "-c", "COUPON"], tmp_root=tmp_path)
+            assert res_guest.returncode != 0
+            assert "%CLI-E-NOPRIV" in res_guest.stdout
+
             # 4. Clerk webhook: subscription.canceled -> DISUSER, then invoice.paid -> ACTIVE
             clerk_cancel = json.dumps({
                 "type": "subscription.canceled",
@@ -761,7 +798,13 @@ class TestVMSDockerContainer:
                 assert ws_res["account"]["status"] == "DISUSER"
                 assert ws_res["enterprise_billing"]["suspended_seats"] >= 1
 
-            # 6. Connect via live WSS (/ws) and log in with newly provisioned VAXUSER1 account
+            # 6. Connect via live WSS (/ws?sid=test_vaxuser1), verify SYSTEM ADMIN menu option is hidden by default,
+            #    and verify terminal login as SYSTEM ([1,4]) automatically authenticates /api/v1/admin/session?sid=test_vaxuser1
+            with urllib.request.urlopen(f"{base_url}/", context=ssl_ctx, timeout=5) as r_root:
+                root_html = r_root.read().decode("utf-8")
+                assert 'id="btn-sys-admin"' in root_html
+                assert 'style="display:none;' in root_html
+
             raw_sock = socket.create_connection(("127.0.0.1", port), timeout=5)
             tls_sock = ssl_ctx.wrap_socket(raw_sock, server_hostname="127.0.0.1")
             ws_key = base64.b64encode(os.urandom(16)).decode("ascii")
@@ -784,11 +827,38 @@ class TestVMSDockerContainer:
                 frame = bytearray([0x81, 0x80 | len(payload)]) + mask + masked
                 tls_sock.sendall(bytes(frame))
 
+            time.sleep(0.25)
+            with pytest.raises(urllib.error.HTTPError) as exc_unauth:
+                urllib.request.urlopen(f"{base_url}/api/v1/admin/session?sid=test_vaxuser1", context=ssl_ctx, timeout=5)
+            assert exc_unauth.value.code == 401
+
             send_masked_ws("VAXUSER1\n")
             time.sleep(0.2)
             send_masked_ws("VAX$1991\n")
+            time.sleep(0.25)
+            with pytest.raises(urllib.error.HTTPError) as exc_vaxuser:
+                urllib.request.urlopen(f"{base_url}/api/v1/admin/session?sid=test_vaxuser1", context=ssl_ctx, timeout=5)
+            assert exc_vaxuser.value.code == 401
+
+            send_masked_ws("SHOW PROCESS\nLOGOUT\n")
+            time.sleep(0.25)
+            send_masked_ws("SYSTEM\n")
             time.sleep(0.2)
-            send_masked_ws("SHOW PROCESS\nLOGOUT/DISCONNECT\n")
+            send_masked_ws("MANAGER\n")
+            time.sleep(0.3)
+            with urllib.request.urlopen(f"{base_url}/api/v1/admin/session?sid=test_vaxuser1", context=ssl_ctx, timeout=5) as r_sys_sess:
+                assert r_sys_sess.status == 200
+                sess_json = json.loads(r_sys_sess.read().decode("utf-8"))
+                assert sess_json["authenticated"] is True
+                assert sess_json["terminal_authenticated"] is True
+                assert sess_json["username"] == "SYSTEM"
+
+            send_masked_ws("LOGOUT\n")
+            time.sleep(0.3)
+            with pytest.raises(urllib.error.HTTPError) as exc_after_logout:
+                urllib.request.urlopen(f"{base_url}/api/v1/admin/session?sid=test_vaxuser1", context=ssl_ctx, timeout=5)
+            assert exc_after_logout.value.code == 401
+            send_masked_ws("LOGOUT/DISCONNECT\n")
 
             collected = b""
             tls_sock.settimeout(2.0)

@@ -589,6 +589,58 @@ class TestRSTSDockerContainer:
                 assert created["coupon_applied"]["code"] == coupon_code_6
                 assert created["discounted_price_usd"] == 6.67
 
+            # 3c. Verify /admin Web Admin page, SYSTEM user authentication, and BASIC-PLUS-2 COUPON CLI integration
+            with urllib.request.urlopen(f"{base_url}/admin", context=ssl_ctx, timeout=5) as r:
+                admin_html = r.read().decode("utf-8")
+                assert r.status == 200
+                assert "LEGACY COMPUTING SYSTEMS — SYSTEM ADMIN" in admin_html
+                assert "COUPON.BAS" in admin_html
+
+            # Non-SYSTEM user must be rejected with 403 Forbidden
+            req_guest = urllib.request.Request(
+                f"{base_url}/api/v1/admin/login",
+                data=json.dumps({"username": "GUEST", "password": ""}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            try:
+                urllib.request.urlopen(req_guest, context=ssl_ctx, timeout=5)
+                assert False, "Expected 403 for GUEST"
+            except urllib.error.HTTPError as e:
+                assert e.code == 403
+
+            # SYSTEM user authentication succeeds and returns admin_token
+            req_sys = urllib.request.Request(
+                f"{base_url}/api/v1/admin/login",
+                data=json.dumps({"username": "SYSTEM", "password": "SYSTEM"}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req_sys, context=ssl_ctx, timeout=5) as r:
+                auth_data = json.loads(r.read().decode("utf-8"))
+                assert auth_data["ok"] is True
+                assert auth_data["authenticated"] is True
+                admin_token = auth_data["admin_token"]
+
+            # Execute BASIC-PLUS-2 COUPON.BAS via /api/v1/admin/coupon-cli as SYSTEM
+            req_bp2 = urllib.request.Request(
+                f"{base_url}/api/v1/admin/coupon-cli",
+                data=json.dumps({"command": "CREATE B2#x!7, 40.00, DAYS, 90, BP2 Web Admin Promo; LIST"}).encode("utf-8"),
+                method="POST",
+                headers={"Content-Type": "application/json", "X-LCS-Admin-Token": admin_token},
+            )
+            with urllib.request.urlopen(req_bp2, context=ssl_ctx, timeout=5) as r:
+                bp2_res = json.loads(r.read().decode("utf-8"))
+                assert bp2_res["ok"] is True
+                assert "[Coupon Created: B2#x!7 | 40.00% OFF" in bp2_res["output"]
+                assert "B2#x!7" in bp2_res["coupons"]
+                assert bp2_res["coupons"]["B2#x!7"]["discount_percent"] == 40.0
+
+            # Also verify RSTS/E terminal privilege check on COUPON (allowed for [1,2] SYSTEM, blocked for [200,200] GUEST)
+            res_guest = run_rsts(["-u", "200,200", "-c", "COUPON"], tmp_root=tmp_path)
+            assert res_guest.returncode != 0
+            assert "Protection violation — COUPON requires privileged [1,2] SYSTEM account" in res_guest.stdout
+
             # 4. Clerk webhook: subscription.canceled -> DISUSER, then invoice.paid -> ACTIVE
             clerk_cancel = json.dumps({
                 "type": "subscription.canceled",
@@ -672,12 +724,18 @@ class TestRSTSDockerContainer:
                 assert wd_res["enterprise_billing"]["active_seats"] == 0
                 assert wd_res["enterprise_billing"]["suspended_seats"] == 1
 
-            # 6. Connect via live WSS (/ws) and log in with newly provisioned BELL11 account
+            # 6. Connect via live WSS (/ws?sid=test_rsts_term), verify SYSTEM ADMIN menu option is hidden by default,
+            #    and verify terminal login as SYSTEM ([1,2]) automatically authenticates /api/v1/admin/session?sid=test_rsts_term
+            with urllib.request.urlopen(f"{base_url}/", context=ssl_ctx, timeout=5) as r_root:
+                root_html = r_root.read().decode("utf-8")
+                assert 'id="btn-sys-admin"' in root_html
+                assert 'style="display:none;' in root_html
+
             raw_sock = socket.create_connection(("127.0.0.1", port), timeout=5)
             tls_sock = ssl_ctx.wrap_socket(raw_sock, server_hostname="127.0.0.1")
             ws_key = base64.b64encode(os.urandom(16)).decode("ascii")
             handshake = (
-                f"GET /ws HTTP/1.1\r\n"
+                f"GET /ws?sid=test_rsts_term HTTP/1.1\r\n"
                 f"Host: 127.0.0.1:{port}\r\n"
                 "Upgrade: websocket\r\n"
                 "Connection: Upgrade\r\n"
@@ -695,11 +753,42 @@ class TestRSTSDockerContainer:
                 frame = bytearray([0x81, 0x80 | len(payload)]) + mask + masked
                 tls_sock.sendall(bytes(frame))
 
+            time.sleep(0.25)
+            # Before terminal login (at User: prompt), /api/v1/admin/session?sid=test_rsts_term must be 401
+            with pytest.raises(urllib.error.HTTPError) as exc_unauth:
+                urllib.request.urlopen(f"{base_url}/api/v1/admin/session?sid=test_rsts_term", context=ssl_ctx, timeout=5)
+            assert exc_unauth.value.code == 401
+
+            # Log in as BELL11 (non-SYSTEM subscriber) -> still 401 for SYSTEM ADMIN
             send_masked_ws("BELL11\n")
             time.sleep(0.2)
             send_masked_ws("DEC$1970\n")
+            time.sleep(0.25)
+            with pytest.raises(urllib.error.HTTPError) as exc_bell:
+                urllib.request.urlopen(f"{base_url}/api/v1/admin/session?sid=test_rsts_term", context=ssl_ctx, timeout=5)
+            assert exc_bell.value.code == 401
+
+            # Log out of BELL11 and log in as SYSTEM ([1,2]) -> /api/v1/admin/session?sid=test_rsts_term becomes 200 OK!
+            send_masked_ws("BYE\n")
+            time.sleep(0.25)
+            send_masked_ws("1,2\n")
             time.sleep(0.2)
-            send_masked_ws("SHOW SYSTEM\nBYE/DISCONNECT\n")
+            send_masked_ws("SYSTEM\n")
+            time.sleep(0.3)
+            with urllib.request.urlopen(f"{base_url}/api/v1/admin/session?sid=test_rsts_term", context=ssl_ctx, timeout=5) as r_sys_sess:
+                assert r_sys_sess.status == 200
+                sess_json = json.loads(r_sys_sess.read().decode("utf-8"))
+                assert sess_json["authenticated"] is True
+                assert sess_json["terminal_authenticated"] is True
+                assert sess_json["username"] == "SYSTEM"
+
+            # Log out of SYSTEM (BYE) -> /api/v1/admin/session?sid=test_rsts_term immediately revokes back to 401!
+            send_masked_ws("SHOW SYSTEM\nBYE\n")
+            time.sleep(0.3)
+            with pytest.raises(urllib.error.HTTPError) as exc_after_bye:
+                urllib.request.urlopen(f"{base_url}/api/v1/admin/session?sid=test_rsts_term", context=ssl_ctx, timeout=5)
+            assert exc_after_bye.value.code == 401
+            send_masked_ws("BYE/DISCONNECT\n")
 
             collected = b""
             tls_sock.settimeout(2.0)

@@ -182,6 +182,7 @@ class RSTSEmulator:
         "RPGII": ("rpgii", "DEC PDP-11 RPG II V2.1 Report Program Generator"),
         "APL": ("apl11", "DEC PDP-11 APL-11 V2.1 Compiler & Interactive Workspace"),
         "APL11": ("apl11", "DEC PDP-11 APL-11 V2.1 Compiler & Interactive Workspace"),
+        "COUPON": ("coupon", "Legacy Computing Systems SYSTEM Discount Coupon Manager V1.0"),
     }
 
     # Applications strictly requiring 32-bit VAX/VMS or ULTRIX (NOT supported on PDP-11 RSTS/E)
@@ -907,6 +908,24 @@ class RSTSEmulator:
         print("Devices configured: DK0: (RA81), KB0:-KB31: (DHV11), LP0: (LP11), MT0: (TU16)")
         print(f"RSTS {self.VERSION}  {now_str}  System Initialized.\n")
 
+    def verify_account_credentials(self, user_input, password=""):
+        """Verify RSTS/E $ACCT.SYS account and password. Returns (ok, ppn_key, acct_dict, error_message)."""
+        self._reload_accounts()
+        ppn = self.normalize_ppn(user_input)
+        if not ppn or ppn not in self.accounts:
+            return False, None, None, "?Invalid user account - use PPN (e.g. 1,2 or 200,200) or account name (SYSTEM, GUEST)"
+        acct = self.accounts[ppn]
+        flags_list = [fl.strip().upper() for fl in str(acct.get("flags", "NODISUSER")).split(",") if fl.strip()]
+        status_str = str(acct.get("status", "ACTIVE")).upper()
+        if ("DISUSER" in flags_list and "NODISUSER" not in flags_list) or status_str in ("DISUSER", "SUSPENDED", "DISABLED"):
+            return False, ppn, acct, "?Account is disabled (DISUSER) - contact System Manager or Legacy Computing Systems"
+        expected_pw = str(acct.get("password", "") or "")
+        if expected_pw:
+            given_pw = str(password or "").strip()
+            if given_pw.upper() != expected_pw.upper():
+                return False, ppn, acct, "?Invalid login attempt"
+        return True, ppn, acct, ""
+
     def interactive_login(self, in_stream=None):
         stream = in_stream or sys.stdin
         self._register_session(logged_in=False, what="LOGIN")
@@ -1136,7 +1155,7 @@ class RSTSEmulator:
                 self.monitor_mode = target
                 print(f"Switched to RSTS/E {target} Keyboard Monitor")
                 return 0
-        if verb == "DCL":
+        if verb in ("DCL", "EXIT"):
             self.monitor_mode = "DCL"
             print("Switched to RSTS/E DCL Keyboard Monitor")
             return 0
@@ -2098,6 +2117,10 @@ class RSTSEmulator:
             elif not self._is_dcl_qualifier(t):
                 tokens.append(t)
         if not tokens:
+            if getattr(self, "_in_interactive_loop", False):
+                self.monitor_mode = "BASIC"
+                print(f"RSTS {self.VERSION} BASIC-PLUS-2 V2.7 Keyboard Monitor (Type DCL or EXIT to return to $)")
+                return 0
             print("%DCL-E-NOFILE, missing BASIC source filename")
             return 1
         src = self.resolve_path(tokens[0])
@@ -2117,7 +2140,10 @@ class RSTSEmulator:
         if not basicc_bin:
             print("%BP2-F-NOCOMP, native basicc compiler not found")
             return 1
-        rc = subprocess.call([basicc_bin, src, "-o", obj_out], cwd=self.default_dir)
+        rc = subprocess.call(
+            [basicc_bin, self._rel_to_cwd(src), "-o", self._rel_to_cwd(obj_out)],
+            cwd=self.default_dir,
+        )
         # Remove intermediate raw bytecode .bin artifact so only authentic .OBJ remains in PPN dir
         stem_out, _ = os.path.splitext(obj_out)
         for bin_cand in (stem_out + ".bin", obj_out + ".bin"):
@@ -2330,7 +2356,11 @@ class RSTSEmulator:
             except OSError:
                 pass
         try:
-            rc = subprocess.call([basiclink_bin, "-o", bin_out, obj], cwd=self.default_dir, env=env)
+            rc = subprocess.call(
+                [basiclink_bin, "-o", self._rel_to_cwd(bin_out), self._rel_to_cwd(obj)],
+                cwd=self.default_dir,
+                env=env,
+            )
         finally:
             if created_vm_link and os.path.islink(vm_link):
                 os.unlink(vm_link)
@@ -2386,6 +2416,13 @@ class RSTSEmulator:
             )
             return 2
 
+        if clean_upper in ("BASIC", "BP2", "BASIC2") and not args_str.strip():
+            return self._cmd_basic("")
+
+        if clean_upper == "COUPON" and self.current_ppn != "1,2":
+            print("?Protection violation — COUPON requires privileged [1,2] SYSTEM account")
+            return 1
+
         # Check if it's a CCL app name (e.g. RUN LB:HAMURABI or RUN $SORT11)
         if clean_upper in self.ccl_table and "." not in prog:
             bname, _ = self.ccl_table[clean_upper]
@@ -2431,10 +2468,29 @@ class RSTSEmulator:
         return 1
 
     def _invoke_app(self, bin_name, args_str=""):
+        if bin_name.lower() == "coupon" and self.current_ppn != "1,2":
+            print("?Protection violation — COUPON requires privileged [1,2] SYSTEM account")
+            return 1
         exe = self.find_executable(bin_name)
         if not exe:
             print(f"?System library program LB:{bin_name.upper()}.TSK not found")
             return 1
+        lcs_eng = None
+        if bin_name.lower() == "coupon":
+            try:
+                src_dir = os.path.dirname(os.path.abspath(__file__))
+                if src_dir not in sys.path:
+                    sys.path.insert(0, src_dir)
+                import lcs_provisioning
+                lcs_eng = lcs_provisioning.LCSProvisioningEngine(
+                    primary_os="RSTS",
+                    os_dir=self.os_dir,
+                    fs_root=self.fs_root,
+                    https_port=self.https_port,
+                )
+                lcs_eng.save_coupons(lcs_eng.load_coupons())
+            except Exception:
+                lcs_eng = None
         env = os.environ.copy()
         env["PATH"] = f"{self.sys_bin}:{env.get('PATH', '')}"
         cmd = [exe]
@@ -2449,7 +2505,14 @@ class RSTSEmulator:
                         cmd.append(resolved)
                 else:
                     cmd.append(tok)
-        return subprocess.call(cmd, cwd=self.default_dir, env=env)
+        rc = subprocess.call(cmd, cwd=self.default_dir, env=env)
+        if lcs_eng is not None:
+            try:
+                dat_p = os.path.join(self.default_dir, "COUPON.DAT")
+                lcs_eng.sync_from_coupon_dat(dat_path=dat_p if os.path.isfile(dat_p) else None)
+            except Exception:
+                pass
+        return rc
 
     def _cmd_print(self, rest):
         tokens = [t for t in rest.split() if not t.startswith("/")]

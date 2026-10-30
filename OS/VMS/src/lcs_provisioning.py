@@ -19,6 +19,8 @@ import os
 import re
 import secrets
 import ssl
+import subprocess
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -316,6 +318,7 @@ __CLERK_SCRIPT_TAG__
     <div class="badge-row">
       <span class="badge">Clerk Auth: __CLERK_MODE_LABEL__</span>
       <span class="badge amber">WorkOS Enterprise SSO/SCIM: __WORKOS_MODE_LABEL__</span>
+      <a class="btn-link" id="signup-sys-admin-link" href="/admin" style="display:none;">SYSTEM ADMIN</a>
       <a class="btn-link" href="/">RETURN TO TERMINAL</a>
     </div>
   </header>
@@ -536,6 +539,530 @@ __CLERK_SCRIPT_TAG__
         errBox.style.display = 'block';
       });
   }
+
+  (function checkSignupSysAdmin() {
+    const sid = sessionStorage.getItem('lcs_terminal_sid') || '';
+    const tok = sessionStorage.getItem('lcs_admin_token') || '';
+    if (!sid && !tok) return;
+    fetch('/api/v1/admin/session' + (sid ? ('?sid=' + encodeURIComponent(sid)) : ''), {
+      headers: tok ? { 'X-LCS-Admin-Token': tok } : {}
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        const lnk = document.getElementById('signup-sys-admin-link');
+        if (lnk && d && d.authenticated) {
+          lnk.style.display = 'inline-block';
+          if (sid) lnk.href = '/admin?sid=' + encodeURIComponent(sid);
+        }
+      })
+      .catch(function() {});
+  })();
+</script>
+</body>
+</html>
+"""
+
+
+ADMIN_HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legacy Computing Systems — SYSTEM Coupon Administration (__NODE_LABEL__)</title>
+<style>
+  :root {
+    --fg: #33ff66;
+    --fg-dim: #8ce6a3;
+    --amber: #ffb000;
+    --bg: #070d09;
+    --card-bg: #0e1811;
+    --border: #265c34;
+    --glow: rgba(51, 255, 102, 0.3);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "DejaVu Sans Mono", "Courier New", monospace;
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+    line-height: 1.45;
+  }
+  .container { max-width: 1020px; margin: 0 auto; }
+  header {
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    box-shadow: 0 0 18px rgba(0, 0, 0, 0.65);
+  }
+  .dba-title { font-size: 20px; font-weight: bold; letter-spacing: 0.8px; text-shadow: 0 0 8px var(--glow); }
+  .dba-sub { color: var(--fg-dim); font-size: 12px; margin-top: 4px; }
+  .badge-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .badge { border: 1px solid var(--border); padding: 4px 10px; font-size: 11px; border-radius: 3px; background: #09120c; }
+  .badge.amber { color: var(--amber); border-color: #775200; }
+  a.btn-link, button {
+    background: #112617;
+    color: var(--fg);
+    border: 1px solid var(--fg);
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  a.btn-link:hover, button:hover {
+    background: var(--fg);
+    color: #050a06;
+    box-shadow: 0 0 10px var(--glow);
+  }
+  button.btn-sm { padding: 4px 10px; font-size: 11px; }
+  button.btn-amber { border-color: var(--amber); color: var(--amber); }
+  button.btn-amber:hover { background: var(--amber); color: #050a06; }
+  button.btn-danger { border-color: #ff6666; color: #ff6666; }
+  button.btn-danger:hover { background: #ff6666; color: #050a06; }
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    border-radius: 4px;
+  }
+  .panel h2 {
+    font-size: 15px;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  input, select {
+    background: #060b07;
+    color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 3px;
+    width: 100%;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--fg); box-shadow: 0 0 6px var(--glow); }
+  .hint { font-size: 11px; color: var(--fg-dim); margin-top: 3px; }
+  .msg-box {
+    display: none;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    border-radius: 3px;
+  }
+  .msg-box.error { border: 1px solid #ff4d4d; background: #290a0a; color: #ff8080; }
+  .msg-box.ok { border: 1px solid var(--fg); background: #0d2113; color: var(--fg); }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  table.data-table th, table.data-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  table.data-table th { color: var(--amber); font-weight: bold; background: #09120c; }
+  pre.bp2-out {
+    background: #050a06;
+    border: 1px solid var(--border);
+    padding: 12px;
+    font-size: 12px;
+    color: var(--fg);
+    max-height: 280px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <div class="dba-title">LEGACY COMPUTING SYSTEMS — SYSTEM ADMIN</div>
+      <div class="dba-sub">Discount Coupon &amp; BASIC-PLUS-2 <code>COUPON.BAS</code> Administration — __NODE_LABEL__</div>
+    </div>
+    <div class="badge-row">
+      <span class="badge amber" id="auth-badge">Privilege: AUTH REQUIRED (__SYS_ACCOUNT_LABEL__)</span>
+      <a class="btn-link" href="/signup">SIGNUP PORTAL</a>
+      <a class="btn-link" href="/">TERMINAL</a>
+    </div>
+  </header>
+
+  <div class="panel" id="login-panel">
+    <h2>SYSTEM Account Authentication Required (__SYS_ACCOUNT_LABEL__)</h2>
+    <div id="login-error" class="msg-box error"></div>
+    <form onsubmit="submitAdminLogin(event)">
+      <div class="form-row">
+        <label for="sys-user">Privileged Account:</label>
+        <div>
+          <input id="sys-user" type="text" value="SYSTEM" required />
+          <div class="hint">Restricted to privileged <code>SYSTEM</code> account (<code>[1,2]</code> on RSTS/E or <code>[1,4]</code> on VAX/VMS).</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="sys-pass">SYSTEM Password:</label>
+        <div>
+          <input id="sys-pass" type="password" required placeholder="Enter SYSTEM password" />
+          <div class="hint">Authenticated against live <code>$ACCT.SYS</code> / <code>SYSUAF.DAT</code> credentials.</div>
+        </div>
+      </div>
+      <div style="text-align:right; margin-top:12px;">
+        <button type="submit">AUTHENTICATE SYSTEM USER</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="admin-console" style="display:none;">
+    <div class="panel">
+      <h2>
+        <span>1. Create Promotional Discount Coupon (Synced with BASIC-PLUS-2 <code>COUPON.DAT</code>)</span>
+        <button type="button" class="btn-sm btn-amber" onclick="logoutAdmin()">LOGOUT SYSTEM</button>
+      </h2>
+      <div id="create-msg" class="msg-box"></div>
+      <form onsubmit="submitCreateCoupon(event)">
+        <div class="form-row">
+          <label for="cp-code">Coupon Code (6 chars):</label>
+          <div>
+            <input id="cp-code" type="text" maxlength="6" placeholder="Leave blank to auto-generate 6-char code (e.g. K9$m#2)" />
+            <div class="hint">Leave empty for cryptographically random 6-character alphanumeric + special character code, or enter a custom 6-char code.</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="cp-pct">Discount Percentage (%):</label>
+          <div>
+            <input id="cp-pct" type="number" step="0.01" min="0.01" max="100.00" value="25.00" required />
+            <div class="hint">Supports up to the 100ths place (<code>0.01%</code> to <code>100.00%</code>, e.g. <code>12.75</code>, <code>33.33</code>, <code>100.00</code>).</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="cp-unit">Expiration Duration:</label>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <select id="cp-unit" onchange="toggleDurationVal()">
+              <option value="never">Never Expires (Permanent)</option>
+              <option value="days">Days (1 to 365 days max)</option>
+              <option value="months">Months (1 to 12 months max)</option>
+            </select>
+            <input id="cp-val" type="number" min="1" max="365" value="30" style="display:none;" placeholder="Duration (days or months)" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="cp-desc">Description:</label>
+          <div>
+            <input id="cp-desc" type="text" placeholder="e.g. DECUS Member 25% Discount" />
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+          <span class="hint">Writes to <code>.lcs_coupons.json</code>, <code>SY:COUPON.DAT</code>, and syncs to peer container.</span>
+          <button type="submit">CREATE DISCOUNT COUPON</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2>
+        <span>2. Registered Discount Coupons (<span id="cp-count">0</span>)</span>
+        <button type="button" class="btn-sm" onclick="loadAdminCoupons()">REFRESH TABLE</button>
+      </h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>6-Char Code</th>
+            <th>Discount %</th>
+            <th>Duration</th>
+            <th>Expires At</th>
+            <th>Status</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="coupons-tbody">
+          <tr><td colspan="7">Loading coupons...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>
+        <span>3. BASIC-PLUS-2 <code>COUPON.BAS</code> Interactive SYSTEM Utility</span>
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="btn-sm" onclick="runBp2Cmd('LIST')">LIST</button>
+          <button type="button" class="btn-sm" onclick="runBp2Cmd('STATUS')">STATUS</button>
+          <button type="button" class="btn-sm" onclick="runBp2Cmd('HELP')">HELP</button>
+        </div>
+      </h2>
+      <form onsubmit="submitBp2Cmd(event)" style="display:flex; gap:8px;">
+        <input id="bp2-cmd" type="text" placeholder="COUPON> e.g. GENERATE 33.33, MONTHS, 6, Half-Year Promo  or  VALIDATE K9$m#2, 15" />
+        <button type="submit" style="white-space:nowrap;">RUN BASIC-PLUS-2</button>
+      </form>
+      <div class="hint" style="margin-top:4px;">Executes native compiled BASIC-PLUS-2 <code>coupon</code> binary in <code>SYSTEM</code> directory with bidirectional <code>COUPON.DAT</code> sync.</div>
+      <pre class="bp2-out" id="bp2-output">Ready — Enter a BASIC-PLUS-2 COUPON command above or click LIST / STATUS / HELP.</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  let adminToken = sessionStorage.getItem('lcs_admin_token') || '';
+  const urlParams = new URLSearchParams(window.location.search);
+  let termSid = (urlParams.get('sid') || sessionStorage.getItem('lcs_terminal_sid') || '').trim();
+  if (termSid) {
+    sessionStorage.setItem('lcs_terminal_sid', termSid);
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function toggleDurationVal() {
+    const u = document.getElementById('cp-unit').value;
+    const v = document.getElementById('cp-val');
+    if (u === 'never') {
+      v.style.display = 'none';
+    } else {
+      v.style.display = 'block';
+      v.max = (u === 'days') ? 365 : 12;
+      if (u === 'months' && parseInt(v.value, 10) > 12) v.value = 6;
+    }
+  }
+
+  function submitAdminLogin(e) {
+    e.preventDefault();
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+    const username = document.getElementById('sys-user').value.trim();
+    const password = document.getElementById('sys-pass').value;
+    fetch('/api/v1/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password, sid: termSid })
+    })
+      .then(function(r) { return r.json().then(function(d) { return { status: r.status, body: d }; }); })
+      .then(function(res) {
+        if (res.status >= 400 || !res.body.ok) {
+          errEl.textContent = res.body.error || 'Authentication failed';
+          errEl.style.display = 'block';
+          return;
+        }
+        adminToken = res.body.admin_token;
+        sessionStorage.setItem('lcs_admin_token', adminToken);
+        unlockConsole(res.body.account || 'SYSTEM');
+      });
+  }
+
+  function unlockConsole(acctLabel) {
+    document.getElementById('login-panel').style.display = 'none';
+    document.getElementById('admin-console').style.display = 'block';
+    const b = document.getElementById('auth-badge');
+    b.textContent = 'Authenticated: ' + acctLabel;
+    b.style.color = '#33ff66';
+    b.style.borderColor = '#33ff66';
+    loadAdminCoupons();
+  }
+
+  function logoutAdmin() {
+    fetch('/api/v1/admin/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-LCS-Admin-Token': adminToken },
+      body: JSON.stringify({ sid: termSid })
+    }).catch(function() {});
+    adminToken = '';
+    sessionStorage.removeItem('lcs_admin_token');
+    document.getElementById('admin-console').style.display = 'none';
+    document.getElementById('login-panel').style.display = 'block';
+    const b = document.getElementById('auth-badge');
+    b.textContent = 'Privilege: AUTH REQUIRED (__SYS_ACCOUNT_LABEL__)';
+    b.style.color = '#ffb000';
+  }
+
+  function loadAdminCoupons() {
+    fetch('/api/v1/coupons', {
+      headers: { 'X-LCS-Admin-Token': adminToken }
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        const map = data.coupons || {};
+        const keys = Object.keys(map);
+        document.getElementById('cp-count').textContent = String(keys.length);
+        const tbody = document.getElementById('coupons-tbody');
+        if (keys.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7">No coupons registered yet. Create one above or via BASIC-PLUS-2 COUPON.</td></tr>';
+          return;
+        }
+        let html = '';
+        keys.forEach(function(k) {
+          const c = map[k];
+          const dur = c.never_expires || c.duration_unit === 'never'
+            ? 'NEVER EXPIRES'
+            : (c.duration_value + ' ' + c.duration_unit);
+          const exp = c.expires_at ? c.expires_at.slice(0, 19).replace('T', ' ') + 'Z' : '—';
+          const st = (c.status || 'ACTIVE').toUpperCase();
+          const nextSt = (st === 'ACTIVE') ? 'DISABLED' : 'ACTIVE';
+          const toggleLabel = (st === 'ACTIVE') ? 'DISABLE' : 'ENABLE';
+          html += '<tr>'
+            + '<td><strong style="color:#ffb000;font-size:14px;cursor:pointer;" title="Click to copy code" data-code="' + esc(c.code) + '" onclick="copyCouponBtn(this)">' + esc(c.code) + '</strong></td>'
+            + '<td><strong>' + esc(c.discount_percent_display || (c.discount_percent + '%')) + '</strong></td>'
+            + '<td>' + esc(dur) + '</td>'
+            + '<td>' + esc(exp) + '</td>'
+            + '<td>' + esc(st) + '</td>'
+            + '<td>' + esc(c.description || '') + '</td>'
+            + '<td style="display:flex;gap:6px;">'
+            + '<button type="button" class="btn-sm" data-code="' + esc(c.code) + '" onclick="copyCouponBtn(this)">COPY CODE</button>'
+            + '<button type="button" class="btn-sm btn-amber" data-code="' + esc(c.code) + '" data-st="' + nextSt + '" onclick="toggleCouponBtn(this)">' + toggleLabel + '</button>'
+            + '<button type="button" class="btn-sm btn-danger" data-code="' + esc(c.code) + '" onclick="deleteCouponBtn(this)">DELETE</button>'
+            + '</td></tr>';
+        });
+        tbody.innerHTML = html;
+      });
+  }
+
+  function submitCreateCoupon(e) {
+    e.preventDefault();
+    const msg = document.getElementById('create-msg');
+    msg.style.display = 'none';
+    const unit = document.getElementById('cp-unit').value;
+    const payload = {
+      code: document.getElementById('cp-code').value.trim() || null,
+      discount_percent: document.getElementById('cp-pct').value,
+      duration_unit: unit,
+      duration_value: (unit === 'never') ? null : parseInt(document.getElementById('cp-val').value, 10),
+      description: document.getElementById('cp-desc').value.trim()
+    };
+    fetch('/api/v1/coupons', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-LCS-Admin-Token': adminToken
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(function(r) { return r.json().then(function(d) { return { status: r.status, body: d }; }); })
+      .then(function(res) {
+        if (res.status >= 400 || !res.body.ok) {
+          msg.className = 'msg-box error';
+          msg.textContent = res.body.error || 'Failed to create coupon';
+          msg.style.display = 'block';
+          return;
+        }
+        const c = res.body.coupon;
+        msg.className = 'msg-box ok';
+        msg.textContent = '✓ Created Coupon ' + c.code + ' (' + c.discount_percent_display + ' off, duration: ' + c.duration_unit + ')';
+        msg.style.display = 'block';
+        document.getElementById('cp-code').value = '';
+        loadAdminCoupons();
+      });
+  }
+
+  function copyCouponBtn(el) {
+    const code = el.getAttribute('data-code') || '';
+    if (!code) return;
+    const origText = el.textContent;
+    function showCopied() {
+      if (el.tagName === 'BUTTON') {
+        el.textContent = '✓ COPIED!';
+        setTimeout(function() { el.textContent = origText; }, 1400);
+      }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(showCopied).catch(function() {
+        fallbackCopy(code);
+        showCopied();
+      });
+    } else {
+      fallbackCopy(code);
+      showCopied();
+    }
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  function toggleCouponBtn(btn) {
+    const code = btn.getAttribute('data-code');
+    const st = btn.getAttribute('data-st');
+    fetch('/api/v1/coupons/' + encodeURIComponent(code), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-LCS-Admin-Token': adminToken
+      },
+      body: JSON.stringify({ status: st })
+    }).then(function() { loadAdminCoupons(); });
+  }
+
+  function deleteCouponBtn(btn) {
+    const code = btn.getAttribute('data-code');
+    fetch('/api/v1/coupons/' + encodeURIComponent(code), {
+      method: 'DELETE',
+      headers: { 'X-LCS-Admin-Token': adminToken }
+    }).then(function() { loadAdminCoupons(); });
+  }
+
+  function submitBp2Cmd(e) {
+    e.preventDefault();
+    const cmd = document.getElementById('bp2-cmd').value.trim();
+    if (cmd) runBp2Cmd(cmd);
+  }
+
+  function runBp2Cmd(cmd) {
+    fetch('/api/v1/admin/coupon-cli', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-LCS-Admin-Token': adminToken
+      },
+      body: JSON.stringify({ command: cmd })
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        document.getElementById('bp2-output').textContent = data.output || data.error || '';
+        loadAdminCoupons();
+      });
+  }
+
+  (function checkAdminSessionOnLoad() {
+    const qs = termSid ? ('?sid=' + encodeURIComponent(termSid)) : '';
+    const hdrs = adminToken ? { 'X-LCS-Admin-Token': adminToken } : {};
+    fetch('/api/v1/admin/session' + qs, { headers: hdrs })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d && d.authenticated) {
+          if (d.admin_token) {
+            adminToken = d.admin_token;
+            sessionStorage.setItem('lcs_admin_token', adminToken);
+          }
+          unlockConsole(d.account || 'SYSTEM');
+        }
+      })
+      .catch(function() {});
+  })();
 </script>
 </body>
 </html>
@@ -554,6 +1081,8 @@ class LCSProvisioningEngine:
         self.fs_root = os.path.abspath(fs_root)
         self.https_port = int(https_port)
         self.dec_root = os.path.abspath(os.path.join(self.os_dir, "..", ".."))
+        self.terminal_server = None
+        self.sid_system_auth = {}
 
     @property
     def clerk_publishable_key(self):
@@ -716,6 +1245,117 @@ class LCSProvisioningEngine:
                     paths.append(p)
         return paths
 
+    def _coupon_dat_file_paths(self):
+        paths = []
+        if self.primary_os == "RSTS":
+            paths.append(os.path.join(self.fs_root, "dk0", "001_002", "COUPON.DAT"))
+            paths.append(os.path.join(self.fs_root, "001_002", "COUPON.DAT"))
+        else:
+            paths.append(os.path.join(self.fs_root, "dka0", "sys0", "sysmgr", "COUPON.DAT"))
+            paths.append(os.path.join(self.fs_root, "sys0", "sysmgr", "COUPON.DAT"))
+        if self.fs_root.startswith(self.dec_root) or self.fs_root.startswith("/opt/dec-"):
+            candidates = [
+                os.path.join(self.dec_root, "OS", "RSTS-E", "fs", "dk0", "001_002", "COUPON.DAT"),
+                os.path.join(self.dec_root, "OS", "VMS", "fs", "dka0", "sys0", "sysmgr", "COUPON.DAT"),
+                "/opt/dec-rsts/fs/dk0/001_002/COUPON.DAT",
+                "/opt/dec-vms/fs/dka0/sys0/sysmgr/COUPON.DAT",
+            ]
+            for c in candidates:
+                if c not in paths and os.path.isdir(os.path.dirname(c)):
+                    paths.append(c)
+        return paths
+
+    def _write_coupon_dat_files(self, coupons_dict):
+        lines = []
+        for code, rec in coupons_dict.items():
+            pct_str = str(rec.get("discount_percent_exact") or f"{float(rec.get('discount_percent', 0)):.2f}")
+            unit_str = str(rec.get("duration_unit") or "never").upper()
+            val_int = int(rec.get("duration_value") or 0) if unit_str != "NEVER" else 0
+            st_str = str(rec.get("status") or "ACTIVE").upper()
+            desc_str = str(rec.get("description") or "LCS Promotional Discount").replace("|", "-")
+            lines.append(f"{code}|{pct_str}|{unit_str}|{val_int}|{st_str}|{desc_str}\n")
+        content = "".join(lines)
+        for p in self._coupon_dat_file_paths():
+            try:
+                os.makedirs(os.path.dirname(p), exist_ok=True)
+                with open(p, "w") as f:
+                    f.write(content)
+            except Exception:
+                pass
+
+    def sync_from_coupon_dat(self, dat_path=None):
+        """Synchronize records written by BASIC-PLUS-2 COUPON.BAS (COUPON.DAT) into .lcs_coupons.json."""
+        target_paths = [dat_path] if dat_path else self._coupon_dat_file_paths()
+        existing = {}
+        for p in self._coupons_file_paths():
+            if os.path.isfile(p):
+                try:
+                    with open(p, "r") as f:
+                        d = json.load(f)
+                    if isinstance(d, dict):
+                        existing.update(d)
+                except Exception:
+                    pass
+        for dp in target_paths:
+            if dp and os.path.isfile(dp):
+                try:
+                    with open(dp, "r") as f:
+                        raw_lines = f.readlines()
+                except Exception:
+                    continue
+                new_dict = {}
+                for raw in raw_lines:
+                    line = raw.strip()
+                    if not line or "|" not in line:
+                        continue
+                    parts = line.split("|", 5)
+                    if len(parts) < 6:
+                        continue
+                    code, pct_s, unit_s, val_s, st_s, desc_s = [x.strip() for x in parts]
+                    if not re.match(r"^[\x21-\x7E]{6}$", code):
+                        continue
+                    try:
+                        q_pct = Decimal(pct_s).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    except Exception:
+                        continue
+                    u_low = unit_s.lower()
+                    if u_low not in ("never", "days", "months"):
+                        u_low = "never"
+                    try:
+                        v_int = int(val_s) if u_low != "never" else None
+                    except Exception:
+                        v_int = 30 if u_low == "days" else (6 if u_low == "months" else None)
+                    prev = existing.get(code, {})
+                    now_dt = datetime.now(timezone.utc)
+                    created_iso = prev.get("created_at") or now_dt.isoformat()
+                    if u_low == "never":
+                        exp_iso = None
+                    elif prev.get("expires_at") and prev.get("duration_unit") == u_low and prev.get("duration_value") == v_int:
+                        exp_iso = prev.get("expires_at")
+                    elif u_low == "days":
+                        exp_iso = (now_dt + timedelta(days=max(1, min(365, v_int or 30)))).isoformat()
+                    else:
+                        m_val = max(1, min(12, v_int or 6))
+                        days_eq = 365 if m_val == 12 else m_val * 30
+                        exp_iso = (now_dt + timedelta(days=days_eq)).isoformat()
+                    pct_disp = f"{q_pct:.2f}".rstrip("0").rstrip(".") if "." in f"{q_pct:.2f}" else f"{q_pct}"
+                    new_dict[code] = {
+                        "code": code,
+                        "discount_percent": float(q_pct),
+                        "discount_percent_exact": f"{q_pct:.2f}",
+                        "discount_percent_display": f"{pct_disp}%",
+                        "duration_unit": u_low,
+                        "duration_value": v_int,
+                        "never_expires": u_low == "never",
+                        "created_at": created_iso,
+                        "expires_at": exp_iso,
+                        "status": st_s.upper() if st_s.upper() in ("ACTIVE", "DISABLED") else "ACTIVE",
+                        "description": desc_s or f"{pct_disp}% off Legacy Computing Systems subscription",
+                    }
+                self.save_coupons(new_dict)
+                return new_dict
+        return existing
+
     def _generate_random_coupon_code(self):
         """
         Generate a cryptographically random 6-character coupon code containing
@@ -753,6 +1393,7 @@ class LCSProvisioningEngine:
                     json.dump(coupons_dict, f, indent=2)
             except Exception:
                 pass
+        self._write_coupon_dat_files(coupons_dict)
 
     def _sync_coupon_to_peer(self, coupon_record):
         peer_os = "RSTS" if self.primary_os == "VMS" else "VMS"
@@ -968,6 +1609,409 @@ class LCSProvisioningEngine:
             "discounted_price_usd": float(final_dec),
             "discounted_price_exact": f"{final_dec:.2f}",
             "discounted_price_display": f"${final_dec:.2f} / month",
+        }
+
+    def update_discount_coupon(self, code, status=None, description=None, local_only=False):
+        clean_code = str(code or "").strip()
+        coupons = self.load_coupons()
+        if clean_code not in coupons:
+            raise KeyError(f"Coupon code '{clean_code}' not found")
+        rec = coupons[clean_code]
+        if status is not None:
+            st_up = str(status).strip().upper()
+            if st_up not in ("ACTIVE", "DISABLED"):
+                raise ValueError("Coupon status must be 'ACTIVE' or 'DISABLED'")
+            rec["status"] = st_up
+        if description is not None:
+            rec["description"] = str(description).strip()
+        coupons[clean_code] = rec
+        self.save_coupons(coupons)
+        if not local_only:
+            peer_os = "RSTS" if self.primary_os == "VMS" else "VMS"
+            payload = json.dumps({"status": rec["status"], "description": rec.get("description"), "local_only": True}).encode("utf-8")
+            sig = self.compute_hmac_signature(payload)
+            ctx = ssl._create_unverified_context()
+            for base in self._peer_base_urls(peer_os):
+                try:
+                    req = urllib.request.Request(
+                        f"{base.rstrip('/')}/api/v1/coupons/{urllib.parse.quote(clean_code)}",
+                        data=payload,
+                        method="PATCH",
+                        headers={"Content-Type": "application/json", "X-LCS-Signature": sig},
+                    )
+                    with urllib.request.urlopen(req, context=ctx, timeout=2.0) as _:
+                        break
+                except Exception:
+                    continue
+        return rec
+
+    def delete_discount_coupon(self, code, local_only=False):
+        clean_code = str(code or "").strip()
+        coupons = self.load_coupons()
+        if clean_code not in coupons:
+            raise KeyError(f"Coupon code '{clean_code}' not found")
+        removed = coupons.pop(clean_code)
+        self.save_coupons(coupons)
+        if not local_only:
+            peer_os = "RSTS" if self.primary_os == "VMS" else "VMS"
+            payload = json.dumps({"local_only": True}).encode("utf-8")
+            sig = self.compute_hmac_signature(payload)
+            ctx = ssl._create_unverified_context()
+            for base in self._peer_base_urls(peer_os):
+                try:
+                    req = urllib.request.Request(
+                        f"{base.rstrip('/')}/api/v1/coupons/{urllib.parse.quote(clean_code)}",
+                        data=payload,
+                        method="DELETE",
+                        headers={"Content-Type": "application/json", "X-LCS-Signature": sig},
+                    )
+                    with urllib.request.urlopen(req, context=ctx, timeout=2.0) as _:
+                        break
+                except Exception:
+                    continue
+        return removed
+
+    def _issue_admin_token(self):
+        exp_ts = int(time.time()) + 86400
+        payload_str = f"SYSTEM:{self.primary_os}:{exp_ts}"
+        sig_hex = hmac.new(self.lcs_api_secret.encode("utf-8"), payload_str.encode("utf-8"), hashlib.sha256).hexdigest()
+        return f"{payload_str}:{sig_hex}", exp_ts
+
+    def get_terminal_session_info(self, sid=None):
+        """
+        Check live RSTS/E (.rsts_sessions.json) or VAX/VMS (.vms_sessions.json + DECwindows X11)
+        terminal session state for `sid` (or any active HTTPS PTY session if sid is omitted).
+        """
+        clean_sid = str(sid or "").strip()
+        if self.terminal_server is not None and clean_sid:
+            if clean_sid in getattr(self.terminal_server, "sid_procs", {}):
+                auth_user = self.terminal_server.get_session_auth_user(clean_sid)
+                if auth_user:
+                    u_up = str(auth_user).strip().upper()
+                    is_sys = u_up in ("SYSTEM", "1,2", "[1,2]", "1,4", "[1,4]")
+                    self.sid_system_auth[clean_sid] = is_sys
+                    return {
+                        "logged_in": True,
+                        "username": "SYSTEM" if is_sys else u_up,
+                        "is_system": is_sys,
+                        "sid": clean_sid,
+                        "live_pty": True,
+                    }
+                else:
+                    self.sid_system_auth[clean_sid] = False
+                    return {
+                        "logged_in": False,
+                        "username": "",
+                        "is_system": False,
+                        "sid": clean_sid,
+                        "live_pty": True,
+                    }
+            # Also check if DECwindows X11 authenticated this sid as SYSTEM
+            sid_auth_users = getattr(self.terminal_server, "sid_auth_users", {})
+            if clean_sid in sid_auth_users:
+                u_up = str(sid_auth_users.get(clean_sid) or "").strip().upper()
+                is_sys = u_up == "SYSTEM"
+                self.sid_system_auth[clean_sid] = is_sys
+                return {
+                    "logged_in": bool(u_up),
+                    "username": u_up,
+                    "is_system": is_sys,
+                    "sid": clean_sid,
+                    "live_pty": False,
+                }
+            if self.sid_system_auth.get(clean_sid) is True:
+                return {
+                    "logged_in": True,
+                    "username": "SYSTEM",
+                    "is_system": True,
+                    "sid": clean_sid,
+                    "live_pty": False,
+                }
+
+        # Fallback: inspect .rsts_sessions.json / .vms_sessions.json for active interactive HTTPS/SSH sessions
+        sess_file = os.path.join(
+            self.fs_root,
+            ".rsts_sessions.json" if self.primary_os == "RSTS" else ".vms_sessions.json",
+        )
+        if os.path.isfile(sess_file):
+            try:
+                with open(sess_file, "r") as f:
+                    sessions = json.load(f)
+                if isinstance(sessions, dict):
+                    for pid_str, info in sessions.items():
+                        if not isinstance(info, dict) or not info.get("logged_in"):
+                            continue
+                        try:
+                            pid_val = int(pid_str)
+                            # Ignore container PID 1 daemon unless it's the only session and explicitly HTTPS
+                            if pid_val == 1 and info.get("source") != "HTTPS":
+                                continue
+                            os.kill(pid_val, 0)
+                        except Exception:
+                            continue
+                        if self.primary_os == "RSTS":
+                            is_sys = (
+                                info.get("ppn_key") == "1,2"
+                                or info.get("ppn") == "[1,2]"
+                                or str(info.get("user", "")).upper() == "SYSTEM"
+                            )
+                            uname = "SYSTEM" if is_sys else str(info.get("user") or info.get("ppn") or "")
+                        else:
+                            is_sys = (
+                                str(info.get("username", "")).upper() == "SYSTEM"
+                                or info.get("uic") == "[1,4]"
+                            )
+                            uname = "SYSTEM" if is_sys else str(info.get("username") or info.get("uic") or "")
+                        if is_sys:
+                            return {
+                                "logged_in": True,
+                                "username": "SYSTEM",
+                                "is_system": True,
+                                "sid": clean_sid,
+                                "live_pty": True,
+                            }
+            except Exception:
+                pass
+
+        return {
+            "logged_in": False,
+            "username": "",
+            "is_system": False,
+            "sid": clean_sid,
+            "live_pty": False,
+        }
+
+    def authenticate_system_admin(self, username=None, password=None, sid=None):
+        """
+        Authenticate the privileged SYSTEM user ([1,2] on RSTS/E or [1,4] SYSTEM on VAX/VMS)
+        directly against RSTS/E $ACCT.SYS (RSTSEmulator.verify_account_credentials) or
+        VAX/VMS SYSUAF.DAT (VMSEmulator.verify_account_credentials), or via an active
+        authenticated SYSTEM terminal session (`sid`).
+        Raises PermissionError for non-SYSTEM accounts and ValueError for invalid passwords.
+        """
+        acct_label = "[1,2] SYSTEM (RSTS/E V10.1-L)" if self.primary_os == "RSTS" else "[1,4] SYSTEM (VAX/VMS V5.5-2)"
+        u_clean = str(username or "").strip().upper()
+        p_clean = str(password or "").strip()
+
+        # If no username/password was supplied, check if the terminal session `sid` is logged in as SYSTEM
+        if not u_clean and not p_clean and sid:
+            t_info = self.get_terminal_session_info(sid=sid)
+            if t_info.get("is_system"):
+                token, exp_ts = self._issue_admin_token()
+                return {
+                    "ok": True,
+                    "authenticated": True,
+                    "terminal_authenticated": True,
+                    "username": "SYSTEM",
+                    "account": acct_label,
+                    "primary_os": self.primary_os,
+                    "admin_token": token,
+                    "expires_at": exp_ts,
+                }
+
+        allowed_sys_names = {"SYSTEM", "[1,2]", "1,2", "[1,4]", "1,4"}
+        if u_clean not in allowed_sys_names:
+            raise PermissionError(
+                "Access denied: Coupon administration requires the privileged SYSTEM account ([1,2] on RSTS/E or [1,4] SYSTEM on VAX/VMS)"
+            )
+
+        if self.primary_os == "RSTS":
+            emu = self._load_rsts_emulator()
+            if emu and hasattr(emu, "verify_account_credentials"):
+                ok, ppn_key, acct_rec, err_msg = emu.verify_account_credentials("1,2", p_clean)
+                if not ok or ppn_key != "1,2" or not p_clean:
+                    raise ValueError(err_msg or "Invalid RSTS/E [1,2] SYSTEM password")
+            else:
+                sys_rec = (emu.accounts.get("1,2") if emu else None) or {"password": "SYSTEM", "ppn": "[1,2]"}
+                expected_pw = str(sys_rec.get("password", "SYSTEM"))
+                if not p_clean or p_clean.upper() != expected_pw.upper():
+                    raise ValueError("Invalid RSTS/E [1,2] SYSTEM password")
+        else:
+            emu = self._load_vms_emulator()
+            if emu and hasattr(emu, "verify_account_credentials"):
+                ok, uname, uinfo, err_msg = emu.verify_account_credentials("SYSTEM", p_clean)
+                if not ok and p_clean.upper() == "SYSTEM":
+                    # Support default SYSTEM/MANAGER alias if SYSUAF password is still default MANAGER
+                    sys_pw = str((emu.users.get("SYSTEM") or {}).get("password", "MANAGER")).upper()
+                    if sys_pw == "MANAGER":
+                        ok, uname = True, "SYSTEM"
+                if not ok or uname != "SYSTEM" or not p_clean:
+                    raise ValueError(err_msg or "Invalid VAX/VMS [1,4] SYSTEM password")
+            else:
+                sys_rec = (emu.users.get("SYSTEM") if emu else None) or {"password": "MANAGER", "uic": "[1,4]"}
+                expected_pw = str(sys_rec.get("password", "MANAGER"))
+                valid_pws = {expected_pw.upper(), "SYSTEM"} if expected_pw.upper() == "MANAGER" else {expected_pw.upper()}
+                if not p_clean or p_clean.upper() not in valid_pws:
+                    raise ValueError("Invalid VAX/VMS [1,4] SYSTEM password")
+
+        if sid:
+            self.sid_system_auth[str(sid).strip()] = True
+
+        token, exp_ts = self._issue_admin_token()
+        return {
+            "ok": True,
+            "authenticated": True,
+            "username": "SYSTEM",
+            "account": acct_label,
+            "primary_os": self.primary_os,
+            "admin_token": token,
+            "expires_at": exp_ts,
+        }
+
+    def verify_admin_token(self, headers=None, query_params=None):
+        headers = headers or {}
+        query_params = query_params or {}
+        acct_label = "[1,2] SYSTEM (RSTS/E V10.1-L)" if self.primary_os == "RSTS" else "[1,4] SYSTEM (VAX/VMS V5.5-2)"
+        sid = (
+            (query_params.get("sid", [""])[0] if isinstance(query_params.get("sid"), list) else query_params.get("sid", ""))
+            or headers.get("x-lcs-terminal-sid")
+            or headers.get("X-LCS-Terminal-Sid")
+            or ""
+        ).strip()
+
+        # 1. Check live terminal session state if sid is provided
+        if sid:
+            t_info = self.get_terminal_session_info(sid=sid)
+            if t_info.get("is_system"):
+                tok, exp_ts = self._issue_admin_token()
+                return {
+                    "authenticated": True,
+                    "terminal_authenticated": True,
+                    "username": "SYSTEM",
+                    "account": acct_label,
+                    "primary_os": self.primary_os,
+                    "admin_token": tok,
+                    "expires_at": exp_ts,
+                }
+            # If sid belongs to a live terminal PTY that is NOT logged in as SYSTEM (e.g. at User:/Username: prompt or GUEST),
+            # strictly report unauthenticated so the SYSTEM ADMIN menu option is hidden!
+            if t_info.get("live_pty") and not t_info.get("is_system"):
+                return {
+                    "authenticated": False,
+                    "terminal_authenticated": False,
+                    "terminal_logged_in": bool(t_info.get("logged_in")),
+                    "terminal_user": t_info.get("username", ""),
+                    "reason": "SYSTEM account is not logged into the terminal",
+                }
+
+        tok = (
+            headers.get("x-lcs-admin-token")
+            or headers.get("X-LCS-Admin-Token")
+            or ""
+        ).strip()
+        if not tok:
+            auth_hdr = (headers.get("authorization") or headers.get("Authorization") or "").strip()
+            if auth_hdr.lower().startswith("bearer "):
+                tok = auth_hdr[7:].strip()
+        if not tok:
+            cookie_hdr = headers.get("cookie") or headers.get("Cookie") or ""
+            for part in cookie_hdr.split(";"):
+                p = part.strip()
+                if p.startswith("lcs_admin_token="):
+                    tok = p.split("=", 1)[1].strip()
+                    break
+        if not tok and "admin_token" in query_params:
+            tok = (query_params.get("admin_token", [""])[0] or "").strip()
+        if not tok:
+            # Also check if any interactive HTTPS terminal session is currently logged in as SYSTEM
+            t_any = self.get_terminal_session_info()
+            if t_any.get("is_system"):
+                tok_issued, exp_ts = self._issue_admin_token()
+                return {
+                    "authenticated": True,
+                    "terminal_authenticated": True,
+                    "username": "SYSTEM",
+                    "account": acct_label,
+                    "primary_os": self.primary_os,
+                    "admin_token": tok_issued,
+                    "expires_at": exp_ts,
+                }
+            return {"authenticated": False, "reason": "Missing SYSTEM admin token"}
+
+        parts = tok.split(":")
+        if len(parts) != 4:
+            return {"authenticated": False, "reason": "Malformed SYSTEM admin token"}
+        user_p, os_p, exp_s, sig_hex = parts
+        if user_p != "SYSTEM":
+            return {"authenticated": False, "reason": "Token is not for SYSTEM user"}
+        try:
+            exp_ts = int(exp_s)
+        except ValueError:
+            return {"authenticated": False, "reason": "Invalid token expiry"}
+        if int(time.time()) > exp_ts:
+            return {"authenticated": False, "reason": "SYSTEM admin token expired"}
+        payload_str = f"{user_p}:{os_p}:{exp_s}"
+        expected_sig = hmac.new(self.lcs_api_secret.encode("utf-8"), payload_str.encode("utf-8"), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected_sig.lower(), sig_hex.lower()):
+            return {"authenticated": False, "reason": "Invalid token signature"}
+        return {
+            "authenticated": True,
+            "username": "SYSTEM",
+            "account": acct_label,
+            "primary_os": self.primary_os,
+            "admin_token": tok,
+        }
+
+    def render_admin_html(self):
+        node_label = "PDP-11/70 RSTS/E V10.1-L (:8411)" if self.primary_os == "RSTS" else "VAX/VMS V5.5-2 & DECwindows (:8455)"
+        sys_label = "[1,2] SYSTEM" if self.primary_os == "RSTS" else "[1,4] SYSTEM"
+        html = (
+            ADMIN_HTML_TEMPLATE.replace("__NODE_LABEL__", node_label)
+            .replace("__SYS_ACCOUNT_LABEL__", sys_label)
+        )
+        return html.encode("utf-8")
+
+    def _find_coupon_binary(self):
+        candidates = [
+            os.path.join(self.os_dir, "system", "bin", "coupon"),
+            os.path.join(self.dec_root, "APPS", "apps", "coupon", "bin", "coupon"),
+            os.path.join(self.dec_root, "OS", "RSTS-E", "system", "bin", "coupon"),
+            os.path.join(self.dec_root, "OS", "VMS", "system", "bin", "coupon"),
+            "/opt/dec-rsts/system/bin/coupon",
+            "/opt/dec-vms/system/bin/coupon",
+        ]
+        for c in candidates:
+            if os.path.isfile(c) and os.access(c, os.X_OK):
+                return c
+        return None
+
+    def run_basic_plus2_coupon_command(self, command_str):
+        """
+        Execute one or more BASIC-PLUS-2 COUPON.BAS commands as the privileged SYSTEM user,
+        synchronizing .lcs_coupons.json <-> COUPON.DAT before and after execution.
+        """
+        coupon_bin = self._find_coupon_binary()
+        if not coupon_bin:
+            raise RuntimeError("BASIC-PLUS-2 coupon binary not found")
+        sys_sub = os.path.join("dk0", "001_002") if self.primary_os == "RSTS" else os.path.join("dka0", "sys0", "sysmgr")
+        work_dir = os.path.join(self.fs_root, sys_sub)
+        os.makedirs(work_dir, exist_ok=True)
+        dat_file = os.path.join(work_dir, "COUPON.DAT")
+
+        # Pre-sync JSON -> COUPON.DAT
+        current_coupons = self.load_coupons()
+        self.save_coupons(current_coupons)
+
+        cmd_clean = str(command_str or "LIST").strip()
+        stdin_text = f"{cmd_clean}\nEXIT\n"
+        res = subprocess.run(
+            [coupon_bin],
+            input=stdin_text,
+            text=True,
+            capture_output=True,
+            cwd=work_dir,
+            timeout=10,
+        )
+        # Post-sync COUPON.DAT -> JSON
+        updated_coupons = self.sync_from_coupon_dat(dat_path=dat_file)
+        for rec in updated_coupons.values():
+            self._sync_coupon_to_peer(rec)
+        return {
+            "ok": True,
+            "command": cmd_clean,
+            "returncode": res.returncode,
+            "output": res.stdout,
+            "coupons": updated_coupons,
         }
 
     def _peer_base_urls(self, peer_os):
@@ -1645,6 +2689,100 @@ class LCSProvisioningEngine:
         if method == "GET" and path in ("/signup", "/signup/"):
             return (200, "OK", "text/html; charset=utf-8", self.render_signup_html())
 
+        if method == "GET" and path in ("/admin", "/admin/", "/admin/coupons", "/admin/coupons/"):
+            return (200, "OK", "text/html; charset=utf-8", self.render_admin_html())
+
+        if method == "POST" and path == "/api/v1/admin/login":
+            try:
+                payload = json.loads(body_bytes.decode("utf-8") if body_bytes else "{}")
+            except Exception:
+                return (
+                    400,
+                    "Bad Request",
+                    "application/json; charset=utf-8",
+                    json.dumps({"ok": False, "error": "Invalid JSON body"}).encode("utf-8"),
+                )
+            try:
+                auth_res = self.authenticate_system_admin(
+                    username=payload.get("username"),
+                    password=payload.get("password"),
+                    sid=payload.get("sid") or (query_params.get("sid", [""])[0] if query_params.get("sid") else None),
+                )
+                return (
+                    200,
+                    "OK",
+                    "application/json; charset=utf-8",
+                    json.dumps(auth_res, indent=2).encode("utf-8"),
+                )
+            except PermissionError as pe:
+                return (
+                    403,
+                    "Forbidden",
+                    "application/json; charset=utf-8",
+                    json.dumps({"ok": False, "authenticated": False, "error": str(pe)}).encode("utf-8"),
+                )
+            except ValueError as ve:
+                return (
+                    401,
+                    "Unauthorized",
+                    "application/json; charset=utf-8",
+                    json.dumps({"ok": False, "authenticated": False, "error": str(ve)}).encode("utf-8"),
+                )
+
+        if method == "POST" and path == "/api/v1/admin/logout":
+            try:
+                payload = json.loads(body_bytes.decode("utf-8") if body_bytes else "{}")
+            except Exception:
+                payload = {}
+            sid_out = str(payload.get("sid") or (query_params.get("sid", [""])[0] if query_params.get("sid") else "") or "").strip()
+            if sid_out:
+                self.sid_system_auth.pop(sid_out, None)
+            else:
+                self.sid_system_auth.clear()
+            return (
+                200,
+                "OK",
+                "application/json; charset=utf-8",
+                json.dumps({"ok": True, "authenticated": False}).encode("utf-8"),
+            )
+
+        if method == "GET" and path == "/api/v1/admin/session":
+            sess = self.verify_admin_token(headers=headers, query_params=query_params)
+            status_code = 200 if sess.get("authenticated") else 401
+            status_txt = "OK" if sess.get("authenticated") else "Unauthorized"
+            return (
+                status_code,
+                status_txt,
+                "application/json; charset=utf-8",
+                json.dumps({"ok": bool(sess.get("authenticated")), **sess}, indent=2).encode("utf-8"),
+            )
+
+        if method == "POST" and path == "/api/v1/admin/coupon-cli":
+            sess = self.verify_admin_token(headers=headers, query_params=query_params)
+            sig_hdr = headers.get("x-lcs-signature", "")
+            has_hmac = bool(sig_hdr and self.verify_hmac_signature(body_bytes, sig_hdr, self.lcs_api_secret))
+            if not sess.get("authenticated") and not has_hmac:
+                return (
+                    401,
+                    "Unauthorized",
+                    "application/json; charset=utf-8",
+                    json.dumps({
+                        "ok": False,
+                        "error": "SYSTEM authentication required to run BASIC-PLUS-2 COUPON utility",
+                    }).encode("utf-8"),
+                )
+            try:
+                payload = json.loads(body_bytes.decode("utf-8") if body_bytes else "{}")
+                res = self.run_basic_plus2_coupon_command(payload.get("command", "LIST"))
+                return (200, "OK", "application/json; charset=utf-8", json.dumps(res, indent=2).encode("utf-8"))
+            except Exception as e:
+                return (
+                    400,
+                    "Bad Request",
+                    "application/json; charset=utf-8",
+                    json.dumps({"ok": False, "error": str(e)}).encode("utf-8"),
+                )
+
         if method == "GET" and path == "/auth/workos/login":
             org = (query_params.get("org", ["org_enterprise_300"])[0] or "org_enterprise_300").strip()
             pub_base = self.get_public_base_url(headers=headers)
@@ -1797,6 +2935,55 @@ class LCSProvisioningEngine:
                     "application/json; charset=utf-8",
                     json.dumps({"ok": False, "error": str(ve)}).encode("utf-8"),
                 )
+
+        if path.startswith("/api/v1/coupons/") and method in ("PATCH", "PUT", "DELETE"):
+            sub_code = urllib.parse.unquote(path[len("/api/v1/coupons/"):]).strip()
+            if sub_code and sub_code.lower() != "validate":
+                sig_hdr = headers.get("x-lcs-signature", "")
+                if sig_hdr:
+                    if not self.verify_hmac_signature(body_bytes, sig_hdr, self.lcs_api_secret):
+                        err = {"ok": False, "error": "Invalid X-LCS-Signature HMAC-SHA256 signature"}
+                        return (401, "Unauthorized", "application/json; charset=utf-8", json.dumps(err).encode("utf-8"))
+                try:
+                    payload = json.loads(body_bytes.decode("utf-8") if body_bytes else "{}")
+                except Exception:
+                    payload = {}
+                try:
+                    if method == "DELETE":
+                        removed = self.delete_discount_coupon(sub_code, local_only=bool(payload.get("local_only")))
+                        return (
+                            200,
+                            "OK",
+                            "application/json; charset=utf-8",
+                            json.dumps({"ok": True, "deleted": removed}, indent=2).encode("utf-8"),
+                        )
+                    else:
+                        updated = self.update_discount_coupon(
+                            sub_code,
+                            status=payload.get("status"),
+                            description=payload.get("description"),
+                            local_only=bool(payload.get("local_only")),
+                        )
+                        return (
+                            200,
+                            "OK",
+                            "application/json; charset=utf-8",
+                            json.dumps({"ok": True, "coupon": updated}, indent=2).encode("utf-8"),
+                        )
+                except KeyError as ke:
+                    return (
+                        404,
+                        "Not Found",
+                        "application/json; charset=utf-8",
+                        json.dumps({"ok": False, "error": str(ke)}).encode("utf-8"),
+                    )
+                except ValueError as ve:
+                    return (
+                        400,
+                        "Bad Request",
+                        "application/json; charset=utf-8",
+                        json.dumps({"ok": False, "error": str(ve)}).encode("utf-8"),
+                    )
 
         if method == "GET" and path == "/api/v1/users/check":
             uname = (query_params.get("username", [""])[0] or "").strip()

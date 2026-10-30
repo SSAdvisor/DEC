@@ -352,6 +352,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <button onclick="clearScreen()">CLEAR</button>
     <button onclick="newSession()">NEW SESSION</button>
     <button onclick="window.location.href='/signup'" style="border-color:#ffb000;color:#ffb000;font-weight:bold;">SIGN UP ($10/MO)</button>
+    <button id="btn-sys-admin" onclick="openSystemAdmin()" style="display:none;border-color:#33ff66;color:#33ff66;font-weight:bold;">SYSTEM ADMIN</button>
   </div>
 </header>
 <div id="workspace">
@@ -431,9 +432,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   const decwUserEl = document.getElementById('decw-user');
   const decwPassEl = document.getElementById('decw-pass');
   const decwErrEl = document.getElementById('decw-login-err');
+  const sysAdminBtnEl = document.getElementById('btn-sys-admin');
   const ctx = canvasEl.getContext('2d');
 
-  let sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  let sessionId = sessionStorage.getItem('lcs_terminal_sid') || (Math.random().toString(36).slice(2) + Date.now().toString(36));
+  sessionStorage.setItem('lcs_terminal_sid', sessionId);
   let ws = null;
   let wsX11 = null;
   let textBuf = "";
@@ -444,6 +447,38 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   let lastWinCount = 0;
   let mouseDownOnX11 = false;
   let lastMoveSent = 0;
+  let authPollTimer = null;
+
+  function updateSysAdminMenu(isSystemLoggedIn, token) {
+    if (!sysAdminBtnEl) return;
+    if (isSystemLoggedIn) {
+      sysAdminBtnEl.style.display = 'inline-block';
+      if (token) {
+        sessionStorage.setItem('lcs_admin_token', token);
+      }
+    } else {
+      sysAdminBtnEl.style.display = 'none';
+      sessionStorage.removeItem('lcs_admin_token');
+    }
+  }
+
+  function syncTerminalSystemAuth() {
+    fetch('/api/v1/admin/session?sid=' + encodeURIComponent(sessionId))
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        updateSysAdminMenu(Boolean(d && d.authenticated), d ? d.admin_token : '');
+      })
+      .catch(function() {});
+  }
+
+  function scheduleAuthCheck() {
+    if (authPollTimer) clearTimeout(authPollTimer);
+    authPollTimer = setTimeout(syncTerminalSystemAuth, 200);
+  }
+
+  function openSystemAdmin() {
+    window.location.href = '/admin?sid=' + encodeURIComponent(sessionId);
+  }
 
   function setTheme(t) {
     document.body.className = (t === 'green') ? '' : t;
@@ -486,11 +521,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       x11AuthBadgeEl.style.color = '#33ff66';
       x11AuthBadgeEl.textContent = '[User: ' + x11User + ']';
       decwErrEl.textContent = '';
+      scheduleAuthCheck();
     } else {
       loginOverlayEl.style.display = 'flex';
       x11AuthBadgeEl.style.color = '#ffb000';
       x11AuthBadgeEl.textContent = '[LOCKED - LOGIN REQUIRED]';
       drawStandbyX11Banner();
+      updateSysAdminMenu(false, '');
     }
   }
 
@@ -553,6 +590,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   function newSession() {
     sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem('lcs_terminal_sid', sessionId);
+    updateSysAdminMenu(false, '');
     updateX11AuthUI(false, "");
     connectWS();
     connectX11WS();
@@ -568,13 +607,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     ws.onopen = function() {
       statusEl.textContent = ENABLE_X11 ? 'ONLINE (VT220 + X11)' : 'ONLINE (WSS PTY)';
+      scheduleAuthCheck();
       focusTerm();
     };
     ws.onmessage = function(ev) {
       appendOutput(typeof ev.data === 'string' ? ev.data : '');
+      scheduleAuthCheck();
     };
     ws.onclose = function() {
       statusEl.textContent = 'DISCONNECTED';
+      updateSysAdminMenu(false, '');
       updateX11AuthUI(false, "");
       appendOutput('\\n[Terminal carrier dropped - click NEW SESSION to reconnect]\\n');
     };
@@ -582,6 +624,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       statusEl.textContent = 'LINK ERROR';
     };
   }
+
+  setInterval(syncTerminalSystemAuth, 1500);
 
   /* ================= DECwindows X11 Canvas Client ================= */
   function drawStandbyX11Banner() {
@@ -1435,6 +1479,7 @@ class MultiUserTerminalServer:
             fs_root=self.fs_root,
             https_port=self.https_port,
         )
+        self.provisioning.terminal_server = self
 
         # Track per-browser-tab session ID -> (proc, master_fd) and authenticated username
         self.sid_procs = {}
@@ -1790,6 +1835,7 @@ class MultiUserTerminalServer:
 
         self.sid_procs[sid] = (proc, master_fd)
         self.sid_prev_pty_logged[sid] = False
+        self.provisioning.sid_system_auth[sid] = False
 
         fl = fcntl.fcntl(master_fd, fcntl.F_GETFL)
         fcntl.fcntl(master_fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
@@ -1837,6 +1883,8 @@ class MultiUserTerminalServer:
         finally:
             t1.cancel()
             t2.cancel()
+            was_sys = (str(self.get_session_auth_user(sid) or "").upper() == "SYSTEM")
+            self.provisioning.sid_system_auth[sid] = was_sys
             self.sid_procs.pop(sid, None)
             self.sid_auth_users.pop(sid, None)
             self.sid_prev_pty_logged.pop(sid, None)

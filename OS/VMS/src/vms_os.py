@@ -132,6 +132,7 @@ class VMSEmulator:
         "VAXSCAN": "vaxscan",
         "CORAL": "vaxcoral",
         "VAXCORAL": "vaxcoral",
+        "COUPON": "coupon",
     }
 
     # VAX/VMS DCL Compiler Verbs -> (binary, default_extensions, facility_name, supports_repl)
@@ -332,6 +333,7 @@ class VMSEmulator:
         "BP2FMT": ("indent", "VAX BASIC / BASIC-PLUS-2 Source Formatter"),
         "PRETTY": ("indent", "VAX BASIC / BASIC-PLUS-2 Pretty-Printer"),
         "EDT": ("edt", "VAX/VMS EDT Interactive Text Editor V3.0"),
+        "COUPON": ("coupon", "Legacy Computing Systems SYSTEM Discount Coupon Manager V1.0"),
         # DECwindows Workstation Suite (Native to VAX/VMS)
         "DECWINDOWS": ("decwx11", "VAX/VMS DECwindows Motif Workstation Suite"),
         "DECWX11": ("decwx11", "DECwindows XUI / OSF/Motif 1.1 Session Manager"),
@@ -1083,6 +1085,24 @@ class VMSEmulator:
         print("%DECW-I-STARTED, DECwindows XUI / OSF/Motif V1.1 workstation server initialized")
         print(f"%SET-I-INTSET, login interactive limit = 64, current interactive value = 1")
         print(f"  SYSTEM       job terminated at {now_str} (Startup Completed)\n")
+
+    def verify_account_credentials(self, user_input, password=""):
+        """Verify VAX/VMS SYSUAF.DAT username/UIC and password. Returns (ok, username, uinfo_dict, error_message)."""
+        self._reload_sysuaf()
+        uname = self.normalize_user(user_input)
+        if not uname or uname not in self.users:
+            return False, None, None, "%LOGIN-F-NOSUCHUSER, no such user"
+        uinfo = self.users[uname]
+        flags_list = [fl.strip().upper() for fl in uinfo.get("flags", "").split(",") if fl.strip()]
+        status_str = str(uinfo.get("status", "ACTIVE")).upper()
+        if ("DISUSER" in flags_list and "NODISUSER" not in flags_list) or status_str in ("DISUSER", "SUSPENDED", "DISABLED"):
+            return False, uname, uinfo, "%LOGIN-F-DISUSER, account is disabled"
+        expected_pw = str(uinfo.get("password", "") or "")
+        if expected_pw:
+            given_pw = str(password or "").strip()
+            if given_pw.upper() != expected_pw.upper():
+                return False, uname, uinfo, "%LOGIN-F-NOTVALID, user authorization failure"
+        return True, uname, uinfo, ""
 
     def interactive_login(self, in_stream=None):
         stream = in_stream or sys.stdin
@@ -2619,6 +2639,10 @@ class VMSEmulator:
             )
             return 2
 
+        if clean_upper == "COUPON" and self.current_user.upper() != "SYSTEM":
+            print("%CLI-E-NOPRIV, insufficient privilege or object protection violation (COUPON requires [1,4] SYSTEM)")
+            return 1
+
         is_sys_image = any(prog.upper().startswith(p) for p in ("SYS$SYSTEM:", "SYS$LIBRARY:", "DKA0:[SYSEXE]", "$"))
         if not is_sys_image:
             target = self.resolve_path(prog)
@@ -2667,10 +2691,29 @@ class VMSEmulator:
         return 1
 
     def _invoke_app(self, bin_name, args_str=""):
+        if bin_name.lower() == "coupon" and self.current_user.upper() != "SYSTEM":
+            print("%CLI-E-NOPRIV, insufficient privilege or object protection violation (COUPON requires [1,4] SYSTEM)")
+            return 1
         exe = self.find_executable(bin_name)
         if not exe:
             print(f"%DCL-W-ACTIMAGE, error activating SYS$SYSTEM:{bin_name.upper()}.EXE")
             return 1
+        lcs_eng = None
+        if bin_name.lower() == "coupon":
+            try:
+                src_dir = os.path.dirname(os.path.abspath(__file__))
+                if src_dir not in sys.path:
+                    sys.path.insert(0, src_dir)
+                import lcs_provisioning
+                lcs_eng = lcs_provisioning.LCSProvisioningEngine(
+                    primary_os="VMS",
+                    os_dir=self.os_dir,
+                    fs_root=self.fs_root,
+                    https_port=self.https_port,
+                )
+                lcs_eng.save_coupons(lcs_eng.load_coupons())
+            except Exception:
+                lcs_eng = None
         env = os.environ.copy()
         env["PATH"] = f"{self.sys_bin}:{env.get('PATH', '')}"
         env["LD_LIBRARY_PATH"] = f"{self.sys_lib}:{env.get('LD_LIBRARY_PATH', '')}"
@@ -2695,7 +2738,14 @@ class VMSEmulator:
                         cmd.append(resolved)
                 else:
                     cmd.append(tok)
-        return subprocess.call(cmd, cwd=self.default_dir, env=env)
+        rc = subprocess.call(cmd, cwd=self.default_dir, env=env)
+        if lcs_eng is not None:
+            try:
+                dat_p = os.path.join(self.default_dir, "COUPON.DAT")
+                lcs_eng.sync_from_coupon_dat(dat_path=dat_p if os.path.isfile(dat_p) else None)
+            except Exception:
+                pass
+        return rc
 
     def _cmd_print(self, rest):
         tokens = [t for t in rest.split() if not self._is_dcl_qualifier(t)]
