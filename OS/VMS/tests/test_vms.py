@@ -463,6 +463,7 @@ class TestVMSDockerContainer:
     def test_14_x11_web_workstation_png_and_bridge(self):
         import sys
         sys.path.insert(0, os.path.join(VMS_ROOT, "src"))
+        sys.modules.pop("multiuser_service", None)
         import multiuser_service
 
         # Verify pure-Python BGRA -> RGBA PNG encoder used by /ws-x11
@@ -711,7 +712,10 @@ class TestVMSDockerContainer:
                 assert "V9$k!2" in bp2_res["coupons"]
                 assert bp2_res["coupons"]["V9$k!2"]["discount_percent"] == 50.0
 
-            # Also verify VAX/VMS DCL privilege check on COUPON (blocked for GUEST)
+            # Also verify VAX/VMS DCL privilege check on COUPON (allowed for SYSTEM, blocked for GUEST)
+            res_sys_cpn = run_vms("COUPON", stdin_text="LIST\nEXIT\n", tmp_root=tmp_path)
+            assert res_sys_cpn.returncode == 0
+            assert "V9$k!2" in res_sys_cpn.stdout
             res_guest = run_vms(["-u", "GUEST", "-c", "COUPON"], tmp_root=tmp_path)
             assert res_guest.returncode != 0
             assert "%CLI-E-NOPRIV" in res_guest.stdout

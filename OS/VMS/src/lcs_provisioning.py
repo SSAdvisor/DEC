@@ -1420,8 +1420,10 @@ class LCSProvisioningEngine:
                         "X-LCS-Signature": sig,
                     },
                 )
-                with urllib.request.urlopen(req, context=ctx, timeout=2.0) as _:
+                with urllib.request.urlopen(req, context=ctx, timeout=1.5) as _:
                     return True
+            except urllib.error.HTTPError:
+                break
             except Exception:
                 continue
         return False
@@ -1639,8 +1641,10 @@ class LCSProvisioningEngine:
                         method="PATCH",
                         headers={"Content-Type": "application/json", "X-LCS-Signature": sig},
                     )
-                    with urllib.request.urlopen(req, context=ctx, timeout=2.0) as _:
+                    with urllib.request.urlopen(req, context=ctx, timeout=1.5) as _:
                         break
+                except urllib.error.HTTPError:
+                    break
                 except Exception:
                     continue
         return rec
@@ -1665,8 +1669,10 @@ class LCSProvisioningEngine:
                         method="DELETE",
                         headers={"Content-Type": "application/json", "X-LCS-Signature": sig},
                     )
-                    with urllib.request.urlopen(req, context=ctx, timeout=2.0) as _:
+                    with urllib.request.urlopen(req, context=ctx, timeout=1.5) as _:
                         break
+                except urllib.error.HTTPError:
+                    break
                 except Exception:
                     continue
         return removed
@@ -2015,16 +2021,16 @@ class LCSProvisioningEngine:
         }
 
     def _peer_base_urls(self, peer_os):
-        if peer_os == "VMS":
-            env_url = os.environ.get("LCS_VMS_URL", "").strip()
-            urls = [env_url] if env_url else []
-            urls.extend(["https://dec-vms:8455", "https://host.docker.internal:8455", "https://127.0.0.1:8455"])
-            return urls
+        port = 8455 if peer_os == "VMS" else 8411
+        env_key = "LCS_VMS_URL" if peer_os == "VMS" else "LCS_RSTS_URL"
+        container_host = "dec-vms" if peer_os == "VMS" else "dec-rsts-e"
+        env_url = os.environ.get(env_key, "").strip()
+        urls = [env_url] if env_url else []
+        if os.path.exists("/.dockerenv"):
+            urls.extend([f"https://{container_host}:{port}", f"https://127.0.0.1:{port}"])
         else:
-            env_url = os.environ.get("LCS_RSTS_URL", "").strip()
-            urls = [env_url] if env_url else []
-            urls.extend(["https://dec-rsts-e:8411", "https://host.docker.internal:8411", "https://127.0.0.1:8411"])
-            return urls
+            urls.extend([f"https://127.0.0.1:{port}", f"https://{container_host}:{port}"])
+        return urls
 
     def _provision_peer_over_https(
         self,
@@ -2070,6 +2076,8 @@ class LCSProvisioningEngine:
                         return data["vms_account"]
                     if peer_os == "RSTS" and data.get("rsts_account"):
                         return data["rsts_account"]
+            except urllib.error.HTTPError:
+                break
             except Exception:
                 continue
         return None
@@ -2101,6 +2109,8 @@ class LCSProvisioningEngine:
                         return data["vms_account"]
                     if peer_os == "RSTS" and data.get("rsts_account"):
                         return data["rsts_account"]
+            except urllib.error.HTTPError:
+                break
             except Exception:
                 continue
         return None

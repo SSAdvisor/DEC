@@ -108,9 +108,10 @@ RSTS_APPS=(
     "fms11"
     "menu11"
     "indent"
+    "coupon"
 )
 
-echo "Staging 33 RSTS/E-compatible applications from ${APPS_ROOT}..."
+echo "Staging 34 RSTS/E-compatible applications from ${APPS_ROOT}..."
 for app in "${RSTS_APPS[@]}"; do
     APP_BIN_DIR="${APPS_ROOT}/apps/${app}/bin"
     if [ ! -d "${APP_BIN_DIR}" ]; then

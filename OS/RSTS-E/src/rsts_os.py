@@ -1500,7 +1500,7 @@ class RSTSEmulator:
                 "    TOTAL (TOTDBM), AMBASE (AMQRY), ACCENTR (ACCENT), SATURNBASE (SATBASE),\n"
                 "    MCBA (MCBAMRP), MAPS (MAPSGL), TIMELINE (DIGIGL), COMPUSHARE (CAS),\n"
                 "    CJBUSINESS (CJBIZ/CJGL), KDSS, TAM, FSORT3 (VSELECT), CLYDE (CONTRL/CAUDIT),\n"
-                "    MINITAB (MTAB), SPSS11 (SPSS), DIBS (CTS500), FMS11, MENU11, INDENT\n"
+                "    MINITAB (MTAB), SPSS11 (SPSS), DIBS (CTS500), FMS11, MENU11, INDENT, COUPON\n"
             )
             return 0
         if topic in self.ccl_table:
@@ -2560,6 +2560,9 @@ class RSTSEmulator:
 
 def main():
     import argparse
+    import signal
+
+    signal.signal(signal.SIGTERM, lambda signum, frame: os._exit(0))
 
     parser = argparse.ArgumentParser(
         description="DEC RSTS/E V10.1-L Operating System Emulation Monitor"

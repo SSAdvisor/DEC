@@ -1,9 +1,17 @@
 import os
 import sys
 import subprocess
+import pytest
 
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COMPILER_CMD = f"{sys.executable} compiler/basicc.py {{input}} -o {{output}}"
 LINKER_CMD = f"{sys.executable} compiler/basiclink.py {{input}} -o {{output}}"
+
+
+@pytest.fixture(autouse=True)
+def _chdir_root(monkeypatch):
+    monkeypatch.chdir(ROOT_DIR)
+
 
 def test_linker_executable():
     bas_content = "10 PRINT 100\n20 END\n"

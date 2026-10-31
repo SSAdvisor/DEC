@@ -28,3 +28,8 @@ services:
 
 volumes:
   vms_dka0_data:
+
+networks:
+  default:
+    name: dec-cluster-net
+    external: true

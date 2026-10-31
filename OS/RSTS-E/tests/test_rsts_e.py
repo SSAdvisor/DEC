@@ -637,6 +637,9 @@ class TestRSTSDockerContainer:
                 assert bp2_res["coupons"]["B2#x!7"]["discount_percent"] == 40.0
 
             # Also verify RSTS/E terminal privilege check on COUPON (allowed for [1,2] SYSTEM, blocked for [200,200] GUEST)
+            res_sys_cpn = run_rsts("COUPON", stdin_text="LIST\nEXIT\n", tmp_root=tmp_path)
+            assert res_sys_cpn.returncode == 0
+            assert "B2#x!7" in res_sys_cpn.stdout
             res_guest = run_rsts(["-u", "200,200", "-c", "COUPON"], tmp_root=tmp_path)
             assert res_guest.returncode != 0
             assert "Protection violation — COUPON requires privileged [1,2] SYSTEM account" in res_guest.stdout

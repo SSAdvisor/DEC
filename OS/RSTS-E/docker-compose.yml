@@ -26,3 +26,8 @@ services:
 
 volumes:
   rsts_dk0_data:
+
+networks:
+  default:
+    name: dec-cluster-net
+    external: true

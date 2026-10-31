@@ -3,8 +3,15 @@ import sys
 import subprocess
 import pytest
 
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COMPILER_CMD = f"{sys.executable} compiler/basicc.py {{input}} -o {{output}} {{extra}}"
 LINKER_CMD = f"{sys.executable} compiler/basiclink.py {{inputs}} {{odl}} -o {{output}}"
+
+
+@pytest.fixture(autouse=True)
+def _chdir_root(monkeypatch):
+    monkeypatch.chdir(ROOT_DIR)
+
 
 PREAMBLE = """1 C=C
 2 N$=N$

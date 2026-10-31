@@ -40,6 +40,7 @@ echo ""
 
 TMP_DIR="$(mktemp -d /tmp/dec_apps_verify_XXXXXX)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
+cd "${TMP_DIR}"
 
 # Target applications to verify (default: all binaries present in BIN_DIR)
 TARGET_APPS=("$@")
@@ -903,6 +904,17 @@ for APP in "${TARGET_APPS[@]}"; do
             OUT="$(printf "APPS\nEXIT\n" | DECW_FORCE_CLI=1 "${EXE}" 2>&1 || true)"
             if echo "${OUT}" | grep -q "DECwindows V3.0 - X11 Protocol & Motif Session Manager"; then
                 echo "PASSED (DECwindows X11 Session Manager verified)"
+                PASSED_COUNT=$((PASSED_COUNT + 1))
+            else
+                echo "FAILED"
+                echo "    Execution output: ${OUT}"
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+            ;;
+        coupon|lcssys|cpnmgr)
+            OUT="$(cd "${TMP_DIR}" && printf "SAMPLE\nLIST\nEXIT\n" | "${EXE}" 2>&1 || true)"
+            if echo "${OUT}" | grep -qi "Discount Coupon Manager"; then
+                echo "PASSED (LCS SYSTEM Discount Coupon Manager verified)"
                 PASSED_COUNT=$((PASSED_COUNT + 1))
             else
                 echo "FAILED"

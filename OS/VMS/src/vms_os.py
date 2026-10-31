@@ -1548,7 +1548,7 @@ class VMSEmulator:
                 "    TOTAL, AMBASE, ACCENTR, SATURNBASE, MANMAN, CERNER (PATHNET),\n"
                 "    MCBA, MAPS, TIMELINE, COMPUSHARE (CAS), CJBUSINESS, KDSS, TAM, FSORT3, CLYDE,\n"
                 "    SAS, RS1, MINITAB, SPSS, SPICE3 (HSPICE), ANSYS, GAUSSIAN (G90),\n"
-                "    DISKEEPER (DEFRAG), ROBOMON, FMS, MENU, INDENT, HAMURABI\n"
+                "    DISKEEPER (DEFRAG), ROBOMON, FMS, MENU, INDENT, COUPON, HAMURABI\n"
                 "    DECWINDOWS, DXSESSION, DECTERM, BOOKREADER, CALENDAR, CARDFILER,\n"
                 "    CDAVIEWER, CALCULATOR, CLOCK, DECSOUND, DXMAIL, FILEVIEW, NOTEPAD\n"
                 "    RUN SYS$SYSTEM:DECW$CLOCK (and all SYS$SYSTEM:DECW$* images)\n"
@@ -2793,6 +2793,9 @@ class VMSEmulator:
 
 def main():
     import argparse
+    import signal
+
+    signal.signal(signal.SIGTERM, lambda signum, frame: os._exit(0))
 
     parser = argparse.ArgumentParser(
         description="DEC VAX/VMS V5.5-2 Operating System Emulation Executive & DCL"

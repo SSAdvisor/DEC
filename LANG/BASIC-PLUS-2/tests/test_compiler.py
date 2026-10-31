@@ -2,8 +2,16 @@ import os
 import sys
 import json
 import subprocess
+import pytest
 
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COMPILER_CMD = f"{sys.executable} compiler/basicc.py {{input}} -o {{output}}"
+
+
+@pytest.fixture(autouse=True)
+def _chdir_root(monkeypatch):
+    monkeypatch.chdir(ROOT_DIR)
+
 
 def compile_and_load(bas_content, test_name):
     bas_file = f"tests/{test_name}.bas"

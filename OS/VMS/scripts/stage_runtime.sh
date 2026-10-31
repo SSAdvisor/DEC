@@ -155,10 +155,11 @@ VMS_APPS=(
     "fms11"
     "menu11"
     "indent"
+    "coupon"
     "decwindows"
 )
 
-echo "Staging 52 VAX/VMS-compatible applications (including DECwindows X11/Motif) from ${APPS_ROOT}..."
+echo "Staging 53 VAX/VMS-compatible applications (including DECwindows X11/Motif) from ${APPS_ROOT}..."
 for app in "${VMS_APPS[@]}"; do
     APP_BIN_DIR="${APPS_ROOT}/apps/${app}/bin"
     if [ ! -d "${APP_BIN_DIR}" ]; then

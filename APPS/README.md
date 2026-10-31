@@ -124,11 +124,8 @@ make clean
 | [`fms11`](apps/fms11) | Forms Management | FMS-11: DEC Forms Management System supporting Form Editor (FED), Form Library (FLB), Form Utility (FUT), and Form Driver (FDV) | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M, RT-11) & VAX/VMS (1979-1986) |
 | [`menu11`](apps/menu11) | Menu Control / Shell | MENU-11: DEC Menu Control & Application Dispatch Facility (MCF) with PPN security privilege enforcement, hierarchical submenus, and audit logging | Digital Equipment Corporation PDP-11 (RSTS/E, RSX-11M, CTS-300/500) & VAX/VMS (1978-1988) |
 | [`indent`](apps/indent) | Developer Utility | INDENT: DEC BASIC-PLUS-2 source code pretty-printer, block-structure formatter, nesting auditor, and control-flow cross-reference analyzer | Digital Equipment Corporation & DECUS PDP-11 / RSTS/E / VAX/VMS (1977-1986) |
+| [`coupon`](apps/coupon) | LCS System Admin | COUPON: Legacy Computing Systems SYSTEM Discount Coupon Manager (`[1,2]` RSTS/E & `[1,4]` VAX/VMS) with 6-character alphanumeric+special codes and 100ths-percent precision | Legacy Computing Systems RSTS/E V10.1-L & VAX/VMS V5.5-2 |
 | [`decwindows`](apps/decwindows) | Workstation X11 / Motif Suite | DECwindows X11 Protocol Interfacing Library (`libdecw_x11.so`, `decw_x11`, `decwx11` Session Manager) & 11 GUI Applications (`DECterm`, `Bookreader`, `Calendar`, `Cardfiler`, `CDA Viewer`, `Calculator`, `Clock`, `DECsound`, `DECwindows Mail`, `FileView`, `Notepad`) | Digital Equipment Corporation VAX/VMS, ULTRIX & OSF/1 (1988-1995) |
-
-
-
-
-
+| **38 Third-Party ISV Suites** | Commercial, DBMS, ERP, CAD & Scientific | Includes `word11`, `lex11`, `saturnwp`, `wp51`, `interleaf`, `calc2020`, `saturncalc`, `nyplan`, `lotus123`, `ifps`, `systemw`, `total`, `ambase`, `accentr`, `saturnbase`, `oracle`, `ingres`, `focus`, `powerhouse`, `s1032`, `mcba`, `maps`, `timeline`, `compushare`, `cjbusiness`, `manman`, `cerner`, `kdss`, `tam`, `fsort3`, `clyde`, `minitab`, `spss11`, `sas`, `rs1`, `spice3`, `ansys`, `gaussian`, `diskeeper`, and `robomon` | Classic PDP-11 RSTS/E & VAX/VMS ISV Ecosystem |
 
 

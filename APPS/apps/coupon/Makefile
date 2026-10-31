@@ -18,6 +18,8 @@ $(EXE): $(SRC)
 	@mkdir -p $(BUILD_DIR) $(BIN_DIR)
 	basicc $(SRC) -o $(OBJ)
 	basiclink $(OBJ) -o $(EXE)
+	@ln -sf $(APP) $(BIN_DIR)/lcssys
+	@ln -sf $(APP) $(BIN_DIR)/cpnmgr
 
 test: build
 	pytest $(TESTS_DIR)/

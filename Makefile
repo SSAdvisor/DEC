@@ -31,16 +31,17 @@ docker-build:
 test: test-lang test-apps test-os
 
 test-lang:
-	@echo "=== Testing LANG/BASIC-PLUS-2 (55 tests) ==="
-	cd LANG/BASIC-PLUS-2 && pytest -v tests/
+	@echo "=== Testing LANG (25 DEC Language Toolchains — 150 tests) ==="
+	pytest -v LANG/*/tests/
 
 test-apps:
-	@echo "=== Testing APPS (352 tests) ==="
+	@echo "=== Testing APPS (52 Application Suites — 493 tests) ==="
 	cd APPS && pytest -v
 
 test-os:
-	@echo "=== Testing OS/RSTS-E & OS/VMS (26 tests) ==="
-	pytest -v OS/RSTS-E/tests/test_rsts_e.py OS/VMS/tests/test_vms.py
+	@echo "=== Testing OS/RSTS-E & OS/VMS (40 tests) ==="
+	pytest -v OS/RSTS-E/tests/test_rsts_e.py
+	pytest -v OS/VMS/tests/test_vms.py
 
 clean:
 	$(MAKE) -C APPS clean

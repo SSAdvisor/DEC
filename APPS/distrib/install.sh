@@ -250,6 +250,9 @@ list_apps() {
             robomon)
                 printf "%-16s %-18s %s\n" "robomon" "VAX Ops Monitor" "Heroix RoboMon V5.0 Rule-Based VAX/VMS Operations Manager"
                 ;;
+            coupon)
+                printf "%-16s %-18s %s\n" "coupon" "LCS System Admin" "Legacy Computing Systems SYSTEM Discount Coupon Manager"
+                ;;
             *)
                 printf "%-16s %-18s %s\n" "$app" "Application" "DEC System Application ($app)"
                 ;;

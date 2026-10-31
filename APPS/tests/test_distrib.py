@@ -22,6 +22,7 @@ DIBS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-dibs-V1.0-L-Linux-x86_64.tar.
 FMS11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-fms11-V1.0-L-Linux-x86_64.tar.gz")
 MENU11_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-menu11-V1.0-L-Linux-x86_64.tar.gz")
 INDENT_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-indent-V1.0-L-Linux-x86_64.tar.gz")
+COUPON_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-coupon-V1.0-L-Linux-x86_64.tar.gz")
 DECWINDOWS_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-decwindows-V1.0-L-Linux-x86_64.tar.gz")
 SRC_ARCHIVE = os.path.join(DISTRIB_DIR, "DEC-APPS-V1.0-L-Source.tar.gz")
 
@@ -43,6 +44,7 @@ def test_distrib_build_kit():
     assert os.path.isfile(FMS11_ARCHIVE), f"FMS-11 archive {FMS11_ARCHIVE} not created"
     assert os.path.isfile(MENU11_ARCHIVE), f"MENU-11 archive {MENU11_ARCHIVE} not created"
     assert os.path.isfile(INDENT_ARCHIVE), f"INDENT archive {INDENT_ARCHIVE} not created"
+    assert os.path.isfile(COUPON_ARCHIVE), f"COUPON archive {COUPON_ARCHIVE} not created"
     assert os.path.isfile(DECWINDOWS_ARCHIVE), f"DECwindows archive {DECWINDOWS_ARCHIVE} not created"
     assert os.path.isfile(SRC_ARCHIVE), f"Source archive {SRC_ARCHIVE} not created"
 
@@ -86,6 +88,10 @@ def test_distrib_build_kit():
     assert os.path.isfile(os.path.join(staging_dir, "bin", "indent"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "bp2fmt"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "pretty"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "coupon"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "lcssys"))
+    assert os.path.isfile(os.path.join(staging_dir, "bin", "cpnmgr"))
+    assert os.path.isfile(os.path.join(staging_dir, "docs", "coupon.md"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "decwindows"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "decw_x11"))
     assert os.path.isfile(os.path.join(staging_dir, "bin", "decwx11"))
